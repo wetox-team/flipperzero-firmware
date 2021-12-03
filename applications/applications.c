@@ -213,6 +213,10 @@ const FlipperApplication FLIPPER_PLUGINS[] = {
 #ifdef APP_SNAKE_GAME
     {.app = snake_game_app, .name = "Snake Game", .stack_size = 1024, .icon = &A_Plugins_14},
 #endif
+
+#ifdef APP_TELEGRAM
+    {.app = telegram_app, .name = "Telegram Lite", .stack_size = 1024, .icon = &A_Plugins_14},
+#endif
 };
 
 const size_t FLIPPER_PLUGINS_COUNT = sizeof(FLIPPER_PLUGINS) / sizeof(FlipperApplication);
