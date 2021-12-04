@@ -128,6 +128,11 @@ bool furi_hal_ohs_save_key(uint8_t* key) {
             result = true;
         }
     }
+
+    if (!result){
+        FURI_LOG_I(TAG, "Failed to save OHS key");
+    }
+
     file_worker_free(file_worker);
     return result;
 }
