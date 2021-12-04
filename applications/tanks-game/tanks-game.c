@@ -188,10 +188,25 @@ static void tanks_game_init_game(SnakeState* const snake_state) {
     snake_state->state = GameStateLife;
 }
 
-static bool tanks_game_collision_with_frame(Point const next_step) {
+static bool tanks_game_collision(Point const next_step, SnakeState const* const snake_state) {
     // if x == 0 && currentMovement == left then x - 1 == 255 ,
     // so check only x > right border
-    return next_step.x >= FIELD_WIDTH || next_step.y >= FIELD_HEIGHT;
+
+    if (next_step.x < 0 || next_step.y < 0) {
+        return true;
+    }
+
+    if (next_step.x >= FIELD_WIDTH || next_step.y >= FIELD_HEIGHT) {
+        return true;
+    }
+
+    char tile = snake_state->map[next_step.x][next_step.y];
+
+    if (tile == '-' || tile == '=' || tile == '*' || tile == 'a') {
+        return true;
+    }
+
+    return false;
 }
 
 static Point tanks_game_get_next_step(SnakeState const* const snake_state) {
@@ -228,7 +243,7 @@ static void tanks_game_process_game_step(SnakeState* const snake_state) {
 
     if(snake_state->moving) {
         Point next_step = tanks_game_get_next_step(snake_state);
-        bool crush = tanks_game_collision_with_frame(next_step);
+        bool crush = tanks_game_collision(next_step, snake_state);
 
         if(!crush) {
             tanks_game_move_snake(snake_state, next_step);
