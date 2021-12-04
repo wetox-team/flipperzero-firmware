@@ -219,7 +219,7 @@ int32_t bt_srv() {
         view_port_enabled_set(bt->statusbar_view_port, true);
         if(furi_hal_bt_init_app(bt_on_gap_event_callback, bt)) {
             FURI_LOG_I(TAG, "BLE stack started");
-            if(bt->bt_settings.enabled) {
+            if(bt->bt_settings.mode == BT_MODE_ON) {
                 furi_hal_bt_start_advertising();
             }
         } else {

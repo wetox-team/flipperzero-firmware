@@ -69,6 +69,8 @@ bool bt_settings_scene_start_on_event(void* context, SceneManagerEvent event) {
             furi_hal_bt_stop_advertising();
             app->settings.mode = BT_MODE_OFF;
         } else if(event.event == BtSettingOpenHaystack) {
+            furi_hal_ohs_stop();
+            furi_hal_bt_stop_advertising();
             printf("Bluetooth: OHS\r\n");
             app->settings.mode = BT_MODE_OHS;
             furi_hal_ohs_start();
