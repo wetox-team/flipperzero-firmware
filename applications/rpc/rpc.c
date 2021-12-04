@@ -48,6 +48,10 @@ static RpcSystemCallbacks rpc_systems[] = {
         .alloc = rpc_system_gui_alloc,
         .free = rpc_system_gui_free,
     },
+    {
+        .alloc = rpc_tg_alloc,
+        .free = rpc_tg_free,
+    }
 };
 
 struct RpcSession {

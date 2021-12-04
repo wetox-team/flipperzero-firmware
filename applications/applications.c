@@ -43,7 +43,7 @@ extern int32_t vibro_test_app(void* p);
 // Plugins
 extern int32_t music_player_app(void* p);
 extern int32_t snake_game_app(void* p);
-extern int32_t telegram_app (void* p);
+extern int32_t telegram_app(void* p);
 
 // On system start hooks declaration
 extern void bt_cli_init();
