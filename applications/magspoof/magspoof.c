@@ -49,6 +49,12 @@ const NotificationSequence magspoof_sequence_notification = {
     NULL,
 };
 
+bool magspoof_back_event_callback(void* context) {
+    furi_assert(context);
+    Magspoof* app = (Magspoof*)context;
+    return scene_manager_handle_back_event(app->scene_manager);
+}
+
 static void magspoof_view_draw_callback(Canvas* canvas, void* _model) {
     UartDumpModel* model = _model;
 
@@ -312,6 +318,7 @@ static Magspoof* magspoof_alloc() {
     app->scene_manager = scene_manager_alloc(&magspoof_scene_handlers, app);
     view_dispatcher_enable_queue(app->view_dispatcher);
     view_dispatcher_attach_to_gui(app->view_dispatcher, app->gui, ViewDispatcherTypeFullscreen);
+    view_dispatcher_set_navigation_event_callback(app->view_dispatcher, magspoof_back_event_callback);
 
     // Views
     app->view = view_alloc();

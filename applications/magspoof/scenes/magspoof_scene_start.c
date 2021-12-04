@@ -4,8 +4,6 @@ enum SubmenuIndex {
     SubmenuIndexRead,
     SubmenuIndexRunScript,
     SubmenuIndexSaved,
-    SubmenuIndexAddManualy,
-    SubmenuIndexDebug,
 };
 
 void magspoof_scene_start_submenu_callback(void* context, uint32_t index) {
@@ -21,16 +19,13 @@ void magspoof_scene_start_on_enter(void* context) {
     submenu_add_item(
         submenu, "Read card", SubmenuIndexRead, magspoof_scene_start_submenu_callback, magspoof);
     submenu_add_item(
+        submenu, "Saved cards", SubmenuIndexSaved, magspoof_scene_start_submenu_callback, magspoof);
+    submenu_add_item(
         submenu,
         "Run special action",
         SubmenuIndexRunScript,
         magspoof_scene_start_submenu_callback,
         magspoof);
-    submenu_add_item(
-        submenu, "Saved cards", SubmenuIndexSaved, magspoof_scene_start_submenu_callback, magspoof);
-    submenu_add_item(
-        submenu, "Add manually", SubmenuIndexAddManualy, magspoof_scene_start_submenu_callback, magspoof);
-    submenu_add_item(submenu, "Debug", SubmenuIndexDebug, magspoof_scene_start_submenu_callback, magspoof);
     submenu_set_selected_item(
         submenu, scene_manager_get_scene_state(magspoof->scene_manager, MagspoofSceneStart));
 
