@@ -213,7 +213,7 @@ static UartEchoApp* uart_echo_app_alloc() {
 
     // Enable uart listener
     furi_hal_console_disable();
-    furi_hal_uart_set_br(FuriHalUartIdUSART1, 115200);
+    furi_hal_uart_set_br(FuriHalUartIdUSART1, 9600);
     furi_hal_uart_set_irq_cb(FuriHalUartIdUSART1, uart_echo_on_irq_cb, app);
 
     app->worker_thread = furi_thread_alloc();
