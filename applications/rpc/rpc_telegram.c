@@ -20,7 +20,6 @@ void* rpc_tg_alloc(Rpc* rpc) {
 
     RpcTGSystem* rpc_tg = furi_alloc(sizeof(RpcTGSystem));
     TelegramApi* tg_api = furi_alloc(sizeof(TelegramApi));
-    furi_log_print("test");
     furi_record_create("tg", tg_api);
     
     rpc_tg->rpc = rpc;

@@ -1,5 +1,4 @@
 #include "telegram.h"
-
 #include <furi-hal.h>
 #include <furi.h>
 
@@ -72,10 +71,10 @@ Telegram* telegram_init_chats_callback(Telegram* instance) {
 Telegram* telegram_alloc() {
     Telegram* instance = furi_alloc(sizeof(Telegram));
 
+    //TelegramApi* api = furi_record_open("tg");
+    //instance->api = api;
     View* view = NULL;
 
-    // TelegramApi* api = furi_record_open("tg");
-    // instance->api = api;
     instance->gui = furi_record_open("gui");
     instance->view_dispatcher = view_dispatcher_alloc();
     view_dispatcher_enable_queue(instance->view_dispatcher);
