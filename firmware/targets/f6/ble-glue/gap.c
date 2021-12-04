@@ -367,6 +367,7 @@ static void gap_advertise_stop() {
 void gap_start_advertising() {
     FURI_LOG_I(TAG, "Start advertising");
     gap->enable_adv = true;
+    gap_init_svc(gap);
     GapCommand command = GapCommandAdvFast;
     furi_check(osMessageQueuePut(gap->command_queue, &command, 0, 0) == osOK);
 }
