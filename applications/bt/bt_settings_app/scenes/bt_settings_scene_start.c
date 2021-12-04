@@ -60,6 +60,8 @@ bool bt_settings_scene_start_on_event(void* context, SceneManagerEvent event) {
             app->settings.enabled = false;
             app->settings.ohs_enabled = false;
         } else if(event.event == BtSettingOpenHaystack) {
+            furi_hal_ohs_stop();
+            furi_hal_bt_stop_advertising();
             app->settings.enabled = false;
             app->settings.ohs_enabled = true;
             furi_hal_ohs_start();
