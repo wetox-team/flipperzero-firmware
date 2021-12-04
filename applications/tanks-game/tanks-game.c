@@ -67,9 +67,6 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
 
     // Before the function is called, the state is set with the canvas_reset(canvas)
 
-    // Frame
-    canvas_draw_frame(canvas, 0, 0, 128, 64);
-
     // Fruit
     Point f = snake_state->fruit;
     f.x = f.x * CELL_LENGTH_PIXELS;
@@ -82,7 +79,7 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
     // Snake
     Point coordinates = snake_state->coordinates;
 
-    switch (snake_state->nextMovement) {
+    switch (snake_state->direction) {
         case DirectionUp:
             canvas_draw_icon(canvas, coordinates.x * CELL_LENGTH_PIXELS, coordinates.y * CELL_LENGTH_PIXELS - 1, &I_tank_up);
             break;
@@ -249,12 +246,12 @@ static void tanks_game_process_game_step(SnakeState* const snake_state) {
         Point next_step = tanks_game_get_next_step(snake_state);
         bool crush = tanks_game_collision_with_frame(next_step);
 
-        if(crush) {
+        if(!crush) {
             tanks_game_move_snake(snake_state, next_step);
         }
     }
 
-    bool eatFruit = (next_step.x == snake_state->fruit.x) && (next_step.y == snake_state->fruit.y);
+    bool eatFruit = (snake_state->coordinates.x == snake_state->fruit.x) && (snake_state->coordinates.y == snake_state->fruit.y);
     if(eatFruit) {
         snake_state->len++;
     }
