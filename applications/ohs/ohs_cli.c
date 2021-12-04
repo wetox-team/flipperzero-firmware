@@ -31,9 +31,9 @@ void ohs_cli_stop(Cli* cli, string_t args, void* context) {
 void ohs_cli_command(Cli* cli, string_t args, void* context) {
     printf("Starting advertising, kinda\r\n");
 
-    uint8_t public_key[28] = {0x3a, 0x8f, 0x54, 0x1e, 0x2,  0x9c, 0x84, 0x75, 0xad, 0xef,
-                              0x79, 0x1f, 0x4c, 0xb0, 0x7,  0xcf, 0xf2, 0xb1, 0xfb, 0x8f,
-                              0xb0, 0xbe, 0x84, 0x13, 0xc8, 0x21, 0x4d, 0x4f};
+    uint8_t public_key[28] = {0xf2, 0x20, 0xf3, 0x55, 0xa6, 0x30, 0x70, 0x50, 0xb9, 0xce,
+                              0x36, 0xf8, 0xa6, 0xb5, 0x72, 0x3a, 0x1a, 0xea, 0x1d, 0x59,
+                              0x54, 0x9c, 0x3d, 0xdc, 0x2e, 0xf5, 0xac, 0x96};
 
     uint8_t rnd_addr[6] = {
         public_key[0] | (0b11 << 6),
@@ -69,12 +69,12 @@ void ohs_cli_command(Cli* cli, string_t args, void* context) {
     adv_data[29] = public_key[0] >> 6;
 
     tBleStatus ret;
+    ret = aci_hal_write_config_data(CONFIG_DATA_PUBADDR_OFFSET, CONFIG_DATA_PUBADDR_LEN, rnd_addr);
+    CHECK_ERR(ret);
     ret =
-        hci_le_set_advertising_parameters(0x0640, 0x0C80, 0x03, 0x01, 0x00, peer_addr, 0x07, 0x00);
+        hci_le_set_advertising_parameters(0x0640, 0x0C80, 0x03, 0x00, 0x00, peer_addr, 0x07, 0x00);
     CHECK_ERR(ret);
     ret = hci_le_set_advertising_data(31, adv_data);
-    CHECK_ERR(ret);
-    ret = hci_le_set_random_address(rnd_addr);
     CHECK_ERR(ret);
     ret = hci_le_set_advertise_enable(0x01);
     CHECK_ERR(ret);
