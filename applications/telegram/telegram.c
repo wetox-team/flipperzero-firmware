@@ -45,8 +45,6 @@ static uint32_t telegram_previous_callback(void* context) {
     return TelegramViewChats;
 }
 
-
-
 Telegram* telegram_alloc() {
     Telegram* instance = furi_alloc(sizeof(Telegram));
 

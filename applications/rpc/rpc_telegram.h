@@ -1,9 +1,7 @@
-
 #include "telegram.pb.h"
 
-typedef struct {
-    FuriPubSub* sendQueue;
-    FuriPubSub* recvQueue;
-} TelegramApi;
+typedef void (*TGStateHandler)(const PB_Telegram_TelegramStateResponse dialogs);
 
-PB_Telegram_TelegramStateResponse* get_state(TelegramApi* api);
+typedef struct {
+    TGStateHandler handler;
+} TelegramApi;
