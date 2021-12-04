@@ -8,6 +8,7 @@
 typedef struct {
     uint8_t version;
     bool enabled;
+    bool ohs_enabled;
 } BtSettings;
 
 bool bt_settings_load(BtSettings* bt_settings);

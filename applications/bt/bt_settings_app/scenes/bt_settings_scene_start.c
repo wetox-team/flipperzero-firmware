@@ -1,15 +1,18 @@
 #include "../bt_settings_app.h"
 #include "furi-hal-bt.h"
+#include "furi-hal-ohs.h"
 
 enum BtSetting {
     BtSettingOff,
     BtSettingOn,
+    BtSettingOpenHaystack,
     BtSettingNum,
 };
 
 const char* const bt_settings_text[BtSettingNum] = {
     "Off",
     "On",
+    "OpenHaystack"
 };
 
 static void bt_settings_scene_start_var_list_change_callback(VariableItem* item) {
@@ -31,12 +34,15 @@ void bt_settings_scene_start_on_enter(void* context) {
         BtSettingNum,
         bt_settings_scene_start_var_list_change_callback,
         app);
-    if(app->settings.enabled) {
+    if(app->settings.enabled && !app->settings.ohs_enabled) {
         variable_item_set_current_value_index(item, BtSettingOn);
         variable_item_set_current_value_text(item, bt_settings_text[BtSettingOn]);
-    } else {
+    } else if (!app->settings.enabled && !app->settings.ohs_enabled) {
         variable_item_set_current_value_index(item, BtSettingOff);
         variable_item_set_current_value_text(item, bt_settings_text[BtSettingOff]);
+    } else {
+        variable_item_set_current_value_index(item, BtSettingOpenHaystack);
+        variable_item_set_current_value_text(item, bt_settings_text[BtSettingOpenHaystack]);
     }
 
     view_dispatcher_switch_to_view(app->view_dispatcher, BtSettingsAppViewVarItemList);
@@ -48,11 +54,19 @@ bool bt_settings_scene_start_on_event(void* context, SceneManagerEvent event) {
 
     if(event.type == SceneManagerEventTypeCustom) {
         if(event.event == BtSettingOn) {
+            furi_hal_ohs_stop();
             furi_hal_bt_start_advertising();
             app->settings.enabled = true;
+            app->settings.ohs_enabled = false;
         } else if(event.event == BtSettingOff) {
             app->settings.enabled = false;
+            app->settings.ohs_enabled = false;
+            furi_hal_ohs_stop();
             furi_hal_bt_stop_advertising();
+        } else if(event.event == BtSettingOpenHaystack) {
+            app->settings.enabled = false;
+            app->settings.ohs_enabled = true;
+            furi_hal_ohs_start();
         }
         consumed = true;
     }
