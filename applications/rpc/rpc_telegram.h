@@ -1,3 +1,6 @@
+
+#include "telegram.pb.h"
+
 typedef struct {
     FuriPubSub* sendQueue;
     FuriPubSub* recvQueue;

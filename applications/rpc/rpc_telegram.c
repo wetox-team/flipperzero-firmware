@@ -19,7 +19,6 @@ void* rpc_tg_alloc(Rpc* rpc) {
     
     furi_pubsub_alloc(tg_api->recvQueue);
     furi_pubsub_alloc(tg_api->sendQueue);
-    tg_api->recvQueue 
     rpc_tg->rpc = rpc;
     rpc_tg->api = tg_api;
 
@@ -39,8 +38,9 @@ PB_Telegram_TelegramStateResponse* get_state(TelegramApi* api) {
     req->which_content = PB_Main_tg_state_request_tag;
     req->content.tg_state_request.count = 3;
 
-    furi_pubsub_subscribe(api->recvQueue);
+    //furi_pubsub_subscribe(api->recvQueue);
     furi_pubsub_publish(api->sendQueue, req);
+    return NULL;
 }
 
 void rpc_tg_free(void* ctx) {
