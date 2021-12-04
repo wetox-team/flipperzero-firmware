@@ -35,4 +35,15 @@ void ohs_cli_command(Cli* cli, string_t args, void* context) {
 }
 
 void ohs_cli_key_save(Cli* cli, string_t args, void* context){
+    if (args.sizeof() != 56){
+        printf("Incorrect input\r\n");
+        printf("Use 56-symbol hex\r\n");
+    }
+    else{
+        uint8_t key[28];
+        for (int i = 0; i < 28; i++){
+            key[i] = fscanf(args+(i*2), "%02x", key[i]));
+        }
+        furi_hal_ohs_save_key(key, 28);
+    }
 }

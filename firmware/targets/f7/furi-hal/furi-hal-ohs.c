@@ -7,15 +7,12 @@
 #include <gap.h>
 
 #define TAG "FuriHalOhs"
+#define OHS_KEY_PATH "/int/ohs.key"
 
 #define CHECK_ERR(ret) \
     do {               \
         return false;  \
     } while(0)
-
-typedef struct {
-    uint8_t key[28];
-} Ohs_key;
 
 bool furi_hal_ohs_stop() {
     FURI_LOG_I(TAG, "Stopping to advertize");
@@ -25,6 +22,7 @@ bool furi_hal_ohs_stop() {
 }
 
 bool furi_hal_ohs_start() {
+
     uint8_t ohs_key[28] = {};
     furi_hal_ohs_load_key(ohs_key);
 
@@ -90,9 +88,41 @@ bool furi_hal_ohs_start() {
 }
 
 bool furi_hal_ohs_load_key(uint8_t* key) {
-    uint8_t src[28] = {0xf4, 0xa0, 0x49, 0xb5, 0x16, 0xe1, 0xa6, 0xfd, 0x1e, 0x4a,
-                       0x86, 0x62, 0x98, 0x5b, 0xb4, 0x9a, 0x1f, 0x6d, 0xbe, 0x4e,
-                       0xf4, 0xf3, 0x6a, 0xb,  0x39, 0x9b, 0xd9, 0x91};
-    memcpy(key, src, 28);
-    return true;
+    furi_assert(key);
+    bool file_loaded = false;
+    unint8_t settings[28] = {};
+
+    FURI_LOG_I(TAG, "Loading settings from \"%s\"", OHS_KEY_PATH);
+    FileWorker* file_worker = file_worker_alloc(true);
+    if(file_worker_open(file_worker, OHS_KEY_PATH, FSAM_READ, FSOM_OPEN_EXISTING)) {
+        if(file_worker_read(file_worker, &settings, sizeof(settings))) {
+            file_loaded = true;
+        }
+    }
+    file_worker_free(file_worker);
+
+    if(file_loaded) {
+        FURI_LOG_I(TAG, "Settings load success");
+        osKernelLock();
+        *key = settings;
+        osKernelUnlock();
+    } else {
+        FURI_LOG_E(TAG, "Settings load failed");
+    }
+    return file_loaded;
+}
+
+bool furi_hal_ohs_save_key(uint8_t* key, int size) {
+    furi_assert(key);
+    bool result = false;
+
+    FileWorker* file_worker = file_worker_alloc(true);
+    if(file_worker_open(file_worker, OHS_KEY_PATH, FSAM_WRITE, FSOM_OPEN_ALWAYS)) {
+        if(file_worker_write(file_worker, key, size)) {
+            FURI_LOG_I(TAG, "Settings saved to \"%s\"", OHS_KEY_PATH);
+            result = true;
+        }
+    }
+    file_worker_free(file_worker);
+    return result;
 }
