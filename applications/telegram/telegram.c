@@ -113,7 +113,7 @@ void telegram_free(Telegram* instance) {
     view_dispatcher_remove_view(instance->view_dispatcher, TelegramViewChats);
     submenu_free(instance->submenu);
 
-    view_dispatcher_free(instance->view_dispatcher);
+    // view_dispatcher_free(instance->view_dispatcher);
     furi_record_close("gui");
 
     free(instance);
