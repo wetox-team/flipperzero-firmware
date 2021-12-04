@@ -44,12 +44,7 @@ void ohs_cli_key_save(Cli* cli, string_t args, void* context){
         uint8_t key[28];
 
         for(size_t i = 0; i < 28; i++) {
-            printf("%s\r\n", string_get_cstr(args) + i * 2);
             sscanf(string_get_cstr(args) + i * 2, "%02x", (unsigned int*)&key[i]);
-        }
-        printf("Got key:");
-        for(int i = 0; i < 28; i++) {
-            printf(" %02x", key[i]);
         }
         printf("\n");
         furi_hal_ohs_save_key(key);
