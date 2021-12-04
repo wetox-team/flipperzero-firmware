@@ -1,9 +1,6 @@
 #pragma once
 
 #include "magspoof.h"
-#include "magspoof_types.h"
-#include "magspoof_worker.h"
-#include "magspoof_device.h"
 
 #include <furi.h>
 
@@ -21,8 +18,6 @@
 #include <gui/modules/byte_input.h>
 #include <gui/modules/text_box.h>
 #include <gui/modules/widget.h>
-
-#include "views/bank_card.h"
 
 #include <magspoof/scenes/magspoof_scene.h>
 
