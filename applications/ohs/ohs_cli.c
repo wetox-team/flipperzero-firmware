@@ -6,13 +6,12 @@
 #include <ble.h>
 #include "furi-hal-ohs.h"
 #include "ohs_cli.h"
-#include "ohs_settings.h"
 
 void ohs_cli_init() {
     Cli* cli = furi_record_open("cli");
     cli_add_command(cli, "ohs_start", CliCommandFlagDefault, ohs_cli_command, NULL);
     cli_add_command(cli, "ohs_stop", CliCommandFlagDefault, ohs_cli_stop, NULL);
-    cli_add_command(cli, "ohs_cli_key_save", CliCommandFlagDefault, ohs_key_save, NULL);
+    cli_add_command(cli, "ohs_cli_key_save", CliCommandFlagDefault, ohs_cli_key_save, NULL);
     furi_record_close("cli");
 }
 
@@ -35,4 +34,5 @@ void ohs_cli_command(Cli* cli, string_t args, void* context) {
     furi_hal_ohs_start();
 }
 
-void ohs_cli_key_save(Cli* cli, string_t args, void* context){}
+void ohs_cli_key_save(Cli* cli, string_t args, void* context){
+}

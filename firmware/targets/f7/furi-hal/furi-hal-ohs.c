@@ -12,6 +12,10 @@
         return false;  \
     } while(0)
 
+typedef struct{
+    uint8_t key[28];
+} Ohs_key;
+
 bool furi_hal_ohs_stop() {
     FURI_LOG_I(TAG, "Stopping to advertize");
     printf( "Stopping to advertize\r\n");
@@ -21,16 +25,16 @@ bool furi_hal_ohs_stop() {
 
 bool furi_hal_ohs_start() {
 
-    Ohs_key ohs_key;
-    ohs_key_load(&ohs_key);
+    uint8_t ohs_key[28] = {};
+    furi_hal_ohs_load_key(ohs_key);
 
     uint8_t rnd_addr[6] = {
-        ohs_key.key[5],
-        ohs_key.key[4],
-        ohs_key.key[3],
-        ohs_key.key[2],
-        ohs_key.key[1],
-        ohs_key.key[0] | (0b11 << 6),
+        ohs_key[5],
+        ohs_key[4],
+        ohs_key[3],
+        ohs_key[2],
+        ohs_key[1],
+        ohs_key[0] | (0b11 << 6),
     };
 
     uint8_t peer_addr[6] = {
@@ -54,8 +58,8 @@ bool furi_hal_ohs_start() {
         0x00, /* Hint (0x00) */
     };
 
-    memcpy(&adv_data[7], &ohs_key.key[6], 22);
-    adv_data[29] = ohs_key.key[0] >> 6;
+    memcpy(&adv_data[7], &ohs_key[6], 22);
+    adv_data[29] = ohs_key[0] >> 6;
 
     aci_hal_write_config_data(CONFIG_DATA_PUBADDR_OFFSET, CONFIG_DATA_PUBADDR_LEN, rnd_addr);
     //    CHECK_ERR(ret);
@@ -78,5 +82,13 @@ bool furi_hal_ohs_start() {
                rnd_addr[1],
                rnd_addr[0]
                );
+    return true;
+}
+
+bool furi_hal_ohs_load_key(uint8_t* key) {
+    uint8_t src[28] = {0xf4, 0xa0, 0x49, 0xb5, 0x16, 0xe1, 0xa6, 0xfd, 0x1e, 0x4a,
+                       0x86, 0x62, 0x98, 0x5b, 0xb4, 0x9a, 0x1f, 0x6d, 0xbe, 0x4e,
+                       0xf4, 0xf3, 0x6a, 0xb,  0x39, 0x9b, 0xd9, 0x91};
+    memcpy(key, src, 28);
     return true;
 }
