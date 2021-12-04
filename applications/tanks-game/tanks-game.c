@@ -72,7 +72,7 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
     Point f = snake_state->fruit;
     f.x = f.x * 4 + 1;
     f.y = f.y * 4 + 1;
-    tanks_draw_rframe(canvas, f.x, f.y, 6, 6, 2);
+    canvas_draw_rframe(canvas, f.x, f.y, 6, 6, 2);
 
     // Snake
     for(uint16_t i = 0; i < snake_state->len; i++) {
@@ -270,12 +270,12 @@ static void tanks_game_process_game_step(SnakeState* const snake_state) {
 
     bool can_turn = (snake_state->points[0].x % 2 == 0) && (snake_state->points[0].y % 2 == 0);
     if(can_turn) {
-        snake_state->currentMovement = snake_game_get_turn_snake(snake_state);
+        snake_state->currentMovement = tanks_game_get_turn_snake(snake_state);
     }
 
-    Point next_step = snake_game_get_next_step(snake_state);
+    Point next_step = tanks_game_get_next_step(snake_state);
 
-    bool crush = snake_game_collision_with_frame(next_step);
+    bool crush = tanks_game_collision_with_frame(next_step);
     if(crush) {
         if(snake_state->state == GameStateLife) {
             snake_state->state = GameStateLastChance;
@@ -290,7 +290,7 @@ static void tanks_game_process_game_step(SnakeState* const snake_state) {
         }
     }
 
-    crush = snake_game_collision_with_tail(snake_state, next_step);
+    crush = tanks_game_collision_with_tail(snake_state, next_step);
     if(crush) {
         snake_state->state = GameStateGameOver;
         return;
@@ -305,10 +305,10 @@ static void tanks_game_process_game_step(SnakeState* const snake_state) {
         }
     }
 
-    snake_game_move_snake(snake_state, next_step);
+    tanks_game_move_snake(snake_state, next_step);
 
     if(eatFruit) {
-        snake_state->fruit = snake_game_get_new_fruit(snake_state);
+        snake_state->fruit = tanks_game_get_new_fruit(snake_state);
     }
 }
 
@@ -318,7 +318,7 @@ int32_t tanks_game_app(void* p) {
     osMessageQueueId_t event_queue = osMessageQueueNew(8, sizeof(SnakeEvent), NULL);
 
     SnakeState* snake_state = furi_alloc(sizeof(SnakeState));
-    snake_game_init_game(snake_state);
+    tanks_game_init_game(snake_state);
 
     ValueMutex state_mutex;
     if(!init_mutex(&state_mutex, snake_state, sizeof(SnakeState))) {
