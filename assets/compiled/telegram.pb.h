@@ -10,24 +10,24 @@
 #endif
 
 /* Struct definitions */
-typedef struct _PB_Telegram_TelegramStateResponse { 
-    pb_callback_t dialogs; 
-} PB_Telegram_TelegramStateResponse;
-
-typedef struct _PB_Telegram_TelegramDialog { 
-    int64_t id; 
-    pb_callback_t name; 
-    pb_callback_t messages; 
-} PB_Telegram_TelegramDialog;
-
 typedef struct _PB_Telegram_TelegramMessage { 
-    pb_callback_t text; 
+    char *text; 
     bool is_our; 
 } PB_Telegram_TelegramMessage;
 
+typedef struct _PB_Telegram_TelegramDialog { 
+    int64_t id; 
+    char *name; 
+    PB_Telegram_TelegramMessage messages[3]; 
+} PB_Telegram_TelegramDialog;
+
+typedef struct _PB_Telegram_TelegramStateResponse { 
+    PB_Telegram_TelegramDialog dialogs[3]; 
+} PB_Telegram_TelegramStateResponse;
+
 typedef struct _PB_Telegram_TelegramSendMessageRequest { 
     int64_t id; 
-    pb_callback_t msg; 
+    char *msg; 
 } PB_Telegram_TelegramSendMessageRequest;
 
 typedef struct _PB_Telegram_TelegramStateRequest { 

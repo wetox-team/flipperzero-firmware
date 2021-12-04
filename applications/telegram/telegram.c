@@ -44,28 +44,38 @@ static uint32_t telegram_previous_callback(void* context) {
     return TelegramViewChats;
 }
 
-Telegram* telegram_init_chats_callback(Telegram* instance) {
-    submenu_clean(instance->submenu);
-    submenu_add_item(
-        instance->submenu,
-        "Chat 1 loaded",
-        TelegramViewDialogue,
-        telegram_submenu_callback,
-        instance);
-    submenu_add_item(
-        instance->submenu,
-        "Chat 2 loaded",
-        TelegramViewDialogue,
-        telegram_submenu_callback,
-        instance);
-    submenu_add_item(
-        instance->submenu,
-        "Chat 3 loaded",
-        TelegramViewDialogue,
-        telegram_submenu_callback,
-        instance);
-
-    return instance;
+void telegram_init_chats_callback(const PB_Telegram_TelegramStateResponse* response, void* instance) {
+    Telegram* tg_instance = instance;
+    submenu_clean(tg_instance->submenu);
+    
+    if (response == NULL) {
+        submenu_add_item(
+            tg_instance->submenu,
+            "Chats are loading...",
+            TelegramViewDialogue,
+            NULL,
+            tg_instance);
+    } else {
+        submenu_add_item(
+            tg_instance->submenu,
+            response->dialogs[0].name,
+            TelegramViewDialogue,
+            telegram_submenu_callback,
+            tg_instance);
+        submenu_add_item(
+            tg_instance->submenu,
+            response->dialogs[1].name,
+            TelegramViewDialogue,
+            telegram_submenu_callback,
+            tg_instance);
+        submenu_add_item(
+            tg_instance->submenu,
+            response->dialogs[2].name,
+            TelegramViewDialogue,
+            telegram_submenu_callback,
+            tg_instance);
+    }
+    
 }
 
 Telegram* telegram_alloc() {
@@ -116,11 +126,11 @@ Telegram* telegram_alloc() {
 
     if (!furi_record_exists("tg"))  {
         submenu_add_item(
-        instance->submenu,
-        "NO RPC",
-        TelegramViewDialogue,
-        NULL,
-        instance);
+            instance->submenu,
+            "NO RPC",
+            TelegramViewDialogue,
+            NULL,
+            instance);
 
         return instance;
     }
@@ -144,9 +154,11 @@ Telegram* telegram_alloc() {
         telegram_submenu_callback,
         instance);
 
-    telegram_init_chats_callback(instance);
+    telegram_init_chats_callback(NULL, instance);
     TelegramApi* api = furi_record_open("tg");
+    api->instance = instance;
     instance->api = api;
+    api->handler = telegram_init_chats_callback;
     return instance;
 }
 

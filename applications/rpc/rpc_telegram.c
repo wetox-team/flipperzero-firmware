@@ -12,7 +12,7 @@ typedef struct {
 
 static void state_callback(const PB_Main* request, void* context) {
     RpcTGSystem* rpcSystem = context;
-    rpcSystem->api->handler(request->content.tg_state_response);
+    rpcSystem->api->handler(&request->content.tg_state_response, rpcSystem->api->instance);
 }
 
 void* rpc_tg_alloc(Rpc* rpc) {
