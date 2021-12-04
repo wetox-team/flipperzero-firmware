@@ -20,15 +20,17 @@ bool furi_hal_ohs_stop() {
 }
 
 bool furi_hal_ohs_start() {
-    uint8_t public_key[28] = {0xee, 0xf, 0x43, 0x34, 0xe4, 0x63, 0x1f, 0x22, 0x96, 0x8d, 0x56, 0xbc, 0x10, 0xe, 0xf8, 0x39, 0x50, 0xa6, 0x81, 0x8, 0xc7, 0x95, 0xf7, 0x92, 0x41, 0x84, 0x10, 0x6f};
+
+    Ohs_key ohs_key;
+    ohs_key_load(&ohs_key);
 
     uint8_t rnd_addr[6] = {
-        public_key[5],
-        public_key[4],
-        public_key[3],
-        public_key[2],
-        public_key[1],
-        public_key[0] | (0b11 << 6),
+        ohs_key.key[5],
+        ohs_key.key[4],
+        ohs_key.key[3],
+        ohs_key.key[2],
+        ohs_key.key[1],
+        ohs_key.key[0] | (0b11 << 6),
     };
 
     uint8_t peer_addr[6] = {
@@ -52,8 +54,8 @@ bool furi_hal_ohs_start() {
         0x00, /* Hint (0x00) */
     };
 
-    memcpy(&adv_data[7], &public_key[6], 22);
-    adv_data[29] = public_key[0] >> 6;
+    memcpy(&adv_data[7], &ohs_key.key[6], 22);
+    adv_data[29] = ohs_key.key[0] >> 6;
 
     aci_hal_write_config_data(CONFIG_DATA_PUBADDR_OFFSET, CONFIG_DATA_PUBADDR_LEN, rnd_addr);
     //    CHECK_ERR(ret);
