@@ -57,7 +57,7 @@ typedef struct {
     InputEvent input;
 } SnakeEvent;
 
-static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
+static void snake_game_render_callback(Canvas* const canvas, void* ctx) {
     const SnakeState* snake_state = acquire_mutex((ValueMutex*)ctx, 25);
     if(snake_state == NULL) {
         return;
@@ -103,21 +103,21 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
     release_mutex((ValueMutex*)ctx, snake_state);
 }
 
-static void tanks_game_input_callback(InputEvent* input_event, osMessageQueueId_t event_queue) {
+static void snake_game_input_callback(InputEvent* input_event, osMessageQueueId_t event_queue) {
     furi_assert(event_queue);
 
     SnakeEvent event = {.type = EventTypeKey, .input = *input_event};
     osMessageQueuePut(event_queue, &event, 0, osWaitForever);
 }
 
-static void tanks_game_update_timer_callback(osMessageQueueId_t event_queue) {
+static void snake_game_update_timer_callback(osMessageQueueId_t event_queue) {
     furi_assert(event_queue);
 
     SnakeEvent event = {.type = EventTypeTick};
     osMessageQueuePut(event_queue, &event, 0, 0);
 }
 
-static void tanks_game_init_game(SnakeState* const snake_state) {
+static void snake_game_init_game(SnakeState* const snake_state) {
     Point p[] = {{8, 6}, {7, 6}, {6, 6}, {5, 6}, {4, 6}, {3, 6}, {2, 6}};
     memcpy(snake_state->points, p, sizeof(p));
 
@@ -133,7 +133,7 @@ static void tanks_game_init_game(SnakeState* const snake_state) {
     snake_state->state = GameStateLife;
 }
 
-static Point tanks_game_get_new_fruit(SnakeState const* const snake_state) {
+static Point snake_game_get_new_fruit(SnakeState const* const snake_state) {
     // 1 bit for each point on the playing field where the snake can turn
     // and where the fruit can appear
     uint16_t buffer[8];
@@ -162,8 +162,8 @@ static Point tanks_game_get_new_fruit(SnakeState const* const snake_state) {
             if((buffer[y] & mask) == 0) {
                 if(newFruit == 0) {
                     Point p = {
-                        .x = x * 2,
-                        .y = y * 2,
+                            .x = x * 2,
+                            .y = y * 2,
                     };
                     return p;
                 }
@@ -176,14 +176,14 @@ static Point tanks_game_get_new_fruit(SnakeState const* const snake_state) {
     return p;
 }
 
-static bool tanks_game_collision_with_frame(Point const next_step) {
+static bool snake_game_collision_with_frame(Point const next_step) {
     // if x == 0 && currentMovement == left then x - 1 == 255 ,
     // so check only x > right border
     return next_step.x > 30 || next_step.y > 14;
 }
 
 static bool
-    tanks_game_collision_with_tail(SnakeState const* const snake_state, Point const next_step) {
+snake_game_collision_with_tail(SnakeState const* const snake_state, Point const next_step) {
     for(uint16_t i = 0; i < snake_state->len; i++) {
         Point p = snake_state->points[i];
         if(p.x == next_step.x && p.y == next_step.y) {
@@ -194,76 +194,76 @@ static bool
     return false;
 }
 
-static Direction tanks_game_get_turn_snake(SnakeState const* const snake_state) {
+static Direction snake_game_get_turn_snake(SnakeState const* const snake_state) {
     switch(snake_state->currentMovement) {
-    case DirectionUp:
-        switch(snake_state->nextMovement) {
-        case DirectionRight:
-            return DirectionRight;
-        case DirectionLeft:
-            return DirectionLeft;
-        default:
-            return snake_state->currentMovement;
-        }
-    case DirectionRight:
-        switch(snake_state->nextMovement) {
         case DirectionUp:
-            return DirectionUp;
-        case DirectionDown:
-            return DirectionDown;
-        default:
-            return snake_state->currentMovement;
-        }
-    case DirectionDown:
-        switch(snake_state->nextMovement) {
+            switch(snake_state->nextMovement) {
+                case DirectionRight:
+                    return DirectionRight;
+                case DirectionLeft:
+                    return DirectionLeft;
+                default:
+                    return snake_state->currentMovement;
+            }
         case DirectionRight:
-            return DirectionRight;
-        case DirectionLeft:
-            return DirectionLeft;
-        default:
-            return snake_state->currentMovement;
-        }
-    default: // case DirectionLeft:
-        switch(snake_state->nextMovement) {
-        case DirectionUp:
-            return DirectionUp;
+            switch(snake_state->nextMovement) {
+                case DirectionUp:
+                    return DirectionUp;
+                case DirectionDown:
+                    return DirectionDown;
+                default:
+                    return snake_state->currentMovement;
+            }
         case DirectionDown:
-            return DirectionDown;
-        default:
-            return snake_state->currentMovement;
-        }
+            switch(snake_state->nextMovement) {
+                case DirectionRight:
+                    return DirectionRight;
+                case DirectionLeft:
+                    return DirectionLeft;
+                default:
+                    return snake_state->currentMovement;
+            }
+        default: // case DirectionLeft:
+            switch(snake_state->nextMovement) {
+                case DirectionUp:
+                    return DirectionUp;
+                case DirectionDown:
+                    return DirectionDown;
+                default:
+                    return snake_state->currentMovement;
+            }
     }
 }
 
-static Point tanks_game_get_next_step(SnakeState const* const snake_state) {
+static Point snake_game_get_next_step(SnakeState const* const snake_state) {
     Point next_step = snake_state->points[0];
     switch(snake_state->currentMovement) {
-    // +-----x
-    // |
-    // |
-    // y
-    case DirectionUp:
-        next_step.y--;
-        break;
-    case DirectionRight:
-        next_step.x++;
-        break;
-    case DirectionDown:
-        next_step.y++;
-        break;
-    case DirectionLeft:
-        next_step.x--;
-        break;
+        // +-----x
+        // |
+        // |
+        // y
+        case DirectionUp:
+            next_step.y--;
+            break;
+        case DirectionRight:
+            next_step.x++;
+            break;
+        case DirectionDown:
+            next_step.y++;
+            break;
+        case DirectionLeft:
+            next_step.x--;
+            break;
     }
     return next_step;
 }
 
-static void tanks_game_move_snake(SnakeState* const snake_state, Point const next_step) {
+static void snake_game_move_snake(SnakeState* const snake_state, Point const next_step) {
     memmove(snake_state->points + 1, snake_state->points, snake_state->len * sizeof(Point));
     snake_state->points[0] = next_step;
 }
 
-static void tanks_game_process_game_step(SnakeState* const snake_state) {
+static void snake_game_process_game_step(SnakeState* const snake_state) {
     if(snake_state->state == GameStateGameOver) {
         return;
     }
@@ -312,7 +312,7 @@ static void tanks_game_process_game_step(SnakeState* const snake_state) {
     }
 }
 
-int32_t tanks_game_app(void* p) {
+int32_t snake_game_app(void* p) {
     srand(DWT->CYCCNT);
 
     osMessageQueueId_t event_queue = osMessageQueueNew(8, sizeof(SnakeEvent), NULL);
@@ -328,11 +328,11 @@ int32_t tanks_game_app(void* p) {
     }
 
     ViewPort* view_port = view_port_alloc();
-    view_port_draw_callback_set(view_port, tanks_game_render_callback, &state_mutex);
-    view_port_input_callback_set(view_port, tanks_game_input_callback, event_queue);
+    view_port_draw_callback_set(view_port, snake_game_render_callback, &state_mutex);
+    view_port_input_callback_set(view_port, snake_game_input_callback, event_queue);
 
     osTimerId_t timer =
-        osTimerNew(snake_game_update_timer_callback, osTimerPeriodic, event_queue, NULL);
+            osTimerNew(snake_game_update_timer_callback, osTimerPeriodic, event_queue, NULL);
     osTimerStart(timer, osKernelGetTickFreq() / 4);
 
     // Open GUI and register view_port
@@ -350,26 +350,26 @@ int32_t tanks_game_app(void* p) {
             if(event.type == EventTypeKey) {
                 if(event.input.type == InputTypePress) {
                     switch(event.input.key) {
-                    case InputKeyUp:
-                        snake_state->nextMovement = DirectionUp;
-                        break;
-                    case InputKeyDown:
-                        snake_state->nextMovement = DirectionDown;
-                        break;
-                    case InputKeyRight:
-                        snake_state->nextMovement = DirectionRight;
-                        break;
-                    case InputKeyLeft:
-                        snake_state->nextMovement = DirectionLeft;
-                        break;
-                    case InputKeyOk:
-                        if(snake_state->state == GameStateGameOver) {
-                            snake_game_init_game(snake_state);
-                        }
-                        break;
-                    case InputKeyBack:
-                        processing = false;
-                        break;
+                        case InputKeyUp:
+                            snake_state->nextMovement = DirectionUp;
+                            break;
+                        case InputKeyDown:
+                            snake_state->nextMovement = DirectionDown;
+                            break;
+                        case InputKeyRight:
+                            snake_state->nextMovement = DirectionRight;
+                            break;
+                        case InputKeyLeft:
+                            snake_state->nextMovement = DirectionLeft;
+                            break;
+                        case InputKeyOk:
+                            if(snake_state->state == GameStateGameOver) {
+                                snake_game_init_game(snake_state);
+                            }
+                            break;
+                        case InputKeyBack:
+                            processing = false;
+                            break;
                     }
                 }
             } else if(event.type == EventTypeTick) {
