@@ -3,6 +3,8 @@
 #include <input/input.h>
 #include <stdlib.h>
 
+#include "contants.h"
+
 typedef struct {
     //    +-----x
     //    |
@@ -36,8 +38,6 @@ typedef enum {
     DirectionLeft,
 } Direction;
 
-#define MAX_SNAKE_LEN 253
-
 typedef struct {
     Point coordinates;
     uint16_t len;
@@ -70,8 +70,11 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
 
     // Fruit
     Point f = snake_state->fruit;
-    f.x = f.x * 4 + 1;
-    f.y = f.y * 4 + 1;
+    f.x = f.x * CELL_LENGTH_PIXELS;
+    f.y = f.y * CELL_LENGTH_PIXELS;
+
+    canvas_draw_box(canvas, FIELD_WIDTH * CELL_LENGTH_PIXELS, 0, 2, SCREEN_HEIGHT);
+
     canvas_draw_rframe(canvas, f.x, f.y, 6, 6, 2);
 
     // Snake
@@ -79,16 +82,16 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
 
     switch (snake_state->nextMovement) {
         case DirectionUp:
-            canvas_draw_icon(canvas, coordinates.x * 4 + 2, coordinates.y * 4 + 2, &I_tank_up);
+            canvas_draw_icon(canvas, coordinates.x * CELL_LENGTH_PIXELS, coordinates.y * CELL_LENGTH_PIXELS - 1, &I_tank_up);
             break;
         case DirectionDown:
-            canvas_draw_icon(canvas, coordinates.x * 4 + 2, coordinates.y * 4 + 2, &I_tank_down);
+            canvas_draw_icon(canvas, coordinates.x * CELL_LENGTH_PIXELS, coordinates.y * CELL_LENGTH_PIXELS - 1, &I_tank_down);
             break;
         case DirectionRight:
-            canvas_draw_icon(canvas, coordinates.x * 4 + 2, coordinates.y * 4 + 2, &I_tank_right);
+            canvas_draw_icon(canvas, coordinates.x * CELL_LENGTH_PIXELS, coordinates.y * CELL_LENGTH_PIXELS - 1, &I_tank_right);
             break;
         case DirectionLeft:
-            canvas_draw_icon(canvas, coordinates.x * 4 + 2, coordinates.y * 4 + 2, &I_tank_left);
+            canvas_draw_icon(canvas, coordinates.x * CELL_LENGTH_PIXELS, coordinates.y * CELL_LENGTH_PIXELS - 1, &I_tank_left);
             break;
     }
 
@@ -128,6 +131,20 @@ static void tanks_game_update_timer_callback(osMessageQueueId_t event_queue) {
 }
 
 static void tanks_game_init_game(SnakeState* const snake_state) {
+//    char map[FIELD_HEIGHT][FIELD_WIDTH + 1] = {
+//        "*       -  *   -",
+//        "  -  -  =       ",
+//        "        -  -   2",
+//        "1    =     - -- ",
+//        "--   =     - -- ",
+//        "a-   =  -  =   2",
+//        "--   =     - -- ",
+//        "1    =     - -- ",
+//        "        -  -   2",
+//        "  -  -  =       ",
+//        "*       -  *   -",
+//    };
+
     Point c = {5, 5};
     snake_state->coordinates = c;
 
@@ -137,7 +154,7 @@ static void tanks_game_init_game(SnakeState* const snake_state) {
 
     snake_state->nextMovement = DirectionRight;
 
-    Point f = {18, 6};
+    Point f = {3, 3};
     snake_state->fruit = f;
 
     snake_state->state = GameStateLife;
@@ -146,17 +163,17 @@ static void tanks_game_init_game(SnakeState* const snake_state) {
 static Point tanks_game_get_new_fruit(SnakeState const* const snake_state) {
     // 1 bit for each point on the playing field where the snake can turn
     // and where the fruit can appear
-    uint16_t buffer[8];
+    uint16_t buffer[FIELD_HEIGHT];
     memset(buffer, 0, sizeof(buffer));
-    uint8_t empty = 8 * 16;
+    uint8_t empty = FIELD_HEIGHT * FIELD_WIDTH;
 
     // Bit set if snake use that playing field
 
     uint16_t newFruit = rand() % empty;
 
     // Skip random number of _empty_ fields
-    for(uint8_t y = 0; y < 8; y++) {
-        for(uint16_t x = 0, mask = 1; x < 16; x += 1, mask <<= 1) {
+    for(uint8_t y = 0; y < FIELD_HEIGHT; y++) {
+        for(uint16_t x = 0, mask = 1; x < FIELD_WIDTH; x += 1, mask <<= 1) {
             if((buffer[y] & mask) == 0) {
                 if(newFruit == 0) {
                     Point p = {
@@ -177,7 +194,7 @@ static Point tanks_game_get_new_fruit(SnakeState const* const snake_state) {
 static bool tanks_game_collision_with_frame(Point const next_step) {
     // if x == 0 && currentMovement == left then x - 1 == 255 ,
     // so check only x > right border
-    return next_step.x > 30 || next_step.y > 14;
+    return next_step.x >= FIELD_WIDTH || next_step.y >= FIELD_HEIGHT;
 }
 
 static Direction tanks_game_get_turn_snake(SnakeState const* const snake_state) {
@@ -275,10 +292,6 @@ static void tanks_game_process_game_step(SnakeState* const snake_state) {
     bool eatFruit = (next_step.x == snake_state->fruit.x) && (next_step.y == snake_state->fruit.y);
     if(eatFruit) {
         snake_state->len++;
-        if(snake_state->len >= MAX_SNAKE_LEN) {
-            snake_state->state = GameStateGameOver;
-            return;
-        }
     }
 
     tanks_game_move_snake(snake_state, next_step);
@@ -370,26 +383,3 @@ int32_t tanks_game_app(void* p) {
 
     return 0;
 }
-
-// Screen is 128x64 px
-// (4 + 4) * 16 - 4 + 2 + 2border == 128
-// (4 + 4) * 8 - 4 + 2 + 2border == 64
-// Game field from point{x:  0, y: 0} to point{x: 30, y: 14}.
-// The snake turns only in even cells - intersections.
-// ┌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┐
-// ╎ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ╎
-// ╎ ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪ ╎
-// ╎ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ╎
-// ╎ ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪ ╎
-// ╎ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ╎
-// ╎ ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪ ╎
-// ╎ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ╎
-// ╎ ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪ ╎
-// ╎ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ╎
-// ╎ ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪ ╎
-// ╎ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ╎
-// ╎ ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪ ╎
-// ╎ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ╎
-// ╎ ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪   ▪ ╎
-// ╎ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ▪ ╎
-// └╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┘

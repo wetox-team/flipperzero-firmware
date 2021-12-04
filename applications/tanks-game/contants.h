@@ -14,18 +14,4 @@ const uint8_t SHOT_COOLDOWN = 3;
 
 const uint8_t CELL_LENGTH_PIXELS = 6;
 
-const char MAP[FIELD_HEIGHT][FIELD_WIDTH + 1] = {
-    "*       -  *   -",
-    "  -  -  =       ",
-    "        -  -   2",
-    "1    =     - -- ",
-    "--   =     - -- ",
-    "a-   =  -  =   2",
-    "--   =     - -- ",
-    "1    =     - -- ",
-    "        -  -   2",
-    "  -  -  =       ",
-    "*       -  *   -",
-};
-
 #endif //FLIPPERZERO_FIRMWARE_CONTANTS_H
