@@ -13,14 +13,14 @@
     } while(0)
 
 bool furi_hal_ohs_stop() {
+    FURI_LOG_I(TAG, "Stopping to advertize");
+    printf( "Stopping to advertize\r\n");
     hci_le_set_advertise_enable(0x00);
     return true;
 }
 
 bool furi_hal_ohs_start() {
-    uint8_t public_key[28] = {0xf4, 0xa0, 0x49, 0xb5, 0x16, 0xe1, 0xa6, 0xfd, 0x1e, 0x4a,
-                              0x86, 0x62, 0x98, 0x5b, 0xb4, 0x9a, 0x1f, 0x6d, 0xbe, 0x4e,
-                              0xf4, 0xf3, 0x6a, 0xb,  0x39, 0x9b, 0xd9, 0x91};
+    uint8_t public_key[28] = {0xee, 0xf, 0x43, 0x34, 0xe4, 0x63, 0x1f, 0x22, 0x96, 0x8d, 0x56, 0xbc, 0x10, 0xe, 0xf8, 0x39, 0x50, 0xa6, 0x81, 0x8, 0xc7, 0x95, 0xf7, 0x92, 0x41, 0x84, 0x10, 0x6f};
 
     uint8_t rnd_addr[6] = {
         public_key[5],
@@ -60,11 +60,21 @@ bool furi_hal_ohs_start() {
     hci_le_set_advertising_parameters(0x0640, 0x0C80, 0x03, 0x00, 0x00, peer_addr, 0x07, 0x00);
     hci_le_set_advertising_data(31, adv_data);
     hci_le_set_advertise_enable(0x01);
+    printf( "Started to advertize OHS with random addr: %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+               rnd_addr[5],
+               rnd_addr[4],
+               rnd_addr[3],
+               rnd_addr[2],
+               rnd_addr[1],
+               rnd_addr[0]
+    );
+    FURI_LOG_I(TAG, "Started to advertize OHS with random addr: %02x:%02x:%02x:%02x:%02x:%02x",
+               rnd_addr[5],
+               rnd_addr[4],
+               rnd_addr[3],
+               rnd_addr[2],
+               rnd_addr[1],
+               rnd_addr[0]
+               );
     return true;
-
-    printf("Random addr: ");
-    for(int i = 0; i < 6; i++) {
-        printf("%x ", rnd_addr[5 - i]);
-    }
-    printf("\r\n");
 }

@@ -9,7 +9,11 @@ enum BtSetting {
     BtSettingNum,
 };
 
-const char* const bt_settings_text[BtSettingNum] = {"Off", "On", "OHS"};
+const char* const bt_settings_text[BtSettingNum] = {
+    "Off",
+    "On",
+    "OHS"
+};
 
 static void bt_settings_scene_start_var_list_change_callback(VariableItem* item) {
     BtSettingsApp* app = variable_item_get_context(item);
@@ -30,15 +34,20 @@ void bt_settings_scene_start_on_enter(void* context) {
         BtSettingNum,
         bt_settings_scene_start_var_list_change_callback,
         app);
-    if(app->settings.enabled && !app->settings.ohs_enabled) {
+    if(app->settings.mode == BT_MODE_ON) {
+        printf("Scene: Bluetooth: On");
         variable_item_set_current_value_index(item, BtSettingOn);
         variable_item_set_current_value_text(item, bt_settings_text[BtSettingOn]);
-    } else if(!app->settings.enabled && !app->settings.ohs_enabled) {
+    } else if (app->settings.mode == BT_MODE_OFF) {
+        printf("Scene: Bluetooth: Off");
         variable_item_set_current_value_index(item, BtSettingOff);
         variable_item_set_current_value_text(item, bt_settings_text[BtSettingOff]);
-    } else {
+    } else if (app->settings.mode == BT_MODE_OHS) {
+        printf("Scene: Bluetooth: OHS");
         variable_item_set_current_value_index(item, BtSettingOpenHaystack);
         variable_item_set_current_value_text(item, bt_settings_text[BtSettingOpenHaystack]);
+    } else {
+        printf("No possible scene!");
     }
 
     view_dispatcher_switch_to_view(app->view_dispatcher, BtSettingsAppViewVarItemList);
@@ -50,18 +59,18 @@ bool bt_settings_scene_start_on_event(void* context, SceneManagerEvent event) {
 
     if(event.type == SceneManagerEventTypeCustom) {
         if(event.event == BtSettingOn) {
+            printf("Bluetooth: OHS\r\n");
             furi_hal_ohs_stop();
             furi_hal_bt_start_advertising();
-            app->settings.enabled = true;
-            app->settings.ohs_enabled = false;
+            app->settings.mode = BT_MODE_ON;
         } else if(event.event == BtSettingOff) {
+            printf("Bluetooth: OHS\r\n");
             furi_hal_ohs_stop();
             furi_hal_bt_stop_advertising();
-            app->settings.enabled = false;
-            app->settings.ohs_enabled = false;
+            app->settings.mode = BT_MODE_OFF;
         } else if(event.event == BtSettingOpenHaystack) {
-            app->settings.enabled = false;
-            app->settings.ohs_enabled = true;
+            printf("Bluetooth: OHS\r\n");
+            app->settings.mode = BT_MODE_OHS;
             furi_hal_ohs_start();
         }
         consumed = true;
