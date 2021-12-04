@@ -11,7 +11,7 @@ void ohs_cli_init() {
     Cli* cli = furi_record_open("cli");
     cli_add_command(cli, "ohs_start", CliCommandFlagDefault, ohs_cli_command, NULL);
     cli_add_command(cli, "ohs_stop", CliCommandFlagDefault, ohs_cli_stop, NULL);
-    cli_add_command(cli, "ohs_cli_key_save", CliCommandFlagDefault, ohs_cli_key_save, NULL);
+    cli_add_command(cli, "ohs_save_key", CliCommandFlagDefault, ohs_cli_key_save, NULL);
     furi_record_close("cli");
 }
 
@@ -35,15 +35,18 @@ void ohs_cli_command(Cli* cli, string_t args, void* context) {
 }
 
 void ohs_cli_key_save(Cli* cli, string_t args, void* context){
-    if (args.sizeof() != 56){
-        printf("Incorrect input\r\n");
-        printf("Use 56-symbol hex\r\n");
-    }
-    else{
+//    if (sizeof(args) != 56){
+//        printf("Incorrect input\r\n");
+//        printf("Use 56-symbol hex\r\n");
+//    }
+//    else{
         uint8_t key[28];
         for (int i = 0; i < 28; i++){
-            key[i] = fscanf(args+(i*2), "%02x", key[i]));
+            key[i] = sscanf((args+(i*2))->ptr, "%02x", (unsigned int *) key + i);
         }
-        furi_hal_ohs_save_key(key, 28);
-    }
+        printf("Key entered:");
+        for (int i = 0; i < 28; i++)
+            printf(" %X", key[i]);
+        furi_hal_ohs_save_key(key);
+//    }
 }
