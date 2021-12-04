@@ -76,7 +76,10 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
 
     // Snake
     Point coordinates = snake_state->coordinates;
-    canvas_draw_box(canvas, coordinates.x, coordinates.y, 4, 4);
+
+    // canvas_draw_icon(canvas, model->x, model->y, model->icon);
+
+    canvas_draw_box(canvas, coordinates.x * 4 + 2, coordinates.y * 4 + 2, 4, 4);
 
     // Game Over banner
     if(snake_state->state == GameStateGameOver) {
