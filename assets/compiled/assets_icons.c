@@ -734,6 +734,9 @@ const uint8_t *_I_tank_explosion[] = {_I_tank_explosion_0};
 const uint8_t _I_tank_stone_0[] = {0x00,0x12,0x3F,0x1E,0x1E,0x3F,0x12,};
 const uint8_t *_I_tank_stone[] = {_I_tank_stone_0};
 
+const uint8_t _I_projectile_left_0[] = {0x00,0x00,0x1C,0x0E,0x0E,0x1C,0x00,};
+const uint8_t *_I_projectile_left[] = {_I_projectile_left_0};
+
 const uint8_t _I_tank_up_0[] = {0x00,0x0C,0x2D,0x3F,0x3F,0x3F,0x21,};
 const uint8_t *_I_tank_up[] = {_I_tank_up_0};
 
@@ -758,11 +761,20 @@ const uint8_t *_I_tank_down[] = {_I_tank_down_0};
 const uint8_t _I_enemy_down_0[] = {0x00,0x21,0x3F,0x33,0x3F,0x2D,0x0C,};
 const uint8_t *_I_enemy_down[] = {_I_enemy_down_0};
 
+const uint8_t _I_projectile_right_0[] = {0x00,0x00,0x0E,0x1C,0x1C,0x0E,0x00,};
+const uint8_t *_I_projectile_right[] = {_I_projectile_right_0};
+
 const uint8_t _I_tank_hedgehog_0[] = {0x00,0x21,0x12,0x0C,0x0C,0x12,0x21,};
 const uint8_t *_I_tank_hedgehog[] = {_I_tank_hedgehog_0};
 
+const uint8_t _I_projectile_down_0[] = {0x00,0x00,0x12,0x1E,0x1E,0x0C,0x00,};
+const uint8_t *_I_projectile_down[] = {_I_projectile_down_0};
+
 const uint8_t _I_enemy_right_0[] = {0x00,0x1F,0x0E,0x3A,0x3A,0x0E,0x1F,};
 const uint8_t *_I_enemy_right[] = {_I_enemy_right_0};
+
+const uint8_t _I_projectile_up_0[] = {0x00,0x00,0x0C,0x1E,0x1E,0x12,0x00,};
+const uint8_t *_I_projectile_up[] = {_I_projectile_up_0};
 
 const uint8_t _I_enemy_up_0[] = {0x00,0x0C,0x2D,0x3F,0x33,0x3F,0x21,};
 const uint8_t *_I_enemy_up[] = {_I_enemy_up_0};
@@ -972,6 +984,7 @@ const Icon I_MHz_25x11 = {.width=25,.height=11,.frame_count=1,.frame_rate=0,.fra
 const Icon I_Lock_7x8 = {.width=7,.height=8,.frame_count=1,.frame_rate=0,.frames=_I_Lock_7x8};
 const Icon I_tank_explosion = {.width=6,.height=6,.frame_count=1,.frame_rate=0,.frames=_I_tank_explosion};
 const Icon I_tank_stone = {.width=6,.height=6,.frame_count=1,.frame_rate=0,.frames=_I_tank_stone};
+const Icon I_projectile_left = {.width=6,.height=6,.frame_count=1,.frame_rate=0,.frames=_I_projectile_left};
 const Icon I_tank_up = {.width=6,.height=6,.frame_count=1,.frame_rate=0,.frames=_I_tank_up};
 const Icon I_enemy_left = {.width=6,.height=6,.frame_count=1,.frame_rate=0,.frames=_I_enemy_left};
 const Icon I_tank_left = {.width=6,.height=6,.frame_count=1,.frame_rate=0,.frames=_I_tank_left};
@@ -980,8 +993,11 @@ const Icon I_tank_right = {.width=6,.height=6,.frame_count=1,.frame_rate=0,.fram
 const Icon I_tank_base = {.width=6,.height=6,.frame_count=1,.frame_rate=0,.frames=_I_tank_base};
 const Icon I_tank_down = {.width=6,.height=6,.frame_count=1,.frame_rate=0,.frames=_I_tank_down};
 const Icon I_enemy_down = {.width=6,.height=6,.frame_count=1,.frame_rate=0,.frames=_I_enemy_down};
+const Icon I_projectile_right = {.width=6,.height=6,.frame_count=1,.frame_rate=0,.frames=_I_projectile_right};
 const Icon I_tank_hedgehog = {.width=6,.height=6,.frame_count=1,.frame_rate=0,.frames=_I_tank_hedgehog};
+const Icon I_projectile_down = {.width=6,.height=6,.frame_count=1,.frame_rate=0,.frames=_I_projectile_down};
 const Icon I_enemy_right = {.width=6,.height=6,.frame_count=1,.frame_rate=0,.frames=_I_enemy_right};
+const Icon I_projectile_up = {.width=6,.height=6,.frame_count=1,.frame_rate=0,.frames=_I_projectile_up};
 const Icon I_enemy_up = {.width=6,.height=6,.frame_count=1,.frame_rate=0,.frames=_I_enemy_up};
 const Icon I_DolphinMafia_115x62 = {.width=115,.height=62,.frame_count=1,.frame_rate=0,.frames=_I_DolphinMafia_115x62};
 const Icon I_DolphinExcited_64x63 = {.width=64,.height=63,.frame_count=1,.frame_rate=0,.frames=_I_DolphinExcited_64x63};

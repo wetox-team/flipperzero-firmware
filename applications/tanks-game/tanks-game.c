@@ -43,6 +43,7 @@ typedef struct {
     uint8_t lives;
     Direction direction;
     bool moving;
+    bool shooting;
     uint8_t cooldown;
 } PlayerState;
 
@@ -111,6 +112,43 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
 
             case 'a':
                 canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, &I_tank_base);
+                break;
+            }
+        }
+    }
+
+    for(int8_t x = 0; x < 100; x++) {
+        if (tanks_state->projectiles[x] != NULL) {
+            ProjectileState *projectile = tanks_state->projectiles[x];
+
+            switch(projectile->direction) {
+            case DirectionUp:
+                canvas_draw_icon(
+                    canvas,
+                    projectile->coordinates.x * CELL_LENGTH_PIXELS,
+                    projectile->coordinates.y * CELL_LENGTH_PIXELS - 1,
+                    &I_projectile_up);
+                break;
+            case DirectionDown:
+                canvas_draw_icon(
+                    canvas,
+                    projectile->coordinates.x * CELL_LENGTH_PIXELS,
+                    projectile->coordinates.y * CELL_LENGTH_PIXELS - 1,
+                    &I_projectile_down);
+                break;
+            case DirectionRight:
+                canvas_draw_icon(
+                    canvas,
+                    projectile->coordinates.x * CELL_LENGTH_PIXELS,
+                    projectile->coordinates.y * CELL_LENGTH_PIXELS - 1,
+                    &I_projectile_right);
+                break;
+            case DirectionLeft:
+                canvas_draw_icon(
+                    canvas,
+                    projectile->coordinates.x * CELL_LENGTH_PIXELS,
+                    projectile->coordinates.y * CELL_LENGTH_PIXELS - 1,
+                    &I_projectile_left);
                 break;
             }
         }
@@ -202,6 +240,7 @@ static void tanks_game_init_game(TanksState* const tanks_state) {
         4,
         DirectionUp,
         0,
+        0,
         SHOT_COOLDOWN,
     };
 
@@ -267,7 +306,32 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
         }
     }
 
+    if(tanks_state->p1->shooting) {
+        int freeProjectileIndex;
+        for (
+                freeProjectileIndex = 0;
+                freeProjectileIndex < 100;
+                freeProjectileIndex++
+            ) {
+            if (tanks_state->projectiles[freeProjectileIndex] == NULL) {
+                break;
+            }
+        }
+
+        ProjectileState* projectile_state = furi_alloc(sizeof(ProjectileState));
+        Point p_c = {
+            tanks_state->p1->coordinates.x,
+            tanks_state->p1->coordinates.y
+        };
+
+        projectile_state->direction = tanks_state->p1->direction;
+        projectile_state->coordinates = p_c;
+
+        tanks_state->projectiles[freeProjectileIndex] = projectile_state;
+    }
+
     tanks_state->p1->moving = false;
+    tanks_state->p1->shooting = false;
 }
 
 int32_t tanks_game_app(void* p) {
@@ -325,6 +389,8 @@ int32_t tanks_game_app(void* p) {
                             tanks_state->p1->direction = DirectionLeft;
                             break;
                         case InputKeyOk:
+                            tanks_state->p1->shooting = true;
+
                             if(tanks_state->state == GameStateGameOver) {
                                 tanks_game_init_game(tanks_state);
                             }
