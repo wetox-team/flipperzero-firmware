@@ -12,6 +12,8 @@
 #include <gui/modules/submenu.h>
 #include <gui/modules/variable-item-list.h>
 
+#include <rpc/rpc_telegram.h>
+
 #include "view_dialogue.h"
 
 #define TAG "Telegram"
@@ -22,6 +24,7 @@ typedef struct {
     ViewTelegram* view_dialogue;
     VariableItemList* variable_item_list;
     Submenu* submenu;
+    TelegramApi* api;
 } Telegram;
 
 typedef enum {
@@ -43,11 +46,14 @@ static uint32_t telegram_previous_callback(void* context) {
 }
 
 
+
 Telegram* telegram_alloc() {
     Telegram* instance = furi_alloc(sizeof(Telegram));
 
     View* view = NULL;
 
+    TelegramApi* api = furi_record_open("tg");
+    instance->api = api;
     instance->gui = furi_record_open("gui");
     instance->view_dispatcher = view_dispatcher_alloc();
     view_dispatcher_enable_queue(instance->view_dispatcher);
@@ -115,6 +121,7 @@ void telegram_free(Telegram* instance) {
 
     view_dispatcher_free(instance->view_dispatcher);
     furi_record_close("gui");
+    furi_record_close("tg");
 
     free(instance);
 }
