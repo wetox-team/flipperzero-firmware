@@ -65,8 +65,12 @@ bool furi_hal_ohs_start() {
     hci_le_set_advertising_parameters(0x0640, 0x0C80, 0x03, 0x00, 0x00, peer_addr, 0x07, 0x00);
     hci_le_set_advertising_data(31, adv_data);
     hci_le_set_advertise_enable(0x01);
+    printf("Started to advertize OHS with key: ");
+    for (int i = 0; i < 28; i++) {
+        printf(" %02x", ohs_key[i]);
+    }
     printf(
-        "Started to advertize OHS with random addr: %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+        "\nStarted to advertize OHS with random addr: %02x:%02x:%02x:%02x:%02x:%02x\r\n",
         rnd_addr[5],
         rnd_addr[4],
         rnd_addr[3],

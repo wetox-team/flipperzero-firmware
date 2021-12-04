@@ -6,11 +6,10 @@
 #include <ble.h>
 #include "furi-hal-ohs.h"
 #include "ohs_cli.h"
-#include "base64.h"
 
 void ohs_cli_init() {
     Cli* cli = furi_record_open("cli");
-    cli_add_command(cli, "ohs_start", CliCommandFlagDefault, ohs_cli_command, NULL);
+        cli_add_command(cli, "ohs_start", CliCommandFlagDefault, ohs_cli_command, NULL);
     cli_add_command(cli, "ohs_stop", CliCommandFlagDefault, ohs_cli_stop, NULL);
     cli_add_command(cli, "ohs_save_key", CliCommandFlagDefault, ohs_cli_key_save, NULL);
     cli_add_command(cli, "ohs_get_key", CliCommandFlagDefault, ohs_cli_key_get, NULL);
@@ -37,15 +36,19 @@ void ohs_cli_command(Cli* cli, string_t args, void* context) {
 }
 
 void ohs_cli_key_save(Cli* cli, string_t args, void* context){
-//    if (strlen(args) != 56){
-//        printf("Incorrect input. Save aborted.\r\n");
-//        printf("Use 56-symbol hex\r\n");
-//    }
-//    else{
-        uint8_t key[28];
-        mbedtls_base64_decode(key, 28, 28, args, string.size(args));
-        furi_hal_ohs_save_key(key);
-//    }
+
+    uint8_t key[28];
+
+    for (size_t i = 0; i < 28; i++) {
+        printf("%s\r\n", string_get_cstr(args) + i * 2);
+        sscanf(string_get_cstr(args) + i * 2, "%02x",(unsigned int *) &key[i]);
+    }
+    printf("Got key:");
+    for (int i = 0; i < 28; i++) {
+        printf(" %02x", key[i]);
+    }
+    printf("\n");
+    furi_hal_ohs_save_key(key);
 }
 
 void ohs_cli_key_get(Cli* cli, string_t args, void* context){
@@ -53,6 +56,6 @@ void ohs_cli_key_get(Cli* cli, string_t args, void* context){
     furi_hal_ohs_load_key(ohs_key);
 
     for (int i = 0; i < 28; i++){
-        printf("%h ", ohs_key[i]);
+        printf("%02x ", ohs_key[i]);
     }
 }
