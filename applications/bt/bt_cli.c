@@ -53,7 +53,7 @@ void bt_cli_command_carrier_tx(Cli* cli, string_t args, void* context) {
         osDelay(250);
     }
     furi_hal_bt_stop_tone_tx();
-    if(bt_settings.enabled) {
+    if(bt_settings.mode == BT_MODE_ON) {
         furi_hal_bt_start_advertising();
     }
 }
@@ -86,7 +86,7 @@ void bt_cli_command_carrier_rx(Cli* cli, string_t args, void* context) {
     }
 
     furi_hal_bt_stop_packet_test();
-    if(bt_settings.enabled) {
+    if(bt_settings.mode == BT_MODE_ON) {
         furi_hal_bt_start_advertising();
     }
 }
@@ -137,7 +137,7 @@ void bt_cli_command_packet_tx(Cli* cli, string_t args, void* context) {
     }
     furi_hal_bt_stop_packet_test();
     printf("Transmitted %lu packets", furi_hal_bt_get_transmitted_packets());
-    if(bt_settings.enabled) {
+    if(bt_settings.mode == BT_MODE_ON) {
         furi_hal_bt_start_advertising();
     }
 }
@@ -176,7 +176,7 @@ void bt_cli_command_packet_rx(Cli* cli, string_t args, void* context) {
     }
     uint16_t packets_received = furi_hal_bt_stop_packet_test();
     printf("Received %hu packets", packets_received);
-    if(bt_settings.enabled) {
+    if(bt_settings.mode == BT_MODE_ON) {
         furi_hal_bt_start_advertising();
     }
 }

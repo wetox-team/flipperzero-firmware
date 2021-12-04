@@ -99,7 +99,7 @@ int32_t bt_debug_app(void* p) {
     view_dispatcher_run(app->view_dispatcher);
 
     // Restart advertising
-    if(app->settings.enabled) {
+    if(app->settings.mode == BT_MODE_ON) {
         furi_hal_bt_start_advertising();
     }
     bt_debug_app_free(app);
