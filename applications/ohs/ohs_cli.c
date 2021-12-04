@@ -36,19 +36,24 @@ void ohs_cli_command(Cli* cli, string_t args, void* context) {
 }
 
 void ohs_cli_key_save(Cli* cli, string_t args, void* context){
-
-    uint8_t key[28];
-
-    for (size_t i = 0; i < 28; i++) {
-        printf("%s\r\n", string_get_cstr(args) + i * 2);
-        sscanf(string_get_cstr(args) + i * 2, "%02x",(unsigned int *) &key[i]);
+    if (strlen(args) != 56){
+        printf("Incorrect input. Save aborted.\r\n");
+        printf("Use 56-symbol hex\r\n");
     }
-    printf("Got key:");
-    for (int i = 0; i < 28; i++) {
-        printf(" %02x", key[i]);
+    else {
+        uint8_t key[28];
+
+        for(size_t i = 0; i < 28; i++) {
+            printf("%s\r\n", string_get_cstr(args) + i * 2);
+            sscanf(string_get_cstr(args) + i * 2, "%02x", (unsigned int*)&key[i]);
+        }
+        printf("Got key:");
+        for(int i = 0; i < 28; i++) {
+            printf(" %02x", key[i]);
+        }
+        printf("\n");
+        furi_hal_ohs_save_key(key);
     }
-    printf("\n");
-    furi_hal_ohs_save_key(key);
 }
 
 void ohs_cli_key_get(Cli* cli, string_t args, void* context){
