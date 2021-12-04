@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define BT_SETTINGS_VERSION (2)
+#define BT_SETTINGS_VERSION (3)
 
 typedef enum {
     BT_MODE_OFF,

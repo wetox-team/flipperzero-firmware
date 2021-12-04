@@ -35,19 +35,19 @@ void bt_settings_scene_start_on_enter(void* context) {
         bt_settings_scene_start_var_list_change_callback,
         app);
     if(app->settings.mode == BT_MODE_ON) {
-        printf("Scene: Bluetooth: On");
+        printf("Scene: Bluetooth: On\r\n");
         variable_item_set_current_value_index(item, BtSettingOn);
         variable_item_set_current_value_text(item, bt_settings_text[BtSettingOn]);
     } else if (app->settings.mode == BT_MODE_OFF) {
-        printf("Scene: Bluetooth: Off");
+        printf("Scene: Bluetooth: Off\r\n");
         variable_item_set_current_value_index(item, BtSettingOff);
         variable_item_set_current_value_text(item, bt_settings_text[BtSettingOff]);
     } else if (app->settings.mode == BT_MODE_OHS) {
-        printf("Scene: Bluetooth: OHS");
+        printf("Scene: Bluetooth: OHS\r\n");
         variable_item_set_current_value_index(item, BtSettingOpenHaystack);
         variable_item_set_current_value_text(item, bt_settings_text[BtSettingOpenHaystack]);
     } else {
-        printf("No possible scene!");
+        printf("No possible scene!\r\n");
     }
 
     view_dispatcher_switch_to_view(app->view_dispatcher, BtSettingsAppViewVarItemList);
@@ -59,12 +59,12 @@ bool bt_settings_scene_start_on_event(void* context, SceneManagerEvent event) {
 
     if(event.type == SceneManagerEventTypeCustom) {
         if(event.event == BtSettingOn) {
-            printf("Bluetooth: OHS\r\n");
+            printf("Bluetooth: On\r\n");
             furi_hal_ohs_stop();
             furi_hal_bt_start_advertising();
             app->settings.mode = BT_MODE_ON;
         } else if(event.event == BtSettingOff) {
-            printf("Bluetooth: OHS\r\n");
+            printf("Bluetooth: Off\r\n");
             furi_hal_ohs_stop();
             furi_hal_bt_stop_advertising();
             app->settings.mode = BT_MODE_OFF;
