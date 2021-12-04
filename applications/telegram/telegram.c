@@ -45,13 +45,37 @@ static uint32_t telegram_previous_callback(void* context) {
     return TelegramViewChats;
 }
 
+Telegram* telegram_init_chats_callback(Telegram* instance) {
+    submenu_clean(instance->submenu);
+    submenu_add_item(
+        instance->submenu,
+        "Chat 1 loaded",
+        TelegramViewDialogue,
+        telegram_submenu_callback,
+        instance);
+    submenu_add_item(
+        instance->submenu,
+        "Chat 2 loaded",
+        TelegramViewDialogue,
+        telegram_submenu_callback,
+        instance);
+    submenu_add_item(
+        instance->submenu,
+        "Chat 3 loaded",
+        TelegramViewDialogue,
+        telegram_submenu_callback,
+        instance);
+
+    return instance;
+}
+
 Telegram* telegram_alloc() {
     Telegram* instance = furi_alloc(sizeof(Telegram));
 
     View* view = NULL;
 
-    TelegramApi* api = furi_record_open("tg");
-    instance->api = api;
+    // TelegramApi* api = furi_record_open("tg");
+    // instance->api = api;
     instance->gui = furi_record_open("gui");
     instance->view_dispatcher = view_dispatcher_alloc();
     view_dispatcher_enable_queue(instance->view_dispatcher);
@@ -110,16 +134,18 @@ Telegram* telegram_alloc() {
         telegram_submenu_callback,
         instance);
 
+    telegram_init_chats_callback(instance);
     return instance;
 }
+
 
 void telegram_free(Telegram* instance) {
     view_dispatcher_remove_view(instance->view_dispatcher, TelegramViewChats);
     submenu_free(instance->submenu);
 
-    view_dispatcher_free(instance->view_dispatcher);
+    // view_dispatcher_free(instance->view_dispatcher);
     furi_record_close("gui");
-    furi_record_close("tg");
+    //furi_record_close("tg");
 
     free(instance);
 }
