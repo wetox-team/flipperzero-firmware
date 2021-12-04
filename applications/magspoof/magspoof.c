@@ -325,6 +325,7 @@ static MagSpoofApp* magspoof_app_alloc() {
 
     // View dispatcher
     app->view_dispatcher = view_dispatcher_alloc();
+    app->scene_manager = scene_manager_alloc(&magspoof_scene_handlers, app);
     view_dispatcher_enable_queue(app->view_dispatcher);
     view_dispatcher_attach_to_gui(app->view_dispatcher, app->gui, ViewDispatcherTypeFullscreen);
 
@@ -389,6 +390,8 @@ static void magspoof_app_free(MagSpoofApp* app) {
     view_free(app->view);
     view_dispatcher_free(app->view_dispatcher);
 
+    scene_manager_free(app->scene_manager);
+
     // Close gui record
     furi_record_close("gui");
     furi_record_close("notification");
@@ -402,6 +405,9 @@ static void magspoof_app_free(MagSpoofApp* app) {
 
 int32_t magspoof_app(void* p) {
     MagSpoofApp* app = magspoof_app_alloc();
+
+    scene_manager_next_scene(app->scene_manager, MagspoofSceneStart);
+
     view_dispatcher_run(app->view_dispatcher);
     magspoof_app_free(app);
     return 0;

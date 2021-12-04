@@ -1,0 +1,1 @@
+ADD_SCENE(magspoof, start, Start)
