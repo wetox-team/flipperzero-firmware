@@ -36,12 +36,12 @@ void ohs_cli_command(Cli* cli, string_t args, void* context) {
                               0x54, 0x9c, 0x3d, 0xdc, 0x2e, 0xf5, 0xac, 0x96};
 
     uint8_t rnd_addr[6] = {
-        public_key[0] | (0b11 << 6),
-        public_key[1],
-        public_key[2],
-        public_key[3],
-        public_key[4],
         public_key[5],
+        public_key[4],
+        public_key[3],
+        public_key[2],
+        public_key[1],
+        public_key[0] | (0b11 << 6),
     };
 
     uint8_t peer_addr[6] = {
