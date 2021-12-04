@@ -1,0 +1,31 @@
+#ifndef FLIPPERZERO_FIRMWARE_CONTANTS_H
+#define FLIPPERZERO_FIRMWARE_CONTANTS_H
+
+const uint8_t SCREEN_WIDTH = 128;
+const uint8_t SCREEN_HEIGHT = 64;
+
+const uint8_t FIELD_WIDTH = 16;
+const uint8_t FIELD_HEIGHT = 11;
+
+const uint16_t TURN_LENGTH = 300;
+const uint16_t LONG_PRESS_LENGTH = 10;
+
+const uint8_t SHOT_COOLDOWN = 3;
+
+const uint8_t CELL_LENGTH_PIXELS = 6;
+
+const char MAP[FIELD_HEIGHT][FIELD_WIDTH + 1] = {
+    "*       -  *   -",
+    "  -  -  =       ",
+    "        -  -   2",
+    "1    =     - -- ",
+    "--   =     - -- ",
+    "a-   =  -  =   2",
+    "--   =     - -- ",
+    "1    =     - -- ",
+    "        -  -   2",
+    "  -  -  =       ",
+    "*       -  *   -",
+};
+
+#endif //FLIPPERZERO_FIRMWARE_CONTANTS_H
