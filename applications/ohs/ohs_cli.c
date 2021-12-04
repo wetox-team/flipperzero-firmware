@@ -81,7 +81,7 @@ void ohs_cli_command(Cli* cli, string_t args, void* context) {
 
     printf("Random addr: ");
     for(int i = 0; i < 6; i++) {
-        printf("%x ", rnd_addr[i]);
+        printf("%x ", rnd_addr[5 - i]);
     }
     printf("\r\n");
 }
