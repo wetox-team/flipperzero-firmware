@@ -51,15 +51,6 @@ bool magspoof_scene_start_on_event(void* context, SceneManagerEvent event) {
             // scene_manager_set_scene_state(magspoof->scene_manager, MagspoofSceneStart, SubmenuIndexSaved);
             // scene_manager_next_scene(magspoof->scene_manager, MagspoofSceneFileSelect);
             consumed = true;
-        } else if(event.event == SubmenuIndexAddManualy) {
-            // scene_manager_set_scene_state(
-            //     magspoof->scene_manager, MagspoofSceneStart, SubmenuIndexAddManualy);
-            // scene_manager_next_scene(magspoof->scene_manager, MagspoofSceneSetType);
-            consumed = true;
-        } else if(event.event == SubmenuIndexDebug) {
-            // scene_manager_set_scene_state(magspoof->scene_manager, MagspoofSceneStart, SubmenuIndexDebug);
-            // scene_manager_next_scene(magspoof->scene_manager, MagspoofSceneEmulateApduSequence);
-            consumed = true;
         }
     }
     return consumed;
