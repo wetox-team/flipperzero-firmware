@@ -34,36 +34,36 @@ void magspoof_scene_start_on_enter(void* context) {
     submenu_set_selected_item(
         submenu, scene_manager_get_scene_state(magspoof->scene_manager, MagspoofSceneStart));
 
-    magspoof_device_clear(magspoof->dev);
+
     view_dispatcher_switch_to_view(magspoof->view_dispatcher, MagspoofViewMenu);
 }
 
 bool magspoof_scene_start_on_event(void* context, SceneManagerEvent event) {
-    Magspoof* magspoof = (Magspoof*)context;
+    // Magspoof* magspoof = (Magspoof*)context;
     bool consumed = false;
 
     if(event.type == SceneManagerEventTypeCustom) {
         if(event.event == SubmenuIndexRead) {
-            scene_manager_set_scene_state(magspoof->scene_manager, MagspoofSceneStart, SubmenuIndexRead);
-            scene_manager_next_scene(magspoof->scene_manager, MagspoofSceneReadCard);
+            // scene_manager_set_scene_state(magspoof->scene_manager, MagspoofSceneStart, SubmenuIndexRead);
+            // scene_manager_next_scene(magspoof->scene_manager, MagspoofSceneReadCard);
             consumed = true;
         } else if(event.event == SubmenuIndexRunScript) {
-            scene_manager_set_scene_state(
-                magspoof->scene_manager, MagspoofSceneStart, SubmenuIndexRunScript);
-            scene_manager_next_scene(magspoof->scene_manager, MagspoofSceneScriptsMenu);
+            // scene_manager_set_scene_state(
+            //     magspoof->scene_manager, MagspoofSceneStart, SubmenuIndexRunScript);
+            // scene_manager_next_scene(magspoof->scene_manager, MagspoofSceneScriptsMenu);
             consumed = true;
         } else if(event.event == SubmenuIndexSaved) {
-            scene_manager_set_scene_state(magspoof->scene_manager, MagspoofSceneStart, SubmenuIndexSaved);
-            scene_manager_next_scene(magspoof->scene_manager, MagspoofSceneFileSelect);
+            // scene_manager_set_scene_state(magspoof->scene_manager, MagspoofSceneStart, SubmenuIndexSaved);
+            // scene_manager_next_scene(magspoof->scene_manager, MagspoofSceneFileSelect);
             consumed = true;
         } else if(event.event == SubmenuIndexAddManualy) {
-            scene_manager_set_scene_state(
-                magspoof->scene_manager, MagspoofSceneStart, SubmenuIndexAddManualy);
-            scene_manager_next_scene(magspoof->scene_manager, MagspoofSceneSetType);
+            // scene_manager_set_scene_state(
+            //     magspoof->scene_manager, MagspoofSceneStart, SubmenuIndexAddManualy);
+            // scene_manager_next_scene(magspoof->scene_manager, MagspoofSceneSetType);
             consumed = true;
         } else if(event.event == SubmenuIndexDebug) {
-            scene_manager_set_scene_state(magspoof->scene_manager, MagspoofSceneStart, SubmenuIndexDebug);
-            scene_manager_next_scene(magspoof->scene_manager, MagspoofSceneEmulateApduSequence);
+            // scene_manager_set_scene_state(magspoof->scene_manager, MagspoofSceneStart, SubmenuIndexDebug);
+            // scene_manager_next_scene(magspoof->scene_manager, MagspoofSceneEmulateApduSequence);
             consumed = true;
         }
     }

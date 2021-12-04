@@ -25,14 +25,11 @@
 #define MAGSPOOF_SEND_NOTIFICATION_TRUE (1UL)
 #define MAGSPOOF_TEXT_STORE_SIZE 128
 struct Magspoof {
-    MagspoofWorker* worker;
     ViewDispatcher* view_dispatcher;
     Gui* gui;
     NotificationApp* notification;
     SceneManager* scene_manager;
-    MagspoofDevice* dev;
-    MagspoofDeviceCommonData dev_edit_data;
-
+    
     char text_store[MAGSPOOF_TEXT_STORE_SIZE + 1];
     string_t text_box_store;
 
@@ -48,7 +45,6 @@ struct Magspoof {
     ByteInput* byte_input;
     TextBox* text_box;
     Widget* widget;
-    BankCard* bank_card;
 };
 
 typedef enum {
@@ -62,7 +58,7 @@ typedef enum {
     MagspoofViewBankCard,
 } MagspoofView;
 
-Magspoof* magspoof_alloc();
+// static Magspoof* magspoof_alloc();
 
 int32_t magspoof_task(void* p);
 

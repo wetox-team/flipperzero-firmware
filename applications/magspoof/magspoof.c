@@ -1,21 +1,5 @@
-#include <furi.h>
-#include <m-string.h>
-#include <gui/gui.h>
-#include <notification/notification.h>
-#include <notification/notification-messages.h>
-#include <gui/elements.h>
-#include <stdint.h>
-#include <stream_buffer.h>
-#include <furi-hal-uart.h>
-#include <furi-hal-console.h>
-#include <gui/view_dispatcher.h>
-#include <gui/modules/dialog_ex.h>
-
-#include <furi-hal-resources.h>
-#include <furi-hal-gpio.h>
-#include <furi-hal-delay.h>
-#include <furi-hal.h>
-#include "../gpio/gpio_item.h"
+#include "magspoof.h"
+#include "magspoof_i.h"
 
 #define PIN_A 2
 #define PIN_B 4
@@ -29,14 +13,14 @@ uint8_t magspoof_bit_dir = 0;
 
 typedef struct UartDumpModel UartDumpModel;
 
-typedef struct {
-    Gui* gui;
-    NotificationApp* notification;
-    ViewDispatcher* view_dispatcher;
-    View* view;
-    FuriThread* worker_thread;
-    StreamBufferHandle_t rx_stream;
-} MagSpoof;
+// typedef struct {
+//     Gui* gui;
+//     NotificationApp* notification;
+//     ViewDispatcher* view_dispatcher;
+//     View* view;
+//     FuriThread* worker_thread;
+//     StreamBufferHandle_t rx_stream;
+// } Magspoof;
 
 typedef struct {
     string_t text;
@@ -189,7 +173,7 @@ static bool magspoof_view_input_callback(InputEvent* event, void* context) {
     furi_assert(context);
 
     bool consumed = false;
-    MagSpoof* app = context;
+    Magspoof* app = context;
 
     if(event->type == InputTypeShort) {
         if(event->key == InputKeyOk) {
@@ -227,7 +211,7 @@ static uint32_t magspoof_exit(void* context) {
 static void magspoof_on_irq_cb(UartIrqEvent ev, uint8_t data, void* context) {
     furi_assert(context);
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    MagSpoof* app = context;
+    Magspoof* app = context;
 
     if(ev == UartIrqEventRXNE) {
         xStreamBufferSendFromISR(app->rx_stream, &data, 1, &xHigherPriorityTaskWoken);
@@ -280,7 +264,7 @@ static void magspoof_push_to_list(UartDumpModel* model, const char data) {
 
 static int32_t magspoof_worker(void* context) {
     furi_assert(context);
-    MagSpoof* app = context;
+    Magspoof* app = context;
 
     while(1) {
         uint32_t events = osThreadFlagsWait(WORKER_EVENTS_MASK, osFlagsWaitAny, osWaitForever);
@@ -313,8 +297,8 @@ static int32_t magspoof_worker(void* context) {
     return 0;
 }
 
-static MagSpoof* magspoof_alloc() {
-    MagSpoof* app = furi_alloc(sizeof(MagSpoof));
+static Magspoof* magspoof_alloc() {
+    Magspoof* app = furi_alloc(sizeof(Magspoof));
     // UartDumpModel* cont = furi_alloc(sizeof(UartDumpModel));
 
     app->rx_stream = xStreamBufferCreate(2048, 1);
@@ -348,8 +332,15 @@ static MagSpoof* magspoof_alloc() {
             return true;
         });
 
+
+    // Submenu
+    app->submenu = submenu_alloc();
+    view_dispatcher_add_view(app->view_dispatcher, MagspoofViewMenu, submenu_get_view(app->submenu));
+
+
     view_set_previous_callback(app->view, magspoof_exit);
-    view_dispatcher_add_view(app->view_dispatcher, 0, app->view);
+
+    // view_dispatcher_add_view(app->view_dispatcher, 0, app->view);
     view_dispatcher_switch_to_view(app->view_dispatcher, 0);
 
     // Enable uart listener
@@ -358,7 +349,7 @@ static MagSpoof* magspoof_alloc() {
     furi_hal_uart_set_irq_cb(FuriHalUartIdUSART1, magspoof_on_irq_cb, app);
 
     app->worker_thread = furi_thread_alloc();
-    furi_thread_set_name(app->worker_thread, "MagSpoofWorker");
+    furi_thread_set_name(app->worker_thread, "MagspoofWorker");
     furi_thread_set_stack_size(app->worker_thread, 1024);
     furi_thread_set_context(app->worker_thread, app);
     furi_thread_set_callback(app->worker_thread, magspoof_worker);
@@ -367,7 +358,7 @@ static MagSpoof* magspoof_alloc() {
     return app;
 }
 
-static void magspoof_free(MagSpoof* app) {
+static void magspoof_free(Magspoof* app) {
     furi_assert(app);
 
     osThreadFlagsSet(furi_thread_get_thread_id(app->worker_thread), WorkerEventStop);
@@ -403,8 +394,8 @@ static void magspoof_free(MagSpoof* app) {
     free(app);
 }
 
-int32_t magspoof(void* p) {
-    MagSpoof* app = magspoof_alloc();
+int32_t magspoof_app(void* p) {
+    Magspoof* app = magspoof_alloc();
 
     scene_manager_next_scene(app->scene_manager, MagspoofSceneStart);
 
