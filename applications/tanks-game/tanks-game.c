@@ -45,6 +45,7 @@ typedef struct {
     Direction nextMovement; // if backward of currentMovement, ignore
     Point fruit;
     GameState state;
+    bool moving;
 } SnakeState;
 
 typedef enum {
@@ -131,24 +132,37 @@ static void tanks_game_update_timer_callback(osMessageQueueId_t event_queue) {
 }
 
 static void tanks_game_init_game(SnakeState* const snake_state) {
-//    char map[FIELD_HEIGHT][FIELD_WIDTH + 1] = {
-//        "*       -  *   -",
-//        "  -  -  =       ",
-//        "        -  -   2",
-//        "1    =     - -- ",
-//        "--   =     - -- ",
-//        "a-   =  -  =   2",
-//        "--   =     - -- ",
-//        "1    =     - -- ",
-//        "        -  -   2",
-//        "  -  -  =       ",
-//        "*       -  *   -",
-//    };
+    //char map[FIELD_HEIGHT][FIELD_WIDTH + 1] = {
+    char map[11][16 + 1] = {
+        "*       -  *   -",
+        "  -  -  =       ",
+        "        -  -   2",
+        "1    =     - -- ",
+        "--   =     - -- ",
+        "a-   =  -  =   2",
+        "--   =     - -- ",
+        "1    =     - -- ",
+        "        -  -   2",
+        "  -  -  =       ",
+        "*       -  *   -",
+    };
 
     Point c = {5, 5};
+
+    for(int8_t x = 0; x < FIELD_WIDTH; x++) {
+        for(int8_t y = 0; y < FIELD_HEIGHT; y++) {
+            if (map[y][x] == '1') {
+                c.x = x;
+                c.y = y;
+            }
+        }
+    }
+
     snake_state->coordinates = c;
 
     snake_state->len = 7;
+
+    snake_state->moving = false;
 
     snake_state->currentMovement = DirectionRight;
 
