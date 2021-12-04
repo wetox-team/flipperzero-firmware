@@ -211,11 +211,11 @@ const FlipperApplication FLIPPER_PLUGINS[] = {
 #endif
 
 #ifdef APP_SNAKE_GAME
-    {.app = snake_game_app, .name = "Snake G2ame", .stack_size = 1024, .icon = &A_Plugins_14},
+    {.app = snake_game_app, .name = "Snake Game", .stack_size = 1024, .icon = &A_Plugins_14},
 #endif
 
 #ifdef APP_TANKS_GAME
-    {.app = tanks_game_app, .name = "Tanks G2ame", .stack_size = 1024, .icon = &A_Plugins_14},
+    {.app = tanks_game_app, .name = "Tanks Game", .stack_size = 1024, .icon = &A_Plugins_14},
 #endif
 };
 
