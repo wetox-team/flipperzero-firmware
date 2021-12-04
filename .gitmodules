@@ -12,7 +12,7 @@
 	url = https://github.com/nanopb/nanopb.git
 [submodule "assets/protobuf"]
 	path = assets/protobuf
-	url = https://github.com/flipperdevices/flipperzero-protobuf.git
+	url = https://github.com/wetox-team/flipperzero-protobuf.git
 [submodule "lib/libusb_stm32"]
 	path = lib/libusb_stm32
 	url = https://github.com/flipperdevices/libusb_stm32.git
