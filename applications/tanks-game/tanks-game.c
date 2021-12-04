@@ -77,9 +77,20 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
     // Snake
     Point coordinates = snake_state->coordinates;
 
-    // canvas_draw_icon(canvas, model->x, model->y, model->icon);
-
-    canvas_draw_box(canvas, coordinates.x * 4 + 2, coordinates.y * 4 + 2, 4, 4);
+    switch (snake_state->nextMovement) {
+        case DirectionUp:
+            canvas_draw_icon(canvas, coordinates.x * 4 + 2, coordinates.y * 4 + 2, &I_tank_up);
+            break;
+        case DirectionDown:
+            canvas_draw_icon(canvas, coordinates.x * 4 + 2, coordinates.y * 4 + 2, &I_tank_down);
+            break;
+        case DirectionRight:
+            canvas_draw_icon(canvas, coordinates.x * 4 + 2, coordinates.y * 4 + 2, &I_tank_right);
+            break;
+        case DirectionLeft:
+            canvas_draw_icon(canvas, coordinates.x * 4 + 2, coordinates.y * 4 + 2, &I_tank_left);
+            break;
+    }
 
     // Game Over banner
     if(snake_state->state == GameStateGameOver) {
