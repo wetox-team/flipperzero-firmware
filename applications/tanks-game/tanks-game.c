@@ -38,16 +38,6 @@ typedef struct {
 } ProjectileState;
 
 typedef struct {
-    // char map[FIELD_WIDTH][FIELD_HEIGHT];
-    char map[16][11];
-    Mode mode;
-    GameState state;
-    ProjectileState *projectiles[100];
-    PlayerState p1;
-    PlayerState p2;
-} TanksState;
-
-typedef struct {
     Point coordinates;
     uint16_t score;
     uint8_t lives;
@@ -55,6 +45,16 @@ typedef struct {
     bool moving;
     uint8_t cooldown;
 } PlayerState;
+
+typedef struct {
+    // char map[FIELD_WIDTH][FIELD_HEIGHT];
+    char map[16][11];
+    Mode mode;
+    GameState state;
+    ProjectileState *projectiles[100];
+    PlayerState *p1;
+    PlayerState *p2;
+} TanksState;
 
 typedef enum {
     EventTypeTick,
@@ -77,9 +77,9 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
     canvas_draw_box(canvas, FIELD_WIDTH * CELL_LENGTH_PIXELS, 0, 2, SCREEN_HEIGHT);
 
     // Player
-    Point coordinates = tanks_state->coordinates;
+    Point coordinates = tanks_state->p1->coordinates;
 
-    switch (tanks_state->direction) {
+    switch (tanks_state->p1->direction) {
         case DirectionUp:
             canvas_draw_icon(canvas, coordinates.x * CELL_LENGTH_PIXELS, coordinates.y * CELL_LENGTH_PIXELS - 1, &I_tank_up);
             break;
@@ -130,7 +130,7 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
 
         canvas_set_font(canvas, FontSecondary);
         char buffer[13];
-        snprintf(buffer, sizeof(buffer), "Score: %u", tanks_state->score);
+        snprintf(buffer, sizeof(buffer), "Score: %u", tanks_state->p1->score);
         canvas_draw_str_aligned(canvas, 64, 41, AlignCenter, AlignBottom, buffer);
     }
 
@@ -196,18 +196,23 @@ static void tanks_game_init_game(TanksState* const tanks_state) {
         }
     }
 
-    tanks_state->coordinates = c;
-    tanks_state->score = 0;
-    tanks_state->cooldown = SHOT_COOLDOWN;
-    tanks_state->moving = false;
-    tanks_state->direction = DirectionUp;
+    PlayerState p1 = {
+        c,
+        0,
+        4,
+        DirectionUp,
+        0,
+        SHOT_COOLDOWN,
+    };
+
+    PlayerState* p1_state = furi_alloc(sizeof(PlayerState));
+    *p1_state = p1;
+
+    tanks_state->p1 = p1_state;
     tanks_state->state = GameStateLife;
 }
 
 static bool tanks_game_collision(Point const next_step, TanksState const* const tanks_state) {
-    // if x == 0 && currentMovement == left then x - 1 == 255 ,
-    // so check only x > right border
-
     if (next_step.x < 0 || next_step.y < 0) {
         return true;
     }
@@ -226,8 +231,8 @@ static bool tanks_game_collision(Point const next_step, TanksState const* const 
 }
 
 static Point tanks_game_get_next_step(TanksState const* const tanks_state) {
-    Point next_step = tanks_state->coordinates;
-    switch(tanks_state->direction) {
+    Point next_step = tanks_state->p1->coordinates;
+    switch(tanks_state->p1->direction) {
         // +-----x
         // |
         // |
@@ -248,25 +253,21 @@ static Point tanks_game_get_next_step(TanksState const* const tanks_state) {
     return next_step;
 }
 
-static void tanks_game_move(TanksState* const tanks_state, Point const next_step) {
-    tanks_state->coordinates = next_step;
-}
-
 static void tanks_game_process_game_step(TanksState* const tanks_state) {
     if(tanks_state->state == GameStateGameOver) {
         return;
     }
 
-    if(tanks_state->moving) {
+    if(tanks_state->p1->moving) {
         Point next_step = tanks_game_get_next_step(tanks_state);
         bool crush = tanks_game_collision(next_step, tanks_state);
 
         if(!crush) {
-            tanks_game_move(tanks_state, next_step);
+            tanks_state->p1->coordinates = next_step;
         }
     }
 
-    tanks_state->moving = false;
+    tanks_state->p1->moving = false;
 }
 
 int32_t tanks_game_app(void* p) {
@@ -308,20 +309,20 @@ int32_t tanks_game_app(void* p) {
                 if(event.input.type == InputTypePress) {
                     switch(event.input.key) {
                         case InputKeyUp:
-                            tanks_state->moving = true;
-                            tanks_state->direction = DirectionUp;
+                            tanks_state->p1->moving = true;
+                            tanks_state->p1->direction = DirectionUp;
                             break;
                         case InputKeyDown:
-                            tanks_state->moving = true;
-                            tanks_state->direction = DirectionDown;
+                            tanks_state->p1->moving = true;
+                            tanks_state->p1->direction = DirectionDown;
                             break;
                         case InputKeyRight:
-                            tanks_state->moving = true;
-                            tanks_state->direction = DirectionRight;
+                            tanks_state->p1->moving = true;
+                            tanks_state->p1->direction = DirectionRight;
                             break;
                         case InputKeyLeft:
-                            tanks_state->moving = true;
-                            tanks_state->direction = DirectionLeft;
+                            tanks_state->p1->moving = true;
+                            tanks_state->p1->direction = DirectionLeft;
                             break;
                         case InputKeyOk:
                             if(tanks_state->state == GameStateGameOver) {
@@ -351,6 +352,15 @@ int32_t tanks_game_app(void* p) {
     view_port_free(view_port);
     osMessageQueueDelete(event_queue);
     delete_mutex(&state_mutex);
+
+    if (tanks_state->p1 != NULL) {
+        free(tanks_state->p1);
+    }
+
+    if (tanks_state->p2 != NULL) {
+        free(tanks_state->p2);
+    }
+
     free(tanks_state);
 
     return 0;
