@@ -71,8 +71,6 @@ Telegram* telegram_init_chats_callback(Telegram* instance) {
 Telegram* telegram_alloc() {
     Telegram* instance = furi_alloc(sizeof(Telegram));
 
-    //TelegramApi* api = furi_record_open("tg");
-    //instance->api = api;
     View* view = NULL;
 
     instance->gui = furi_record_open("gui");
@@ -85,6 +83,7 @@ Telegram* telegram_alloc() {
     view = variable_item_list_get_view(instance->variable_item_list);
     view_set_previous_callback(view, telegram_previous_callback);
     view_dispatcher_add_view(instance->view_dispatcher, TelegramViewDialogue, view);
+
     variable_item_list_add(
         instance->variable_item_list,
         "Message 1",
@@ -114,6 +113,18 @@ Telegram* telegram_alloc() {
     view = submenu_get_view(instance->submenu);
     view_set_previous_callback(view, telegram_exit_callback);
     view_dispatcher_add_view(instance->view_dispatcher, TelegramViewChats, view);
+
+    if (!furi_record_exists("tg"))  {
+        submenu_add_item(
+        instance->submenu,
+        "NO RPC",
+        TelegramViewDialogue,
+        NULL,
+        instance);
+
+        return instance;
+    }
+
     submenu_add_item(
         instance->submenu,
         "Chat 1",
@@ -134,6 +145,8 @@ Telegram* telegram_alloc() {
         instance);
 
     telegram_init_chats_callback(instance);
+    TelegramApi* api = furi_record_open("tg");
+    instance->api = api;
     return instance;
 }
 
@@ -144,7 +157,9 @@ void telegram_free(Telegram* instance) {
 
     // view_dispatcher_free(instance->view_dispatcher);
     furi_record_close("gui");
-    //furi_record_close("tg");
+
+    if (furi_record_exists("tg"))
+        furi_record_close("tg");
 
     free(instance);
 }

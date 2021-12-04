@@ -52,6 +52,21 @@ static void furi_record_unlock() {
     furi_check(osMutexRelease(furi_record->mutex) == osOK);
 }
 
+bool furi_record_exists(const char* name) {
+    furi_assert(furi_record);
+    furi_assert(name);
+
+    string_t name_str;
+    string_init_set_str(name_str, name);
+    bool ret = false;
+
+    furi_record_lock();
+    ret = (FuriRecordDataDict_get(furi_record->records, name_str) != NULL);
+    furi_record_unlock();
+
+    return ret;
+}
+
 void furi_record_create(const char* name, void* data) {
     furi_assert(furi_record);
 
