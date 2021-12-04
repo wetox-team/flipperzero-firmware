@@ -39,7 +39,7 @@ typedef enum {
 #define MAX_SNAKE_LEN 253
 
 typedef struct {
-    Point points[MAX_SNAKE_LEN];
+    Point coordinates;
     uint16_t len;
     Direction currentMovement;
     Direction nextMovement; // if backward of currentMovement, ignore
@@ -75,12 +75,8 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
     canvas_draw_rframe(canvas, f.x, f.y, 6, 6, 2);
 
     // Snake
-    for(uint16_t i = 0; i < snake_state->len; i++) {
-        Point p = snake_state->points[i];
-        p.x = p.x * 4 + 2;
-        p.y = p.y * 4 + 2;
-        canvas_draw_box(canvas, p.x, p.y, 4, 4);
-    }
+    Point coordinates = snake_state->coordinates;
+    canvas_draw_box(canvas, coordinates.x, coordinates.y, 4, 4);
 
     // Game Over banner
     if(snake_state->state == GameStateGameOver) {
@@ -118,8 +114,8 @@ static void tanks_game_update_timer_callback(osMessageQueueId_t event_queue) {
 }
 
 static void tanks_game_init_game(SnakeState* const snake_state) {
-    Point p[] = {{8, 6}, {7, 6}, {6, 6}, {5, 6}, {4, 6}, {3, 6}, {2, 6}};
-    memcpy(snake_state->points, p, sizeof(p));
+    Point c = {5, 5};
+    snake_state->coordinates = c;
 
     snake_state->len = 7;
 
@@ -140,18 +136,6 @@ static Point tanks_game_get_new_fruit(SnakeState const* const snake_state) {
     memset(buffer, 0, sizeof(buffer));
     uint8_t empty = 8 * 16;
 
-    for(uint16_t i = 0; i < snake_state->len; i++) {
-        Point p = snake_state->points[i];
-
-        if(p.x % 2 != 0 || p.y % 2 != 0) {
-            continue;
-        }
-        p.x /= 2;
-        p.y /= 2;
-
-        buffer[p.y] |= 1 << p.x;
-        empty--;
-    }
     // Bit set if snake use that playing field
 
     uint16_t newFruit = rand() % empty;
@@ -180,18 +164,6 @@ static bool tanks_game_collision_with_frame(Point const next_step) {
     // if x == 0 && currentMovement == left then x - 1 == 255 ,
     // so check only x > right border
     return next_step.x > 30 || next_step.y > 14;
-}
-
-static bool
-tanks_game_collision_with_tail(SnakeState const* const snake_state, Point const next_step) {
-    for(uint16_t i = 0; i < snake_state->len; i++) {
-        Point p = snake_state->points[i];
-        if(p.x == next_step.x && p.y == next_step.y) {
-            return true;
-        }
-    }
-
-    return false;
 }
 
 static Direction tanks_game_get_turn_snake(SnakeState const* const snake_state) {
@@ -236,7 +208,7 @@ static Direction tanks_game_get_turn_snake(SnakeState const* const snake_state) 
 }
 
 static Point tanks_game_get_next_step(SnakeState const* const snake_state) {
-    Point next_step = snake_state->points[0];
+    Point next_step = snake_state->coordinates;
     switch(snake_state->currentMovement) {
         // +-----x
         // |
@@ -259,8 +231,7 @@ static Point tanks_game_get_next_step(SnakeState const* const snake_state) {
 }
 
 static void tanks_game_move_snake(SnakeState* const snake_state, Point const next_step) {
-    memmove(snake_state->points + 1, snake_state->points, snake_state->len * sizeof(Point));
-    snake_state->points[0] = next_step;
+    snake_state->coordinates = next_step;
 }
 
 static void tanks_game_process_game_step(SnakeState* const snake_state) {
@@ -268,10 +239,7 @@ static void tanks_game_process_game_step(SnakeState* const snake_state) {
         return;
     }
 
-    bool can_turn = (snake_state->points[0].x % 2 == 0) && (snake_state->points[0].y % 2 == 0);
-    if(can_turn) {
-        snake_state->currentMovement = tanks_game_get_turn_snake(snake_state);
-    }
+    snake_state->currentMovement = tanks_game_get_turn_snake(snake_state);
 
     Point next_step = tanks_game_get_next_step(snake_state);
 
@@ -288,12 +256,6 @@ static void tanks_game_process_game_step(SnakeState* const snake_state) {
         if(snake_state->state == GameStateLastChance) {
             snake_state->state = GameStateLife;
         }
-    }
-
-    crush = tanks_game_collision_with_tail(snake_state, next_step);
-    if(crush) {
-        snake_state->state = GameStateGameOver;
-        return;
     }
 
     bool eatFruit = (next_step.x == snake_state->fruit.x) && (next_step.y == snake_state->fruit.y);
