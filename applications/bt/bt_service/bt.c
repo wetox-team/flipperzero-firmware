@@ -14,6 +14,8 @@ static void bt_draw_statusbar_callback(Canvas* canvas, void* context) {
     Bt* bt = context;
     if(bt->status == BtStatusAdvertising) {
         canvas_draw_icon(canvas, 0, 0, &I_Bluetooth_5x8);
+    } else if(bt->status == BtStatusOhs) {
+        canvas_draw_icon(canvas, 0, 0, &I_Openhaystack_5x8);
     } else if(bt->status == BtStatusConnected) {
         canvas_draw_icon(canvas, 0, 0, &I_BT_Pair_9x8);
     }
