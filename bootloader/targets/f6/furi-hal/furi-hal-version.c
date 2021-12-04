@@ -125,7 +125,7 @@ static void furi_hal_version_load_otp_v0() {
     furi_hal_version.board_body = otp->board_body;
     furi_hal_version.board_connect = otp->board_connect;
 
-    furi_hal_version_set_name("Zaglotus");
+    furi_hal_version_set_name("Zalup");
 }
 
 static void furi_hal_version_load_otp_v1() {
@@ -139,7 +139,7 @@ static void furi_hal_version_load_otp_v1() {
     furi_hal_version.board_color = otp->board_color;
     furi_hal_version.board_region = otp->board_region;
 
-    furi_hal_version_set_name("Zaglotus");
+    furi_hal_version_set_name("Zalup");
 }
 
 static void furi_hal_version_load_otp_v2() {
@@ -159,7 +159,7 @@ static void furi_hal_version_load_otp_v2() {
     if(otp->board_color != 0xFF) {
         furi_hal_version.board_color = otp->board_color;
         furi_hal_version.board_region = otp->board_region;
-        furi_hal_version_set_name("Zaglotus");
+        furi_hal_version_set_name("Zalup");
     } else {
         furi_hal_version.board_color = 0;
         furi_hal_version.board_region = 0;

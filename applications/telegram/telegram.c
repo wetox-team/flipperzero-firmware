@@ -25,6 +25,7 @@ typedef struct {
 } Telegram;
 
 typedef enum {
+    TelegramViewChats,
     TelegramViewDialogue,
 } TelegramView;
 
@@ -37,6 +38,11 @@ static uint32_t telegram_exit_callback(void* context) {
     return VIEW_NONE;
 }
 
+static uint32_t telegram_previous_callback(void* context) {
+    return TelegramViewChats;
+}
+
+
 Telegram* telegram_alloc() {
     Telegram* instance = furi_alloc(sizeof(Telegram));
 
@@ -47,11 +53,40 @@ Telegram* telegram_alloc() {
     view_dispatcher_enable_queue(instance->view_dispatcher);
     view_dispatcher_attach_to_gui(
         instance->view_dispatcher, instance->gui, ViewDispatcherTypeFullscreen);
+    // Open chat
+    instance->variable_item_list = variable_item_list_alloc();
+    view = variable_item_list_get_view(instance->variable_item_list);
+    view_set_previous_callback(view, telegram_previous_callback);
+    view_dispatcher_add_view(instance->view_dispatcher, TelegramViewDialogue, view);
+    variable_item_list_add(
+        instance->variable_item_list,
+        "Message 1",
+        TelegramViewDialogue,
+        NULL,
+        instance);
+    variable_item_list_add(
+        instance->variable_item_list,
+        "Message 2",
+        TelegramViewDialogue,
+        NULL,
+        instance);
+    variable_item_list_add(
+        instance->variable_item_list,
+        "Message 3",
+        TelegramViewDialogue,
+        NULL,
+        instance);
+    variable_item_list_add(
+        instance->variable_item_list,
+        "Send...",
+        TelegramViewDialogue,
+        NULL,
+        instance);
     // Menu
     instance->submenu = submenu_alloc();
     view = submenu_get_view(instance->submenu);
     view_set_previous_callback(view, telegram_exit_callback);
-    view_dispatcher_add_view(instance->view_dispatcher, TelegramViewDialogue, view);
+    view_dispatcher_add_view(instance->view_dispatcher, TelegramViewChats, view);
     submenu_add_item(
         instance->submenu,
         "Chat 1",
@@ -75,7 +110,7 @@ Telegram* telegram_alloc() {
 }
 
 void telegram_free(Telegram* instance) {
-    view_dispatcher_remove_view(instance->view_dispatcher, TelegramViewDialogue);
+    view_dispatcher_remove_view(instance->view_dispatcher, TelegramViewChats);
     submenu_free(instance->submenu);
 
     view_dispatcher_free(instance->view_dispatcher);
@@ -85,7 +120,7 @@ void telegram_free(Telegram* instance) {
 }
 
 int32_t telegram_run(Telegram* instance) {
-    view_dispatcher_switch_to_view(instance->view_dispatcher, TelegramViewDialogue);
+    view_dispatcher_switch_to_view(instance->view_dispatcher, TelegramViewChats);
     view_dispatcher_run(instance->view_dispatcher);
 
     return 0;
