@@ -78,9 +78,6 @@ void telegram_free(Telegram* instance) {
     view_dispatcher_remove_view(instance->view_dispatcher, TelegramViewDialogue);
     submenu_free(instance->submenu);
 
-    view_dispatcher_remove_view(instance->view_dispatcher, TelegramViewDialogue);
-    variable_item_list_free(instance->variable_item_list);
-
     view_dispatcher_free(instance->view_dispatcher);
     furi_record_close("gui");
 
