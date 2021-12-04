@@ -5,6 +5,7 @@
 #include <ble.h>
 #include "furi-hal-ohs.h"
 #include <gap.h>
+#include <file-worker.h>
 
 #define TAG "FuriHalOhs"
 #define OHS_KEY_PATH "/int/ohs.key"
@@ -90,7 +91,7 @@ bool furi_hal_ohs_start() {
 bool furi_hal_ohs_load_key(uint8_t* key) {
     furi_assert(key);
     bool file_loaded = false;
-    unint8_t settings[28] = {};
+    uint8_t settings[28] = {};
 
     FURI_LOG_I(TAG, "Loading settings from \"%s\"", OHS_KEY_PATH);
     FileWorker* file_worker = file_worker_alloc(true);
@@ -104,7 +105,7 @@ bool furi_hal_ohs_load_key(uint8_t* key) {
     if(file_loaded) {
         FURI_LOG_I(TAG, "Settings load success");
         osKernelLock();
-        *key = settings;
+        memcpy(key, settings, 28);
         osKernelUnlock();
     } else {
         FURI_LOG_E(TAG, "Settings load failed");
@@ -112,13 +113,13 @@ bool furi_hal_ohs_load_key(uint8_t* key) {
     return file_loaded;
 }
 
-bool furi_hal_ohs_save_key(uint8_t* key, int size) {
+bool furi_hal_ohs_save_key(uint8_t* key) {
     furi_assert(key);
     bool result = false;
 
     FileWorker* file_worker = file_worker_alloc(true);
     if(file_worker_open(file_worker, OHS_KEY_PATH, FSAM_WRITE, FSOM_OPEN_ALWAYS)) {
-        if(file_worker_write(file_worker, key, size)) {
+        if(file_worker_write(file_worker, key, 28)) {
             FURI_LOG_I(TAG, "Settings saved to \"%s\"", OHS_KEY_PATH);
             result = true;
         }
