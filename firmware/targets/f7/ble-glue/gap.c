@@ -312,6 +312,11 @@ static void gap_init_svc(Gap* gap) {
     aci_gap_configure_whitelist();
 }
 
+void gap_notify_ohs_start() {
+    BleEvent event = {.type = BleEventTypeStartOhs};
+    gap->on_event_cb(event, gap->context);
+}
+
 static void gap_advertise_start(GapState new_state)
 {
     tBleStatus status;

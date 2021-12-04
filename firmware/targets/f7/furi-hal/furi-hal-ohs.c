@@ -82,6 +82,9 @@ bool furi_hal_ohs_start() {
                rnd_addr[1],
                rnd_addr[0]
                );
+               
+    gap_notify_ohs_start();
+
     return true;
 }
 

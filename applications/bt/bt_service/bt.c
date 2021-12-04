@@ -171,6 +171,10 @@ static void bt_on_gap_event_callback(BleEvent event, void* context) {
         bt->status = BtStatusAdvertising;
         BtMessage message = {.type = BtMessageTypeUpdateStatusbar};
         furi_check(osMessageQueuePut(bt->message_queue, &message, 0, osWaitForever) == osOK);
+    } else if(event.type == BleEventTypeStartOhs) {
+        bt->status = BtStatusOhs;
+        BtMessage message = {.type = BtMessageTypeUpdateStatusbar};
+        furi_check(osMessageQueuePut(bt->message_queue, &message, 0, osWaitForever) == osOK);
     } else if(event.type == BleEventTypeStopAdvertising) {
         bt->status = BtStatusOff;
         BtMessage message = {.type = BtMessageTypeUpdateStatusbar};
@@ -198,6 +202,9 @@ static void bt_statusbar_update(Bt* bt) {
         view_port_enabled_set(bt->statusbar_view_port, true);
     } else if(bt->status == BtStatusConnected) {
         view_port_set_width(bt->statusbar_view_port, icon_get_width(&I_BT_Pair_9x8));
+        view_port_enabled_set(bt->statusbar_view_port, true);
+    } else if(bt->status == BtStatusOhs) {
+        view_port_set_width(bt->statusbar_view_port, icon_get_width(&I_Openhaystack_5x8));
         view_port_enabled_set(bt->statusbar_view_port, true);
     } else {
         view_port_enabled_set(bt->statusbar_view_port, false);
