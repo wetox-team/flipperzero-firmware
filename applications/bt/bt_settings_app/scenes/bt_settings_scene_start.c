@@ -9,11 +9,7 @@ enum BtSetting {
     BtSettingNum,
 };
 
-const char* const bt_settings_text[BtSettingNum] = {
-    "Off",
-    "On",
-    "OpenHaystack"
-};
+const char* const bt_settings_text[BtSettingNum] = {"Off", "On", "OHS"};
 
 static void bt_settings_scene_start_var_list_change_callback(VariableItem* item) {
     BtSettingsApp* app = variable_item_get_context(item);
@@ -37,7 +33,7 @@ void bt_settings_scene_start_on_enter(void* context) {
     if(app->settings.enabled && !app->settings.ohs_enabled) {
         variable_item_set_current_value_index(item, BtSettingOn);
         variable_item_set_current_value_text(item, bt_settings_text[BtSettingOn]);
-    } else if (!app->settings.enabled && !app->settings.ohs_enabled) {
+    } else if(!app->settings.enabled && !app->settings.ohs_enabled) {
         variable_item_set_current_value_index(item, BtSettingOff);
         variable_item_set_current_value_text(item, bt_settings_text[BtSettingOff]);
     } else {
@@ -59,10 +55,10 @@ bool bt_settings_scene_start_on_event(void* context, SceneManagerEvent event) {
             app->settings.enabled = true;
             app->settings.ohs_enabled = false;
         } else if(event.event == BtSettingOff) {
-            app->settings.enabled = false;
-            app->settings.ohs_enabled = false;
             furi_hal_ohs_stop();
             furi_hal_bt_stop_advertising();
+            app->settings.enabled = false;
+            app->settings.ohs_enabled = false;
         } else if(event.event == BtSettingOpenHaystack) {
             app->settings.enabled = false;
             app->settings.ohs_enabled = true;
