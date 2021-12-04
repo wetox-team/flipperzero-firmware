@@ -33,6 +33,8 @@ typedef struct {
     Direction direction;
     GameState state;
     bool moving;
+    // char map[FIELD_WIDTH][FIELD_HEIGHT];
+    char map[16][11];
 } SnakeState;
 
 typedef enum {
@@ -71,6 +73,28 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
         case DirectionLeft:
             canvas_draw_icon(canvas, coordinates.x * CELL_LENGTH_PIXELS, coordinates.y * CELL_LENGTH_PIXELS - 1, &I_tank_left);
             break;
+    }
+
+    for(int8_t x = 0; x < FIELD_WIDTH; x++) {
+        for(int8_t y = 0; y < FIELD_HEIGHT; y++) {
+            switch (snake_state->map[x][y]) {
+            case '-':
+                canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, &I_tank_wall);
+                break;
+
+            case '=':
+                canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, &I_tank_stone);
+                break;
+
+            case '*':
+                canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, &I_tank_hedgehog);
+                break;
+
+            case 'a':
+                canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, &I_tank_base);
+                break;
+            }
+        }
     }
 
     // Game Over banner
@@ -128,9 +152,27 @@ static void tanks_game_init_game(SnakeState* const snake_state) {
 
     for(int8_t x = 0; x < FIELD_WIDTH; x++) {
         for(int8_t y = 0; y < FIELD_HEIGHT; y++) {
+            snake_state->map[x][y] = ' ';
+
             if (map[y][x] == '1') {
                 c.x = x;
                 c.y = y;
+            }
+
+            if (map[y][x] == '-') {
+                snake_state->map[x][y] = '-';
+            }
+
+            if (map[y][x] == '=') {
+                snake_state->map[x][y] = '=';
+            }
+
+            if (map[y][x] == '*') {
+                snake_state->map[x][y] = '*';
+            }
+
+            if (map[y][x] == 'a') {
+                snake_state->map[x][y] = 'a';
             }
         }
     }
