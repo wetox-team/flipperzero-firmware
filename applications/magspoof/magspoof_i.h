@@ -24,18 +24,21 @@
 #define MAGSPOOF_SEND_NOTIFICATION_FALSE (0UL)
 #define MAGSPOOF_SEND_NOTIFICATION_TRUE (1UL)
 #define MAGSPOOF_TEXT_STORE_SIZE 128
-
 struct Magspoof {
     MagspoofWorker* worker;
     ViewDispatcher* view_dispatcher;
     Gui* gui;
-    NotificationApp* notifications;
+    NotificationApp* notification;
     SceneManager* scene_manager;
     MagspoofDevice* dev;
     MagspoofDeviceCommonData dev_edit_data;
 
     char text_store[MAGSPOOF_TEXT_STORE_SIZE + 1];
     string_t text_box_store;
+
+    View* view;
+    FuriThread* worker_thread;
+    StreamBufferHandle_t rx_stream;
 
     // Common Views
     Submenu* submenu;
