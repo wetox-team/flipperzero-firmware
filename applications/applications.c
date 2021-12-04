@@ -55,6 +55,7 @@ extern void storage_cli_init();
 extern void subghz_cli_init();
 extern void power_cli_init();
 extern void unit_tests_cli_init();
+extern void ohs_cli_init();
 
 // Settings
 extern int32_t notification_settings_app(void* p);
@@ -184,6 +185,7 @@ const FlipperOnStartHook FLIPPER_ON_SYSTEM_START[] = {
 
 #ifdef SRV_BT
     bt_cli_init,
+    ohs_cli_init,
 #endif
 
 #ifdef SRV_POWER
