@@ -27,15 +27,34 @@ typedef enum {
     DirectionLeft,
 } Direction;
 
+typedef enum {
+    ModeSingle,
+    ModeCooperative,
+} Mode;
+
+typedef struct {
+    Point coordinates;
+    Direction direction;
+} ProjectileState;
+
+typedef struct {
+    // char map[FIELD_WIDTH][FIELD_HEIGHT];
+    char map[16][11];
+    Mode mode;
+    GameState state;
+    ProjectileState *projectiles[100];
+    PlayerState p1;
+    PlayerState p2;
+} TanksState;
+
 typedef struct {
     Point coordinates;
     uint16_t score;
+    uint8_t lives;
     Direction direction;
-    GameState state;
     bool moving;
-    // char map[FIELD_WIDTH][FIELD_HEIGHT];
-    char map[16][11];
-} SnakeState;
+    uint8_t cooldown;
+} PlayerState;
 
 typedef enum {
     EventTypeTick,
@@ -45,11 +64,11 @@ typedef enum {
 typedef struct {
     EventType type;
     InputEvent input;
-} SnakeEvent;
+} TanksEvent;
 
 static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
-    const SnakeState* snake_state = acquire_mutex((ValueMutex*)ctx, 25);
-    if(snake_state == NULL) {
+    const TanksState* tanks_state = acquire_mutex((ValueMutex*)ctx, 25);
+    if(tanks_state == NULL) {
         return;
     }
 
@@ -57,10 +76,10 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
 
     canvas_draw_box(canvas, FIELD_WIDTH * CELL_LENGTH_PIXELS, 0, 2, SCREEN_HEIGHT);
 
-    // Snake
-    Point coordinates = snake_state->coordinates;
+    // Player
+    Point coordinates = tanks_state->coordinates;
 
-    switch (snake_state->direction) {
+    switch (tanks_state->direction) {
         case DirectionUp:
             canvas_draw_icon(canvas, coordinates.x * CELL_LENGTH_PIXELS, coordinates.y * CELL_LENGTH_PIXELS - 1, &I_tank_up);
             break;
@@ -77,7 +96,7 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
 
     for(int8_t x = 0; x < FIELD_WIDTH; x++) {
         for(int8_t y = 0; y < FIELD_HEIGHT; y++) {
-            switch (snake_state->map[x][y]) {
+            switch (tanks_state->map[x][y]) {
             case '-':
                 canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, &I_tank_wall);
                 break;
@@ -98,7 +117,7 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
     }
 
     // Game Over banner
-    if(snake_state->state == GameStateGameOver) {
+    if(tanks_state->state == GameStateGameOver) {
         // Screen is 128x64 px
         canvas_set_color(canvas, ColorWhite);
         canvas_draw_box(canvas, 34, 20, 62, 24);
@@ -111,28 +130,28 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
 
         canvas_set_font(canvas, FontSecondary);
         char buffer[13];
-        snprintf(buffer, sizeof(buffer), "Score: %u", snake_state->score);
+        snprintf(buffer, sizeof(buffer), "Score: %u", tanks_state->score);
         canvas_draw_str_aligned(canvas, 64, 41, AlignCenter, AlignBottom, buffer);
     }
 
-    release_mutex((ValueMutex*)ctx, snake_state);
+    release_mutex((ValueMutex*)ctx, tanks_state);
 }
 
 static void tanks_game_input_callback(InputEvent* input_event, osMessageQueueId_t event_queue) {
     furi_assert(event_queue);
 
-    SnakeEvent event = {.type = EventTypeKey, .input = *input_event};
+    TanksEvent event = {.type = EventTypeKey, .input = *input_event};
     osMessageQueuePut(event_queue, &event, 0, osWaitForever);
 }
 
 static void tanks_game_update_timer_callback(osMessageQueueId_t event_queue) {
     furi_assert(event_queue);
 
-    SnakeEvent event = {.type = EventTypeTick};
+    TanksEvent event = {.type = EventTypeTick};
     osMessageQueuePut(event_queue, &event, 0, 0);
 }
 
-static void tanks_game_init_game(SnakeState* const snake_state) {
+static void tanks_game_init_game(TanksState* const tanks_state) {
     //char map[FIELD_HEIGHT][FIELD_WIDTH + 1] = {
     char map[11][16 + 1] = {
         "*       -  *   -",
@@ -152,7 +171,7 @@ static void tanks_game_init_game(SnakeState* const snake_state) {
 
     for(int8_t x = 0; x < FIELD_WIDTH; x++) {
         for(int8_t y = 0; y < FIELD_HEIGHT; y++) {
-            snake_state->map[x][y] = ' ';
+            tanks_state->map[x][y] = ' ';
 
             if (map[y][x] == '1') {
                 c.x = x;
@@ -160,35 +179,32 @@ static void tanks_game_init_game(SnakeState* const snake_state) {
             }
 
             if (map[y][x] == '-') {
-                snake_state->map[x][y] = '-';
+                tanks_state->map[x][y] = '-';
             }
 
             if (map[y][x] == '=') {
-                snake_state->map[x][y] = '=';
+                tanks_state->map[x][y] = '=';
             }
 
             if (map[y][x] == '*') {
-                snake_state->map[x][y] = '*';
+                tanks_state->map[x][y] = '*';
             }
 
             if (map[y][x] == 'a') {
-                snake_state->map[x][y] = 'a';
+                tanks_state->map[x][y] = 'a';
             }
         }
     }
 
-    snake_state->coordinates = c;
-
-    snake_state->score = 0;
-
-    snake_state->moving = false;
-
-    snake_state->direction = DirectionUp;
-
-    snake_state->state = GameStateLife;
+    tanks_state->coordinates = c;
+    tanks_state->score = 0;
+    tanks_state->cooldown = SHOT_COOLDOWN;
+    tanks_state->moving = false;
+    tanks_state->direction = DirectionUp;
+    tanks_state->state = GameStateLife;
 }
 
-static bool tanks_game_collision(Point const next_step, SnakeState const* const snake_state) {
+static bool tanks_game_collision(Point const next_step, TanksState const* const tanks_state) {
     // if x == 0 && currentMovement == left then x - 1 == 255 ,
     // so check only x > right border
 
@@ -200,7 +216,7 @@ static bool tanks_game_collision(Point const next_step, SnakeState const* const 
         return true;
     }
 
-    char tile = snake_state->map[next_step.x][next_step.y];
+    char tile = tanks_state->map[next_step.x][next_step.y];
 
     if (tile == '-' || tile == '=' || tile == '*' || tile == 'a') {
         return true;
@@ -209,9 +225,9 @@ static bool tanks_game_collision(Point const next_step, SnakeState const* const 
     return false;
 }
 
-static Point tanks_game_get_next_step(SnakeState const* const snake_state) {
-    Point next_step = snake_state->coordinates;
-    switch(snake_state->direction) {
+static Point tanks_game_get_next_step(TanksState const* const tanks_state) {
+    Point next_step = tanks_state->coordinates;
+    switch(tanks_state->direction) {
         // +-----x
         // |
         // |
@@ -232,39 +248,39 @@ static Point tanks_game_get_next_step(SnakeState const* const snake_state) {
     return next_step;
 }
 
-static void tanks_game_move_snake(SnakeState* const snake_state, Point const next_step) {
-    snake_state->coordinates = next_step;
+static void tanks_game_move(TanksState* const tanks_state, Point const next_step) {
+    tanks_state->coordinates = next_step;
 }
 
-static void tanks_game_process_game_step(SnakeState* const snake_state) {
-    if(snake_state->state == GameStateGameOver) {
+static void tanks_game_process_game_step(TanksState* const tanks_state) {
+    if(tanks_state->state == GameStateGameOver) {
         return;
     }
 
-    if(snake_state->moving) {
-        Point next_step = tanks_game_get_next_step(snake_state);
-        bool crush = tanks_game_collision(next_step, snake_state);
+    if(tanks_state->moving) {
+        Point next_step = tanks_game_get_next_step(tanks_state);
+        bool crush = tanks_game_collision(next_step, tanks_state);
 
         if(!crush) {
-            tanks_game_move_snake(snake_state, next_step);
+            tanks_game_move(tanks_state, next_step);
         }
     }
 
-    snake_state->moving = false;
+    tanks_state->moving = false;
 }
 
 int32_t tanks_game_app(void* p) {
     srand(DWT->CYCCNT);
 
-    osMessageQueueId_t event_queue = osMessageQueueNew(8, sizeof(SnakeEvent), NULL);
+    osMessageQueueId_t event_queue = osMessageQueueNew(8, sizeof(TanksEvent), NULL);
 
-    SnakeState* snake_state = furi_alloc(sizeof(SnakeState));
-    tanks_game_init_game(snake_state);
+    TanksState* tanks_state = furi_alloc(sizeof(TanksState));
+    tanks_game_init_game(tanks_state);
 
     ValueMutex state_mutex;
-    if(!init_mutex(&state_mutex, snake_state, sizeof(SnakeState))) {
+    if(!init_mutex(&state_mutex, tanks_state, sizeof(TanksState))) {
         furi_log_print(FURI_LOG_ERROR, "cannot create mutex\r\n");
-        free(snake_state);
+        free(tanks_state);
         return 255;
     }
 
@@ -280,11 +296,11 @@ int32_t tanks_game_app(void* p) {
     Gui* gui = furi_record_open("gui");
     gui_add_view_port(gui, view_port, GuiLayerFullscreen);
 
-    SnakeEvent event;
+    TanksEvent event;
     for(bool processing = true; processing;) {
         osStatus_t event_status = osMessageQueueGet(event_queue, &event, NULL, 100);
 
-        SnakeState* snake_state = (SnakeState*)acquire_mutex_block(&state_mutex);
+        TanksState* tanks_state = (TanksState*)acquire_mutex_block(&state_mutex);
 
         if(event_status == osOK) {
             // press events
@@ -292,24 +308,24 @@ int32_t tanks_game_app(void* p) {
                 if(event.input.type == InputTypePress) {
                     switch(event.input.key) {
                         case InputKeyUp:
-                            snake_state->moving = true;
-                            snake_state->direction = DirectionUp;
+                            tanks_state->moving = true;
+                            tanks_state->direction = DirectionUp;
                             break;
                         case InputKeyDown:
-                            snake_state->moving = true;
-                            snake_state->direction = DirectionDown;
+                            tanks_state->moving = true;
+                            tanks_state->direction = DirectionDown;
                             break;
                         case InputKeyRight:
-                            snake_state->moving = true;
-                            snake_state->direction = DirectionRight;
+                            tanks_state->moving = true;
+                            tanks_state->direction = DirectionRight;
                             break;
                         case InputKeyLeft:
-                            snake_state->moving = true;
-                            snake_state->direction = DirectionLeft;
+                            tanks_state->moving = true;
+                            tanks_state->direction = DirectionLeft;
                             break;
                         case InputKeyOk:
-                            if(snake_state->state == GameStateGameOver) {
-                                tanks_game_init_game(snake_state);
+                            if(tanks_state->state == GameStateGameOver) {
+                                tanks_game_init_game(tanks_state);
                             }
                             break;
                         case InputKeyBack:
@@ -318,14 +334,14 @@ int32_t tanks_game_app(void* p) {
                     }
                 }
             } else if(event.type == EventTypeTick) {
-                tanks_game_process_game_step(snake_state);
+                tanks_game_process_game_step(tanks_state);
             }
         } else {
             // event timeout
         }
 
         view_port_update(view_port);
-        release_mutex(&state_mutex, snake_state);
+        release_mutex(&state_mutex, tanks_state);
     }
 
     osTimerDelete(timer);
@@ -335,7 +351,7 @@ int32_t tanks_game_app(void* p) {
     view_port_free(view_port);
     osMessageQueueDelete(event_queue);
     delete_mutex(&state_mutex);
-    free(snake_state);
+    free(tanks_state);
 
     return 0;
 }
