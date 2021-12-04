@@ -16,18 +16,7 @@ typedef struct {
 
 typedef enum {
     GameStateLife,
-
-    // https://melmagazine.com/en-us/story/snake-nokia-6110-oral-history-taneli-armanto
-    // Armanto: While testing the early versions of the game, I noticed it was hard
-    // to control the snake upon getting close to and edge but not crashing — especially
-    // in the highest speed levels. I wanted the highest level to be as fast as I could
-    // possibly make the device "run," but on the other hand, I wanted to be friendly
-    // and help the player manage that level. Otherwise it might not be fun to play. So
-    // I implemented a little delay. A few milliseconds of extra time right before
-    // the player crashes, during which she can still change the directions. And if
-    // she does, the game continues.
     GameStateLastChance,
-
     GameStateGameOver,
 } GameState;
 
@@ -40,11 +29,8 @@ typedef enum {
 
 typedef struct {
     Point coordinates;
-    uint16_t len;
-    Direction currentMovement;
-    Direction nextMovement; // if backward of currentMovement, ignore
+    uint16_t score;
     Direction direction;
-    Point fruit;
     GameState state;
     bool moving;
 } SnakeState;
@@ -67,14 +53,7 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
 
     // Before the function is called, the state is set with the canvas_reset(canvas)
 
-    // Fruit
-    Point f = snake_state->fruit;
-    f.x = f.x * CELL_LENGTH_PIXELS;
-    f.y = f.y * CELL_LENGTH_PIXELS;
-
     canvas_draw_box(canvas, FIELD_WIDTH * CELL_LENGTH_PIXELS, 0, 2, SCREEN_HEIGHT);
-
-    canvas_draw_rframe(canvas, f.x, f.y, 6, 6, 2);
 
     // Snake
     Point coordinates = snake_state->coordinates;
@@ -107,8 +86,8 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
         canvas_draw_str(canvas, 37, 31, "Game Over");
 
         canvas_set_font(canvas, FontSecondary);
-        char buffer[12];
-        snprintf(buffer, sizeof(buffer), "Score: %u", snake_state->len - 7);
+        char buffer[13];
+        snprintf(buffer, sizeof(buffer), "Score: %u", snake_state->score);
         canvas_draw_str_aligned(canvas, 64, 41, AlignCenter, AlignBottom, buffer);
     }
 
@@ -158,50 +137,13 @@ static void tanks_game_init_game(SnakeState* const snake_state) {
 
     snake_state->coordinates = c;
 
-    snake_state->len = 7;
+    snake_state->score = 0;
 
     snake_state->moving = false;
 
     snake_state->direction = DirectionUp;
 
-    snake_state->currentMovement = DirectionRight;
-    snake_state->nextMovement = DirectionRight;
-
-    Point f = {3, 3};
-    snake_state->fruit = f;
-
     snake_state->state = GameStateLife;
-}
-
-static Point tanks_game_get_new_fruit(SnakeState const* const snake_state) {
-    // 1 bit for each point on the playing field where the snake can turn
-    // and where the fruit can appear
-    uint16_t buffer[FIELD_HEIGHT];
-    memset(buffer, 0, sizeof(buffer));
-    uint8_t empty = FIELD_HEIGHT * FIELD_WIDTH;
-
-    // Bit set if snake use that playing field
-
-    uint16_t newFruit = rand() % empty;
-
-    // Skip random number of _empty_ fields
-    for(uint8_t y = 0; y < FIELD_HEIGHT; y++) {
-        for(uint16_t x = 0, mask = 1; x < FIELD_WIDTH; x += 1, mask <<= 1) {
-            if((buffer[y] & mask) == 0) {
-                if(newFruit == 0) {
-                    Point p = {
-                            .x = x * 2,
-                            .y = y * 2,
-                    };
-                    return p;
-                }
-                newFruit--;
-            }
-        }
-    }
-    // We will never be here
-    Point p = {0, 0};
-    return p;
 }
 
 static bool tanks_game_collision_with_frame(Point const next_step) {
@@ -249,15 +191,6 @@ static void tanks_game_process_game_step(SnakeState* const snake_state) {
         if(!crush) {
             tanks_game_move_snake(snake_state, next_step);
         }
-    }
-
-    bool eatFruit = (snake_state->coordinates.x == snake_state->fruit.x) && (snake_state->coordinates.y == snake_state->fruit.y);
-    if(eatFruit) {
-        snake_state->len++;
-    }
-
-    if(eatFruit) {
-        snake_state->fruit = tanks_game_get_new_fruit(snake_state);
     }
 
     snake_state->moving = false;
