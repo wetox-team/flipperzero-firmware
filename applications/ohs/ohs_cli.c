@@ -10,9 +10,10 @@
 
 void ohs_cli_init() {
     Cli* cli = furi_record_open("cli");
-        cli_add_command(cli, "ohs_start", CliCommandFlagDefault, ohs_cli_command, NULL);
+    cli_add_command(cli, "ohs_start", CliCommandFlagDefault, ohs_cli_command, NULL);
     cli_add_command(cli, "ohs_stop", CliCommandFlagDefault, ohs_cli_stop, NULL);
     cli_add_command(cli, "ohs_save_key", CliCommandFlagDefault, ohs_cli_key_save, NULL);
+    cli_add_command(cli, "ohs_get_key", CliCommandFlagDefault, ohs_cli_key_get, NULL);
     furi_record_close("cli");
 }
 
@@ -45,4 +46,13 @@ void ohs_cli_key_save(Cli* cli, string_t args, void* context){
         mbedtls_base64_decode(key, 28, 28, args, string.size(args));
         furi_hal_ohs_save_key(key);
 //    }
+}
+
+void ohs_cli_key_get(Cli* cli, string_t args, void* context){
+    uint8_t ohs_key[28] = {};
+    furi_hal_ohs_load_key(ohs_key);
+
+    for (int i = 0; i < 28; i++){
+        printf("%h ", ohs_key[i]);
+    }
 }
