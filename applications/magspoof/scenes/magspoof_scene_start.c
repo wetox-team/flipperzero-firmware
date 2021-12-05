@@ -48,8 +48,8 @@ bool magspoof_scene_start_on_event(void* context, SceneManagerEvent event) {
             // scene_manager_next_scene(magspoof->scene_manager, MagspoofSceneScriptsMenu);
             consumed = true;
         } else if(event.event == SubmenuIndexSaved) {
-            // scene_manager_set_scene_state(magspoof->scene_manager, MagspoofSceneStart, SubmenuIndexSaved);
-            // scene_manager_next_scene(magspoof->scene_manager, MagspoofSceneFileSelect);
+            scene_manager_set_scene_state(magspoof->scene_manager, MagspoofSceneStart, SubmenuIndexSaved);
+            scene_manager_next_scene(magspoof->scene_manager, MagspoofSceneFileSelect);
             consumed = true;
         }
     }

@@ -25,5 +25,5 @@ extern const SceneManagerHandlers magspoof_scene_handlers;
 
 // Generate scene on_exit handlers declaration
 #define ADD_SCENE(prefix, name, id) void prefix##_scene_##name##_on_exit(void* context);
-#include "magspoof_scene_config.h"
+#include "mags_scene_config.h"
 #undef ADD_SCENE
