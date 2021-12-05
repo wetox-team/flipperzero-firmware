@@ -1,6 +1,7 @@
 #include "bt_i.h"
 #include "battery_service.h"
 #include "bt_keys_storage.h"
+#include "furi-hal-ohs.h"
 
 #define TAG "BtSrv"
 
@@ -230,6 +231,8 @@ int32_t bt_srv() {
             FURI_LOG_I(TAG, "BLE stack started");
             if(bt->bt_settings.mode == BT_MODE_ON) {
                 furi_hal_bt_start_advertising();
+            } else if(bt->bt_settings.mode == BT_MODE_OHS) {
+                furi_hal_ohs_start();
             }
         } else {
             FURI_LOG_E(TAG, "BT App start failed");
