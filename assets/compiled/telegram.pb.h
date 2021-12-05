@@ -15,16 +15,6 @@ typedef struct _PB_Telegram_TelegramMessage {
     bool is_our; 
 } PB_Telegram_TelegramMessage;
 
-typedef struct _PB_Telegram_TelegramDialog { 
-    int64_t id; 
-    char *name; 
-    PB_Telegram_TelegramMessage messages[3]; 
-} PB_Telegram_TelegramDialog;
-
-typedef struct _PB_Telegram_TelegramStateResponse { 
-    PB_Telegram_TelegramDialog dialogs[3]; 
-} PB_Telegram_TelegramStateResponse;
-
 typedef struct _PB_Telegram_TelegramSendMessageRequest { 
     int64_t id; 
     char *msg; 
@@ -34,11 +24,17 @@ typedef struct _PB_Telegram_TelegramStateRequest {
     int32_t count; 
 } PB_Telegram_TelegramStateRequest;
 
-typedef struct _PB_Telegram_TelegramUpdate { 
+typedef struct _PB_Telegram_TelegramDialog { 
     int64_t id; 
-    bool has_msg;
-    PB_Telegram_TelegramMessage msg; 
-} PB_Telegram_TelegramUpdate;
+    char *name; 
+    pb_size_t messages_count;
+    PB_Telegram_TelegramMessage messages[3]; 
+} PB_Telegram_TelegramDialog;
+
+typedef struct _PB_Telegram_TelegramStateResponse { 
+    pb_size_t dialogs_count;
+    PB_Telegram_TelegramDialog dialogs[3]; 
+} PB_Telegram_TelegramStateResponse;
 
 
 #ifdef __cplusplus
@@ -47,30 +43,26 @@ extern "C" {
 
 /* Initializer values for message structs */
 #define PB_Telegram_TelegramStateRequest_init_default {0}
-#define PB_Telegram_TelegramStateResponse_init_default {{{NULL}, NULL}}
-#define PB_Telegram_TelegramSendMessageRequest_init_default {0, {{NULL}, NULL}}
-#define PB_Telegram_TelegramDialog_init_default  {0, {{NULL}, NULL}, {{NULL}, NULL}}
-#define PB_Telegram_TelegramMessage_init_default {{{NULL}, NULL}, 0}
-#define PB_Telegram_TelegramUpdate_init_default  {0, false, PB_Telegram_TelegramMessage_init_default}
+#define PB_Telegram_TelegramMessage_init_default {NULL, 0}
+#define PB_Telegram_TelegramDialog_init_default  {0, NULL, 0, {PB_Telegram_TelegramMessage_init_default, PB_Telegram_TelegramMessage_init_default, PB_Telegram_TelegramMessage_init_default}}
+#define PB_Telegram_TelegramStateResponse_init_default {0, {PB_Telegram_TelegramDialog_init_default, PB_Telegram_TelegramDialog_init_default, PB_Telegram_TelegramDialog_init_default}}
+#define PB_Telegram_TelegramSendMessageRequest_init_default {0, NULL}
 #define PB_Telegram_TelegramStateRequest_init_zero {0}
-#define PB_Telegram_TelegramStateResponse_init_zero {{{NULL}, NULL}}
-#define PB_Telegram_TelegramSendMessageRequest_init_zero {0, {{NULL}, NULL}}
-#define PB_Telegram_TelegramDialog_init_zero     {0, {{NULL}, NULL}, {{NULL}, NULL}}
-#define PB_Telegram_TelegramMessage_init_zero    {{{NULL}, NULL}, 0}
-#define PB_Telegram_TelegramUpdate_init_zero     {0, false, PB_Telegram_TelegramMessage_init_zero}
+#define PB_Telegram_TelegramMessage_init_zero    {NULL, 0}
+#define PB_Telegram_TelegramDialog_init_zero     {0, NULL, 0, {PB_Telegram_TelegramMessage_init_zero, PB_Telegram_TelegramMessage_init_zero, PB_Telegram_TelegramMessage_init_zero}}
+#define PB_Telegram_TelegramStateResponse_init_zero {0, {PB_Telegram_TelegramDialog_init_zero, PB_Telegram_TelegramDialog_init_zero, PB_Telegram_TelegramDialog_init_zero}}
+#define PB_Telegram_TelegramSendMessageRequest_init_zero {0, NULL}
 
 /* Field tags (for use in manual encoding/decoding) */
-#define PB_Telegram_TelegramStateResponse_dialogs_tag 1
-#define PB_Telegram_TelegramDialog_id_tag        1
-#define PB_Telegram_TelegramDialog_name_tag      2
-#define PB_Telegram_TelegramDialog_messages_tag  3
 #define PB_Telegram_TelegramMessage_text_tag     1
 #define PB_Telegram_TelegramMessage_is_our_tag   2
 #define PB_Telegram_TelegramSendMessageRequest_id_tag 1
 #define PB_Telegram_TelegramSendMessageRequest_msg_tag 2
 #define PB_Telegram_TelegramStateRequest_count_tag 1
-#define PB_Telegram_TelegramUpdate_id_tag        1
-#define PB_Telegram_TelegramUpdate_msg_tag       2
+#define PB_Telegram_TelegramDialog_id_tag        1
+#define PB_Telegram_TelegramDialog_name_tag      2
+#define PB_Telegram_TelegramDialog_messages_tag  3
+#define PB_Telegram_TelegramStateResponse_dialogs_tag 1
 
 /* Struct field encoding specification for nanopb */
 #define PB_Telegram_TelegramStateRequest_FIELDLIST(X, a) \
@@ -78,60 +70,50 @@ X(a, STATIC,   SINGULAR, INT32,    count,             1)
 #define PB_Telegram_TelegramStateRequest_CALLBACK NULL
 #define PB_Telegram_TelegramStateRequest_DEFAULT NULL
 
+#define PB_Telegram_TelegramMessage_FIELDLIST(X, a) \
+X(a, POINTER,  SINGULAR, STRING,   text,              1) \
+X(a, STATIC,   SINGULAR, BOOL,     is_our,            2)
+#define PB_Telegram_TelegramMessage_CALLBACK NULL
+#define PB_Telegram_TelegramMessage_DEFAULT NULL
+
+#define PB_Telegram_TelegramDialog_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, INT64,    id,                1) \
+X(a, POINTER,  SINGULAR, STRING,   name,              2) \
+X(a, STATIC,   REPEATED, MESSAGE,  messages,          3)
+#define PB_Telegram_TelegramDialog_CALLBACK NULL
+#define PB_Telegram_TelegramDialog_DEFAULT NULL
+#define PB_Telegram_TelegramDialog_messages_MSGTYPE PB_Telegram_TelegramMessage
+
 #define PB_Telegram_TelegramStateResponse_FIELDLIST(X, a) \
-X(a, CALLBACK, REPEATED, MESSAGE,  dialogs,           1)
-#define PB_Telegram_TelegramStateResponse_CALLBACK pb_default_field_callback
+X(a, STATIC,   REPEATED, MESSAGE,  dialogs,           1)
+#define PB_Telegram_TelegramStateResponse_CALLBACK NULL
 #define PB_Telegram_TelegramStateResponse_DEFAULT NULL
 #define PB_Telegram_TelegramStateResponse_dialogs_MSGTYPE PB_Telegram_TelegramDialog
 
 #define PB_Telegram_TelegramSendMessageRequest_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, INT64,    id,                1) \
-X(a, CALLBACK, SINGULAR, STRING,   msg,               2)
-#define PB_Telegram_TelegramSendMessageRequest_CALLBACK pb_default_field_callback
+X(a, POINTER,  SINGULAR, STRING,   msg,               2)
+#define PB_Telegram_TelegramSendMessageRequest_CALLBACK NULL
 #define PB_Telegram_TelegramSendMessageRequest_DEFAULT NULL
 
-#define PB_Telegram_TelegramDialog_FIELDLIST(X, a) \
-X(a, STATIC,   SINGULAR, INT64,    id,                1) \
-X(a, CALLBACK, SINGULAR, STRING,   name,              2) \
-X(a, CALLBACK, REPEATED, MESSAGE,  messages,          3)
-#define PB_Telegram_TelegramDialog_CALLBACK pb_default_field_callback
-#define PB_Telegram_TelegramDialog_DEFAULT NULL
-#define PB_Telegram_TelegramDialog_messages_MSGTYPE PB_Telegram_TelegramMessage
-
-#define PB_Telegram_TelegramMessage_FIELDLIST(X, a) \
-X(a, CALLBACK, SINGULAR, STRING,   text,              1) \
-X(a, STATIC,   SINGULAR, BOOL,     is_our,            2)
-#define PB_Telegram_TelegramMessage_CALLBACK pb_default_field_callback
-#define PB_Telegram_TelegramMessage_DEFAULT NULL
-
-#define PB_Telegram_TelegramUpdate_FIELDLIST(X, a) \
-X(a, STATIC,   SINGULAR, INT64,    id,                1) \
-X(a, STATIC,   OPTIONAL, MESSAGE,  msg,               2)
-#define PB_Telegram_TelegramUpdate_CALLBACK NULL
-#define PB_Telegram_TelegramUpdate_DEFAULT NULL
-#define PB_Telegram_TelegramUpdate_msg_MSGTYPE PB_Telegram_TelegramMessage
-
 extern const pb_msgdesc_t PB_Telegram_TelegramStateRequest_msg;
+extern const pb_msgdesc_t PB_Telegram_TelegramMessage_msg;
+extern const pb_msgdesc_t PB_Telegram_TelegramDialog_msg;
 extern const pb_msgdesc_t PB_Telegram_TelegramStateResponse_msg;
 extern const pb_msgdesc_t PB_Telegram_TelegramSendMessageRequest_msg;
-extern const pb_msgdesc_t PB_Telegram_TelegramDialog_msg;
-extern const pb_msgdesc_t PB_Telegram_TelegramMessage_msg;
-extern const pb_msgdesc_t PB_Telegram_TelegramUpdate_msg;
 
 /* Defines for backwards compatibility with code written before nanopb-0.4.0 */
 #define PB_Telegram_TelegramStateRequest_fields &PB_Telegram_TelegramStateRequest_msg
+#define PB_Telegram_TelegramMessage_fields &PB_Telegram_TelegramMessage_msg
+#define PB_Telegram_TelegramDialog_fields &PB_Telegram_TelegramDialog_msg
 #define PB_Telegram_TelegramStateResponse_fields &PB_Telegram_TelegramStateResponse_msg
 #define PB_Telegram_TelegramSendMessageRequest_fields &PB_Telegram_TelegramSendMessageRequest_msg
-#define PB_Telegram_TelegramDialog_fields &PB_Telegram_TelegramDialog_msg
-#define PB_Telegram_TelegramMessage_fields &PB_Telegram_TelegramMessage_msg
-#define PB_Telegram_TelegramUpdate_fields &PB_Telegram_TelegramUpdate_msg
 
 /* Maximum encoded size of messages (where known) */
+/* PB_Telegram_TelegramMessage_size depends on runtime parameters */
+/* PB_Telegram_TelegramDialog_size depends on runtime parameters */
 /* PB_Telegram_TelegramStateResponse_size depends on runtime parameters */
 /* PB_Telegram_TelegramSendMessageRequest_size depends on runtime parameters */
-/* PB_Telegram_TelegramDialog_size depends on runtime parameters */
-/* PB_Telegram_TelegramMessage_size depends on runtime parameters */
-/* PB_Telegram_TelegramUpdate_size depends on runtime parameters */
 #define PB_Telegram_TelegramStateRequest_size    11
 
 #ifdef __cplusplus
