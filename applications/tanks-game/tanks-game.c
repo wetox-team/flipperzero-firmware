@@ -107,7 +107,9 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
         icon = &I_tank_explosion;
     }
 
-    canvas_draw_icon(canvas, coordinates.x * CELL_LENGTH_PIXELS, coordinates.y * CELL_LENGTH_PIXELS - 1, icon);
+    if (tanks_state->p1->live) {
+        canvas_draw_icon(canvas, coordinates.x * CELL_LENGTH_PIXELS, coordinates.y * CELL_LENGTH_PIXELS - 1, icon);
+    }
 
     for(int8_t x = 0; x < FIELD_WIDTH; x++) {
         for(int8_t y = 0; y < FIELD_HEIGHT; y++) {
@@ -379,6 +381,12 @@ static bool tanks_game_collision(Point const next_step, bool shoot, TanksState c
         }
     }
 
+    if(tanks_state->p1 != NULL && tanks_state->p1->live &&
+       tanks_state->p1->coordinates.x == next_step.x &&
+       tanks_state->p1->coordinates.y == next_step.y) {
+        return true;
+    }
+
     return false;
 }
 
@@ -538,8 +546,36 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
         tanks_state->state = GameStateGameOver;
     }
 
+    if (!tanks_state->p1->live && tanks_state->p1->lives == 0) {
+        tanks_state->state = GameStateGameOver;
+    }
+
     if(tanks_state->state == GameStateGameOver) {
         return;
+    }
+
+    if (tanks_state->p1 != NULL) {
+        if (!tanks_state->p1->live && tanks_state->p1->respawn_cooldown > 0){
+            tanks_state->p1->respawn_cooldown--;
+        }
+    }
+
+    // Player spawn
+    if (tanks_state->p1 && !tanks_state->p1->live && tanks_state->p1->lives > 0) {
+        int8_t index = tanks_get_random_free_respawn_point_index(
+            tanks_state,
+            tanks_state->team_one_respawn_points
+        );
+
+        if (index != -1) {
+            Point point = tanks_state->team_one_respawn_points[index];
+            Point c = {point.x, point.y};
+            tanks_state->p1->coordinates = c;
+            tanks_state->p1->live = true;
+            tanks_state->p1->direction = DirectionRight;
+            tanks_state->p1->cooldown = SHOT_COOLDOWN;
+            tanks_state->p1->respawn_cooldown = SHOT_COOLDOWN;
+        }
     }
 
     // Bot turn
@@ -609,7 +645,11 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
         }
     }
 
-    if(tanks_state->p1->moving) {
+    if(
+        tanks_state->p1 != NULL &&
+        tanks_state->p1->live &&
+        tanks_state->p1->moving
+        ) {
         Point next_step = tanks_game_get_next_step(tanks_state->p1->coordinates, tanks_state->p1->direction);
         bool crush = tanks_game_collision(next_step, false, tanks_state);
 
@@ -664,6 +704,20 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
                     return;
                 }
 
+                // Kill a player
+                if (tanks_state->p1 != NULL) {
+                    if (
+                        tanks_state->p1->live &&
+                        tanks_state->p1->coordinates.x == c.x &&
+                        tanks_state->p1->coordinates.y == c.y
+                    ) {
+                        tanks_state->p1->live = false;
+                        tanks_state->p1->lives--;
+                        tanks_state->p1->respawn_cooldown = PLAYER_RESPAWN_COOLDOWN;
+                    }
+                }
+
+                // Delete projectile
                 free(tanks_state->projectiles[x]);
                 tanks_state->projectiles[x] = NULL;
                 continue;
@@ -683,7 +737,12 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
         tanks_state->p1->cooldown--;
     }
 
-    if(tanks_state->p1->shooting && tanks_state->p1->cooldown == 0) {
+    if(
+        tanks_state->p1 != NULL &&
+        tanks_state->p1->live &&
+        tanks_state->p1->shooting &&
+        tanks_state->p1->cooldown == 0
+        ) {
         tanks_game_shoot(tanks_state, tanks_state->p1, true, false);
     }
 
