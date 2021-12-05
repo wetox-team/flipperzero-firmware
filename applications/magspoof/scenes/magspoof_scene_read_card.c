@@ -1,4 +1,5 @@
 #include "../magspoof_i.h"
+#include <furi-hal-resources.h>
 
 #define MAGSPOOF_READ_CARD_CUSTOM_EVENT (10UL)
 #define MAGSPOOF_READ_CARD_DRAW_EVENT (999)
@@ -16,7 +17,7 @@ const NotificationSequence magspoof_sequence_notification = {
 #define PIN_A 2
 #define PIN_B 4
 #define ENABLE_PIN 1
-#define CLOCK_US 200
+#define CLOCK_US 500
 
 uint8_t magspoof_bit_dir = 0;
 
@@ -56,18 +57,33 @@ void magspoof_scene_read_card_dialog_callback(DialogExResult result, void* conte
 // }
 
 // Start spoof code
+
+void gpio_item_set_rfid_pin(uint8_t index, bool level) {
+    // furi_assert(index < GPIO_ITEM_COUNT);
+    if (index == 2) {
+        // hal_gpio_write(&gpio_ext_pa2, level);
+        // hal_gpio_write(&gpio_rfid_pull, level);
+        hal_gpio_write(&gpio_rfid_carrier_out, level);
+    }
+    if (index == 1) {
+        // hal_gpio_write(&gpio_ext_pb13, level);
+        
+        // hal_gpio_write(&gpio_ext_pa7, level);
+    }
+}
+
 static void playBit(uint8_t sendBit)
 {
   magspoof_bit_dir ^= 1;
-  gpio_item_set_pin(PIN_A, magspoof_bit_dir);
-  gpio_item_set_pin(PIN_B, !magspoof_bit_dir);
+  gpio_item_set_rfid_pin(PIN_A, magspoof_bit_dir);
+  gpio_item_set_rfid_pin(PIN_B, !magspoof_bit_dir);
   delay_us(CLOCK_US);
 
   if (sendBit)
   {
     magspoof_bit_dir ^= 1;
-    gpio_item_set_pin(PIN_A, magspoof_bit_dir);
-    gpio_item_set_pin(PIN_B, !magspoof_bit_dir);
+    gpio_item_set_rfid_pin(PIN_A, magspoof_bit_dir);
+    gpio_item_set_rfid_pin(PIN_B, !magspoof_bit_dir);
   }
   delay_us(CLOCK_US);
 }
@@ -104,7 +120,19 @@ static void magspoof_spoof(string_t track_str, uint8_t track) {
 
     printf("%s",data);
     
-    gpio_item_configure_all_pins(GpioModeOutputPushPull);
+    // gpio_item_configure_all_pins(GpioModeOutputPushPull);
+
+    furi_hal_ibutton_start();
+    furi_hal_ibutton_pin_low();
+    
+    // hal_gpio_init(&gpio_rfid_carrier, GpioModeOutputPushPull, GpioPullNo, GpioSpeedLow);
+    
+    
+    hal_gpio_init(&gpio_rfid_pull, GpioModeOutputPushPull, GpioPullNo, GpioSpeedLow);
+    hal_gpio_write(&gpio_rfid_pull, false);
+
+    hal_gpio_init(&gpio_rfid_carrier_out, GpioModeOutputPushPull, GpioPullNo, GpioSpeedLow);
+    
     delay(300);
 
     FURI_CRITICAL_ENTER();
@@ -120,7 +148,7 @@ static void magspoof_spoof(string_t track_str, uint8_t track) {
     magspoof_bit_dir = 0;
 
     // enable H-bridge and LED
-    gpio_item_set_pin(ENABLE_PIN, 1);
+    gpio_item_set_rfid_pin(ENABLE_PIN, 1);
 
     // First put out a bunch of leading zeros.
     for (uint8_t i = 0; i < 25; i++) {
@@ -159,13 +187,15 @@ static void magspoof_spoof(string_t track_str, uint8_t track) {
         playBit(0);
     }
 
-    gpio_item_set_pin(PIN_A, 0);
-    gpio_item_set_pin(PIN_B, 0);
-    gpio_item_set_pin(ENABLE_PIN, 0);
+    gpio_item_set_rfid_pin(PIN_A, 0);
+    gpio_item_set_rfid_pin(PIN_B, 0);
+    gpio_item_set_rfid_pin(ENABLE_PIN, 0);
 
     FURI_CRITICAL_EXIT();
 
-    gpio_item_configure_all_pins(GpioModeAnalog);
+    furi_hal_rfid_pins_reset();
+
+    // gpio_item_configure_all_pins(GpioModeAnalog);
     furi_hal_power_disable_otg();
 }
 
@@ -406,21 +436,24 @@ bool magspoof_scene_read_card_on_event(void* context, SceneManagerEvent event) {
     }
     if(event.type == SceneManagerEventTypeCustom) {
         if(event.event == DialogExResultLeft) {
-            // string_t v;
-            // string_init(v);
-            // string_set_str(v,";123456781234567=YYMMSSSDDDDDDDDDDDDDD?");
-            
-            string_t v1;
-            string_t v2;
-            string_init_set(v1, app->dev->data);
-            string_init_set(v2, v1);
-            magspoof_spoof(v1, 0);
-            delay(500);
-            magspoof_spoof(v2, 1);
+            string_t v;
+            string_init(v);
+            string_set_str(v,"%B123456781234567^LASTNAME/FIRST^YYMMSSSDDDDDDDDDDDDDDDDDDDDDDDDD?;1234567812?");
+            // string_set_str(v,"%B123456781234567^LASTNAME/FIRST^YYMMSSSDDDDDDDDDDDDDDDDDDDDDDDDD?");
+            magspoof_spoof(v, 0);
+            string_clear(v);
 
-            // printf("%s",deb);
-            string_clear(v1);
-            string_clear(v2);
+
+            // string_t v1;
+            // string_t v2;
+            // string_init_set(v1, app->dev->data);
+            // string_init_set(v2, v1);
+            // magspoof_spoof(v1, 0);
+            // delay(500);
+            // magspoof_spoof(v2, 1);
+
+            // string_clear(v1);
+            // string_clear(v2);
             
             return true;
         } else if(event.event == DialogExResultCenter) {
