@@ -88,30 +88,30 @@ void telegram_init_chats_callback(const PB_Telegram_TelegramStateResponse* respo
 
     if (response == NULL) {
         submenu_add_item(
-            tg_instance->submenu,
+            instance->submenu,
             "Chats are loading...",
             TelegramViewDialogue,
             NULL,
-            tg_instance);
+            instance);
     } else {
         submenu_add_item(
-            tg_instance->submenu,
+            instance->submenu,
             response->dialogs[0].name,
             TelegramViewDialogue,
             open_chat_callback,
-            tg_instance);
+            instance);
         submenu_add_item(
-            tg_instance->submenu,
+            instance->submenu,
             response->dialogs[1].name,
             TelegramViewDialogue,
             open_chat_callback,
-            tg_instance);
+            instance);
         submenu_add_item(
-            tg_instance->submenu,
+            instance->submenu,
             response->dialogs[2].name,
             TelegramViewDialogue,
             open_chat_callback,
-            tg_instance);
+            instance);
 
     }
 
