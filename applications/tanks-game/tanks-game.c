@@ -127,6 +127,20 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
         }
     }
 
+    for (
+        uint8_t i = 0;
+        i < 6;
+        i++
+    ) {
+        if (tanks_state->bots[i] != NULL) {
+            canvas_draw_icon(
+                canvas,
+                tanks_state->bots[i]->coordinates.x * CELL_LENGTH_PIXELS,
+                tanks_state->bots[i]->coordinates.y * CELL_LENGTH_PIXELS - 1,
+                &I_enemy_left);
+        }
+    }
+
     for(int8_t x = 0; x < 100; x++) {
         if (tanks_state->projectiles[x] != NULL) {
             ProjectileState *projectile = tanks_state->projectiles[x];
@@ -173,20 +187,6 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
         }
     }
 
-    for (
-        uint8_t i = 0;
-        i < 6;
-        i++
-    ) {
-        if (tanks_state->bots[i] != NULL) {
-            canvas_draw_icon(
-                canvas,
-                tanks_state->bots[i]->coordinates.x * CELL_LENGTH_PIXELS,
-                tanks_state->bots[i]->coordinates.y * CELL_LENGTH_PIXELS - 1,
-                &I_enemy_left);
-        }
-    }
-
     // Game Over banner
     if(tanks_state->state == GameStateGameOver) {
         // Screen is 128x64 px
@@ -199,7 +199,7 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
         canvas_set_font(canvas, FontPrimary);
 
         if (tanks_state->enemies_left == 0 && tanks_state->enemies_live == 0) {
-            canvas_draw_str(canvas, 38, 31, "You win!");
+            canvas_draw_str(canvas, 42, 31, "You win!");
         } else {
             canvas_draw_str(canvas, 37, 31, "Game Over");
         }
