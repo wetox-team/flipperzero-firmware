@@ -6,6 +6,7 @@
 #include "furi-hal-ohs.h"
 #include <gap.h>
 #include <file-worker.h>
+#include <bt/bt_settings.h>
 
 #define TAG "FuriHalOhs"
 

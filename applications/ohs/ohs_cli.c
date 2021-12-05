@@ -4,8 +4,15 @@
 
 #include <furi.h>
 #include <ble.h>
+#include <bt/bt_settings.h>
 #include "furi-hal-ohs.h"
 #include "ohs_cli.h"
+
+bool ohs_cli_check_is_working() {
+    BtSettings bt_settings;
+    bt_settings_load(&bt_settings);
+    return bt_settings.mode == BT_MODE_OHS;
+}
 
 void ohs_cli_init() {
     Cli* cli = furi_record_open("cli");
@@ -40,18 +47,25 @@ void ohs_cli_key_enter(Cli* cli, string_t args, void* context){
     if (string_size(args) != 56){
         printf("Incorrect input. Save aborted.\r\n");
         printf("Use 56-symbol hex\r\n");
+        return;
     }
-    else {
-        uint8_t key[28];
 
-        for(size_t i = 0; i < 28; i++) {
-            if(sscanf(string_get_cstr(args) + i * 2, "%02x", (unsigned int*)&key[i]) != 1) {
-                printf("Something went wrong with this key\r\n");
-                return;
-            }
+    bool worked = ohs_cli_check_is_working();
+    if (worked)
+        furi_hal_ohs_stop();
+
+    uint8_t key[28];
+
+    for(size_t i = 0; i < 28; i++) {
+        if(sscanf(string_get_cstr(args) + i * 2, "%02x", (unsigned int*)&key[i]) != 1) {
+            printf("Something went wrong with this key\r\n");
+            return;
         }
-        furi_hal_ohs_save_key(key);
     }
+    furi_hal_ohs_save_key(key);
+
+    if (worked)
+        furi_hal_ohs_start();
 }
 
 void ohs_cli_key_print(Cli* cli, string_t args, void* context){
@@ -78,3 +92,4 @@ void ohs_cli_mac_print(Cli* cli, string_t args, void* context) {
             printf(":");
     }
 }
+
