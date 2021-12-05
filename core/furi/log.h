@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-#define FURI_LOG_LEVEL_DEFAULT 3
+#define FURI_LOG_LEVEL_DEFAULT 5
 
 #ifndef FURI_LOG_LEVEL
 #define FURI_LOG_LEVEL FURI_LOG_LEVEL_DEFAULT
