@@ -10,7 +10,7 @@
 #include <lib/subghz/protocols/subghz_protocol_princeton.h>
 #include <lib/subghz/subghz_tx_rx_worker.h>
 
-#include "contants.h"
+#include "constants.h"
 
 typedef struct {
     //    +-----x
@@ -129,7 +129,7 @@ char map[11][16 + 1] = {
     "*       -  *   -",
 };
 
-static void tanks_game_write_sell(unsigned char* data, int8_t x, int8_t y, GameCellState cell) {
+static void tanks_game_write_cell(unsigned char* data, int8_t x, int8_t y, GameCellState cell) {
     uint8_t index = y * 16 + x;
     data[index] = cell;
     //    if (x % 2) {
@@ -152,7 +152,7 @@ unsigned char* tanks_game_serialize(const TanksState* const tanks_state) {
             if(tanks_state->map[x][y] == '-') {
                 cell = CellWall;
 
-                tanks_game_write_sell(result, x, y, cell);
+                tanks_game_write_cell(result, x, y, cell);
             }
         }
     }
@@ -176,7 +176,7 @@ unsigned char* tanks_game_serialize(const TanksState* const tanks_state) {
                 break;
             }
 
-            tanks_game_write_sell(
+            tanks_game_write_cell(
                 result,
                 tanks_state->bots[i]->coordinates.x,
                 tanks_state->bots[i]->coordinates.y,
@@ -203,7 +203,7 @@ unsigned char* tanks_game_serialize(const TanksState* const tanks_state) {
                 break;
             }
 
-            tanks_game_write_sell(
+            tanks_game_write_cell(
                 result,
                 tanks_state->projectiles[x]->coordinates.x,
                 tanks_state->projectiles[x]->coordinates.y,
@@ -230,7 +230,7 @@ unsigned char* tanks_game_serialize(const TanksState* const tanks_state) {
             break;
         }
 
-        tanks_game_write_sell(
+        tanks_game_write_cell(
             result, tanks_state->p1->coordinates.x, tanks_state->p1->coordinates.y, cell);
     }
 
@@ -252,7 +252,7 @@ unsigned char* tanks_game_serialize(const TanksState* const tanks_state) {
             break;
         }
 
-        tanks_game_write_sell(
+        tanks_game_write_cell(
             result, tanks_state->p2->coordinates.x, tanks_state->p2->coordinates.y, cell);
     }
 
