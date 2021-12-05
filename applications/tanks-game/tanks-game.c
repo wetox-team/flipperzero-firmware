@@ -416,6 +416,20 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
     // Field right border
     canvas_draw_box(canvas, FIELD_WIDTH * CELL_LENGTH_PIXELS, 0, 2, SCREEN_HEIGHT);
 
+    // Cooperative client
+    if (tanks_state->mode == ModeCooperative && !tanks_state->server){
+        for(int8_t x = 0; x < FIELD_WIDTH; x++) {
+            for(int8_t y = 0; y < FIELD_HEIGHT; y++) {
+                tanks_game_render_cell(tanks_state->map[x][y], x, y, canvas);
+            }
+        }
+
+        tanks_game_render_constant_cells(canvas);
+
+        release_mutex((ValueMutex*)ctx, tanks_state);
+        return;
+    }
+
     // Player
     //    Point coordinates = tanks_state->p1->coordinates;
     //    const Icon *icon;
