@@ -13,6 +13,7 @@ MagspoofDevice* magspoof_device_alloc() {
     MagspoofDevice* magspoof_dev = furi_alloc(sizeof(MagspoofDevice));
     magspoof_dev->storage = furi_record_open("storage");
     magspoof_dev->dialogs = furi_record_open("dialogs");
+    string_init(magspoof_dev->data);
     return magspoof_dev;
 }
 

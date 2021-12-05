@@ -73,6 +73,8 @@ static Magspoof* magspoof_alloc() {
 
     // view_set_previous_callback(app->view, magspoof_exit);
 
+    
+
     // view_dispatcher_add_view(app->view_dispatcher, 0, app->view);
     view_dispatcher_switch_to_view(app->view_dispatcher, 0);
 
@@ -89,6 +91,7 @@ static Magspoof* magspoof_alloc() {
     // furi_thread_start(app->worker_thread);
 
     app->dev = magspoof_device_alloc();
+
 
     return app;
 }

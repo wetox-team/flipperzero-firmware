@@ -26,6 +26,7 @@ typedef struct {
     Storage* storage;
     DialogsApp* dialogs;
     MagspoofDeviceData dev_data;
+    string_t data;
     char dev_name[MAGSPOOF_DEV_NAME_MAX_LEN + 1];
     char file_name[MAGSPOOF_FILE_NAME_MAX_LEN];
     bool shadow_file_exist;

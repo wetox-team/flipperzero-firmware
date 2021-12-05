@@ -1,6 +1,7 @@
 #include "../magspoof_i.h"
 
 #define MAGSPOOF_READ_CARD_CUSTOM_EVENT (10UL)
+#define MAGSPOOF_READ_CARD_DRAW_EVENT (999)
 
 #define WORKER_EVENTS_MASK (WorkerEventStop | WorkerEventRx)
 
@@ -226,7 +227,11 @@ static void magspoof_on_irq_cb(UartIrqEvent ev, uint8_t data, void* context) {
     }
 }
 
-static void magspoof_push_to_list(UartDumpModel* model, const char data) {
+static void magspoof_push_to_list(UartDumpModel* model, const char data, void* context) {
+    Magspoof* app = context;
+    
+    string_push_back(app->dev->data, data);
+
     if(model->escape) {
         // escape code end with letter
         if((data >= 'a' && data <= 'z') || (data >= 'A' && data <= 'Z')) {
@@ -287,16 +292,21 @@ static int32_t magspoof_worker(void* context) {
                     with_view_model(
                         app->view, (UartDumpModel * model) {
                             for(size_t i = 0; i < length; i++) {
-                                magspoof_push_to_list(model, data[i]);
+                                magspoof_push_to_list(model, data[i], app);
                             }
                             return false;
                         });
+                    
                 }
             } while(length > 0);
 
             notification_message(app->notification, &magspoof_sequence_notification);
             with_view_model(
                 app->view, (UartDumpModel * model) { return true; });
+            
+            
+            // XXX make event
+            view_dispatcher_send_custom_event(app->view_dispatcher, MAGSPOOF_READ_CARD_DRAW_EVENT);
         }
     }
 
@@ -361,7 +371,10 @@ bool magspoof_scene_read_card_on_event(void* context, SceneManagerEvent event) {
     Magspoof* app = (Magspoof*)context;
 
     if(event.type == SceneManagerEventTypeCustom) {
-        if(event.event == MAGSPOOF_READ_CARD_CUSTOM_EVENT) {
+        if(event.event == MAGSPOOF_READ_CARD_DRAW_EVENT) {
+            dialog_ex_set_text(app->dialog_ex, string_get_cstr(app->dev->data), 0, 0, AlignLeft, AlignTop);
+            return true;
+        }else if(event.event == MAGSPOOF_READ_CARD_CUSTOM_EVENT) {
             // scene_manager_next_scene(app->scene_manager, NfcSceneReadCardSuccess);
             string_t v;
             string_init(v);
