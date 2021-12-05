@@ -259,6 +259,14 @@ unsigned char* tanks_game_serialize(const TanksState* const tanks_state) {
     return result;
 }
 
+void tanks_game_deserialize_and_write_to_state(unsigned char* data, TanksState* const tanks_state) {
+    for(uint8_t i = 0; i < 11 * 16; i++) {
+        uint8_t x = i % 16;
+        uint8_t y = i / 16;
+        tanks_state->map[x][y] = data[i];
+    }
+}
+
 static void
     tanks_game_render_cell(GameCellState cell, uint8_t x, uint8_t y, Canvas* const canvas) {
     const Icon* icon;
@@ -1072,8 +1080,8 @@ int32_t tanks_game_app(void* p) {
 
     // Initialize network thing.
     uint32_t frequency = 433920000;
-    size_t message_max_len = 64;
-    uint8_t incomingMessage[64] = {0};
+    size_t message_max_len = 180;
+    uint8_t incomingMessage[180] = {0};
     SubGhzTxRxWorker* subghz_txrx = subghz_tx_rx_worker_alloc();
     subghz_tx_rx_worker_start(subghz_txrx, frequency);
     furi_hal_power_suppress_charge_enter();
@@ -1171,7 +1179,15 @@ int32_t tanks_game_app(void* p) {
                     }
                 }
             } else if(event.type == EventTypeTick) {
-                tanks_game_process_game_step(tanks_state);
+                if(tanks_state->state == GameStateCooperativeServer) {
+                    tanks_game_process_game_step(tanks_state);
+                } else if(tanks_state->state == GameStateCooperativeClient) {
+                    if(subghz_tx_rx_worker_available(subghz_txrx)) {
+                        memset(incomingMessage, 0x00, message_max_len);
+                        subghz_tx_rx_worker_read(subghz_txrx, incomingMessage, message_max_len);
+                        tanks_game_deserialize_and_write_to_state((char*)incomingMessage, tanks_state);
+                    }
+                }
             }
         } else {
             // event timeout
