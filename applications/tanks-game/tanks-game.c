@@ -380,7 +380,7 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
         canvas_draw_str_aligned(canvas, 124, 10, AlignRight, AlignBottom, "Single");
         canvas_draw_str_aligned(canvas, 124, 25, AlignRight, AlignBottom, "Co-op S");
         canvas_draw_str_aligned(canvas, 124, 40, AlignRight, AlignBottom, "Co-op C");
-
+        
         switch(tanks_state->menu_state) {
         case MenuStateSingleMode:
             canvas_draw_icon(canvas, 74, 3, &I_tank_right);
@@ -561,20 +561,16 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
 
     // Game Over banner
     if(tanks_state->state == GameStateGameOver) {
-        // Screen is 128x64 px
         canvas_set_color(canvas, ColorWhite);
         canvas_draw_box(canvas, 34, 20, 62, 24);
 
         canvas_set_color(canvas, ColorBlack);
-
+        canvas_draw_frame(canvas, 34, 20, 62, 24);
         canvas_set_font(canvas, FontPrimary);
 
         if(tanks_state->enemies_left == 0 && tanks_state->enemies_live == 0) {
-            canvas_draw_frame(canvas, 0, 0, 128, 64);
-            canvas_draw_icon(canvas, 0, 0, &I_TanksSplashScreen_128x51);
-            canvas_draw_str_aligned(canvas, 124, 10, AlignRight, AlignBottom, "You win!"));
+            canvas_draw_str(canvas, 37, 31, "You win!");
         } else {
-            canvas_draw_frame(canvas, 34, 20, 62, 24);
             canvas_draw_str(canvas, 37, 31, "Game Over");
         }
 
@@ -781,8 +777,8 @@ static void tanks_game_init_game(TanksState* const tanks_state, GameState type) 
         tanks_state->p2 = p2_state;
     }
 
-    tanks_state->enemies_left = 5;
-    tanks_state->enemies_live = 0;
+    tanks_state->enemies_left = 0;
+    tanks_state->enemies_live = 5;
     tanks_state->enemies_respawn_cooldown = RESPAWN_COOLDOWN;
 
     if (type == GameStateCooperativeClient) {
