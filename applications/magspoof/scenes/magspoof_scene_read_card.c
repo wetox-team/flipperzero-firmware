@@ -173,14 +173,15 @@ static void magspoof_spoof(string_t track_str, uint8_t track) {
 
 static void magspoof_clear_list(void* context) {
     Magspoof* app = context;
-    with_view_model(app->view, (UartDumpModel * model) {
-                for(size_t i = 0; i < LINES_ON_SCREEN; i++) {
-                    string_reset(model->list[i]->text);
-                }
-                model->line = 0;
-                model->escape = false;
-                return true;
-            });
+    string_reset(app->dev->data);
+    // with_view_model(app->view, (UartDumpModel * model) {
+    //             for(size_t i = 0; i < LINES_ON_SCREEN; i++) {
+    //                 string_reset(model->list[i]->text);
+    //             }
+    //             model->line = 0;
+    //             model->escape = false;
+    //             return true;
+    //         });
 }
 
 // static bool magspoof_view_input_callback(InputEvent* event, void* context) {
@@ -353,6 +354,8 @@ void magspoof_scene_read_card_on_enter(void* context) {
 
     view_dispatcher_switch_to_view(app->view_dispatcher, MagspoofViewDialogEx);
 
+    view_dispatcher_send_custom_event(app->view_dispatcher, MAGSPOOF_READ_CARD_DRAW_EVENT);
+
     // Worker
     app->worker_thread = furi_thread_alloc();
     furi_thread_set_name(app->worker_thread, "MagspoofWorker");
@@ -372,20 +375,66 @@ bool magspoof_scene_read_card_on_event(void* context, SceneManagerEvent event) {
 
     if(event.type == SceneManagerEventTypeCustom) {
         if(event.event == MAGSPOOF_READ_CARD_DRAW_EVENT) {
-            dialog_ex_set_text(app->dialog_ex, string_get_cstr(app->dev->data), 0, 0, AlignLeft, AlignTop);
-            return true;
-        }else if(event.event == MAGSPOOF_READ_CARD_CUSTOM_EVENT) {
-            // scene_manager_next_scene(app->scene_manager, NfcSceneReadCardSuccess);
-            string_t v;
-            string_init(v);
-            string_set_str(v,";123456781234567=YYMMSSSDDDDDDDDDDDDDD?");
-            magspoof_spoof(v,1);
-
-
-            magspoof_clear_list(app);
+            int8_t COUNT = 4;
+            string_t res;
+            string_init(res);
+            for (int8_t i = 0; i < string_size(app->dev->data); i+=1) {
+                // string_t tmp;
+                // string_init_set(tmp, app->dev->data);
+                // string_mid(tmp, i, COUNT);
+                // // dialog_ex_set_text(app->dialog_ex, string_get_cstr( tmp ), 0, 0, AlignLeft, AlignTop);
+                // string_sets()
+                string_push_back(res, string_get_char(app->dev->data, i));
+                if (i % COUNT == 0) {
+                    string_push_back(res, ' ');
+                }
+            }
+            dialog_ex_set_text(app->dialog_ex, string_get_cstr( res ), 0, 0, AlignLeft, AlignTop);
             return true;
         }
-    } 
+        // else if(event.event == MAGSPOOF_READ_CARD_CUSTOM_EVENT) {
+        //     // scene_manager_next_scene(app->scene_manager, NfcSceneReadCardSuccess);
+        //     string_t v;
+        //     string_init(v);
+        //     string_set_str(v,";123456781234567=YYMMSSSDDDDDDDDDDDDDD?");
+        //     magspoof_spoof(v,1);
+
+
+        //     magspoof_clear_list(app);
+        //     return true;
+        // }
+    }
+    if(event.type == SceneManagerEventTypeCustom) {
+        if(event.event == DialogExResultLeft) {
+            // string_t v;
+            // string_init(v);
+            // string_set_str(v,";123456781234567=YYMMSSSDDDDDDDDDDDDDD?");
+            magspoof_spoof(app->dev->data,0);
+            delay(500);
+            magspoof_spoof(app->dev->data,1);
+            return true;
+        } else if(event.event == DialogExResultCenter) {
+            magspoof_clear_list(app);
+            view_dispatcher_send_custom_event(app->view_dispatcher, MAGSPOOF_READ_CARD_DRAW_EVENT);
+            return true;
+        } else if(event.event == DialogExResultRight) {
+            // Clear device name
+            // nfc_device_set_name(nfc->dev, "");
+            // scene_manager_next_scene(nfc->scene_manager, NfcSceneCardMenu);
+            // magspoof_device_save(app->dev, "Test");
+            char * d = furi_alloc(1);
+            d[0] = string_get_char(app->dev->data, 2);
+            magspoof_device_save(app->dev, d);
+            return true;
+        } 
+        // else if(event.event == DialogExResultUp) {
+        //     // Clear device name
+        //     // nfc_device_set_name(nfc->dev, "");
+        //     // scene_manager_next_scene(nfc->scene_manager, NfcSceneCardMenu);
+        //     magspoof_device_delete(app->dev, "Test");
+        //     return true;
+        // }
+    }
     // else if(event.type == SceneManagerEventTypeTick) {
     //     notification_message(app->notification, &sequence_blink_blue_10);
     //     return true;

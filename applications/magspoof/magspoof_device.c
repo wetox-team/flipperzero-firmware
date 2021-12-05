@@ -26,11 +26,11 @@ void magspoof_device_free(MagspoofDevice* magspoof_dev) {
 
 static bool magspoof_device_save_data(FlipperFile* file, MagspoofDevice* dev) {
     bool saved = false;
-    string_t* data = &(dev->data);
+    // string_t* data = &(dev->data);
     // uint32_t data_temp = 0;
 
     do {
-        if(!flipper_file_write_string(file, "Data", data->data)) break;
+        if(!flipper_file_write_string(file, "Data", dev->data)) break;
         saved = true;
     } while(false);
 
@@ -39,13 +39,13 @@ static bool magspoof_device_save_data(FlipperFile* file, MagspoofDevice* dev) {
 
 bool magspoof_device_load_common_data(FlipperFile* file, MagspoofDevice* dev) {
     bool parsed = false;
-    string_t* data = &(dev->data);
+    // string_t* data = &(dev->data);
     // memset(data, 0, sizeof(MagspoofDeviceCommonData));
     // uint32_t data_cnt = 0;
-    string_init(data);
+    // string_init(data);
 
     do {
-        if(!flipper_file_read_string(file, "Data", data)) break;
+        if(!flipper_file_read_string(file, "Data", dev->data)) break;
         // strlcpy(data->data, temp_str, sizeof(data->data));
     } while(false);
 
