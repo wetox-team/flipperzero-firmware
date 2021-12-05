@@ -10,6 +10,7 @@ struct Submenu {
 
 typedef struct {
     const char* label;
+    const Icon* icon;
     uint32_t index;
     SubmenuItemCallback callback;
     void* callback_context;
@@ -55,11 +56,7 @@ static void submenu_view_draw_callback(Canvas* canvas, void* _model) {
             if(position == model->position) {
                 canvas_set_color(canvas, ColorBlack);
                 elements_slightly_rounded_box(
-                    canvas,
-                    0,
-                    y_offset + (item_position * item_height) + 1,
-                    item_width,
-                    item_height - 2);
+                    canvas, 0, y_offset + (item_position * item_height), item_width, item_height);
                 canvas_set_color(canvas, ColorWhite);
             } else {
                 canvas_set_color(canvas, ColorBlack);
@@ -67,11 +64,24 @@ static void submenu_view_draw_callback(Canvas* canvas, void* _model) {
 
             string_t disp_str;
             string_init_set_str(disp_str, SubmenuItemArray_cref(it)->label);
-            elements_string_fit_width(canvas, disp_str, item_width - 20);
+
+            int icon_offset = 0;
+
+            if(SubmenuItemArray_cref(it)->icon) {
+                canvas_draw_icon(
+                    canvas,
+                    3,
+                    y_offset + (item_position * item_height) + 1,
+                    SubmenuItemArray_cref(it)->icon);
+
+                icon_offset = 16;
+            }
+
+            elements_string_fit_width(canvas, disp_str, item_width - 20 - icon_offset);
 
             canvas_draw_str(
                 canvas,
-                6,
+                6 + icon_offset,
                 y_offset + (item_position * item_height) + item_height - 4,
                 string_get_cstr(disp_str));
 
@@ -162,6 +172,29 @@ void submenu_add_item(
         submenu->view, (SubmenuModel * model) {
             item = SubmenuItemArray_push_new(model->items);
             item->label = label;
+            item->index = index;
+            item->callback = callback;
+            item->callback_context = callback_context;
+            return true;
+        });
+}
+
+void submenu_add_item_with_icon(
+    Submenu* submenu,
+    const char* label,
+    const Icon* icon,
+    uint32_t index,
+    SubmenuItemCallback callback,
+    void* callback_context) {
+    SubmenuItem* item = NULL;
+    furi_assert(label);
+    furi_assert(submenu);
+
+    with_view_model(
+        submenu->view, (SubmenuModel * model) {
+            item = SubmenuItemArray_push_new(model->items);
+            item->label = label;
+            item->icon = icon;
             item->index = index;
             item->callback = callback;
             item->callback_context = callback_context;
