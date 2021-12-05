@@ -16,4 +16,4 @@ const uint8_t PLAYER_RESPAWN_COOLDOWN = 1;
 
 const uint8_t CELL_LENGTH_PIXELS = 6;
 
-#endif FLIPPERZERO_FIRMWARE_CONSTANTS_H
+#endif

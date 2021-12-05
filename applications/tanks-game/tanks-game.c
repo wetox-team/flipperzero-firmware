@@ -3,7 +3,7 @@
 #include <input/input.h>
 #include <stdlib.h>
 
-#include "contants.h"
+#include "constants.h"
 
 typedef struct {
     //    +-----x
@@ -38,6 +38,11 @@ typedef enum {
     MenuStateCooperativeClientMode,
     MenuStateLobbyMode
 } MenuState;
+
+typedef enum {
+    CoopStateClientJoins,
+    CoopStateClientStateUpdated
+} CoopState;
 
 typedef enum {
     GameStateMenu,
@@ -355,15 +360,39 @@ void tanks_game_deserialize_and_render(unsigned char* data, Canvas* const canvas
         uint8_t x = i % 16; // One line (16 cells) = 8 bytes
         uint8_t y = i / 16;
 
-//        GameCellState first = cell >> 4;
-//        GameCellState second = cell & 0b00001111;
+        // GameCellState first = cell >> 4;
+        // GameCellState second = cell & 0b00001111;
 
         tanks_game_render_cell(cell, x, y, canvas);
-//        tanks_game_render_cell(second, x + 1, y, canvas);
+        // tanks_game_render_cell(second, x + 1, y, canvas);
     }
 
     tanks_game_render_constant_cells(canvas);
 }
+
+
+// сервер получил запрос, шлет данные клиенту
+// static void sendDataFromServer (TanksState* const tanks_state) {
+//     // unsigned char *data = tanks_game_serialize(tanks_state);
+//     return;
+// }
+
+// TODO клиент запрашивает данные у сервера или посылает обновление
+static void sendDataToServer (CoopState coop_state, TanksState const * tanks_state) {
+    if (coop_state == CoopStateClientJoins) {
+        // запрашиваем данные у сервера
+    }
+    if (coop_state == CoopStateClientStateUpdated) {
+        // обновление со стороны клиента движения и выстрелов
+    }
+    return;
+}
+
+// TODO отрисовываем на клиенте состояние от сервера
+// static void receivedDataFromServer (unsigned char *data, Canvas* const canvas) {
+//     tanks_game_deserialize_and_render(data, canvas);
+//     return;
+// }
 
 static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
     const TanksState* tanks_state = acquire_mutex((ValueMutex*)ctx, 25);
@@ -373,10 +402,13 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
 
     // Before the function is called, the state is set with the canvas_reset(canvas)
     if (tanks_state->state == GameStateMenu) {
-        if (tanks_state->menu_state == MenuStateLobbyMode) {
+        if (tanks_state->menu_state == MenuStateLobbyMode && tanks_state->state == GameStateCooperativeClient) {
             canvas_draw_frame(canvas, 0, 0, 128, 64);
 
-            canvas_draw_str_aligned(canvas, 0, 32, AlignCenter, AlignCenter, "Waiting for the other player...");
+            canvas_draw_str_aligned(canvas, 0, 32, AlignCenter, AlignCenter, "Retrieving info...");
+
+            CoopState coop_state = CoopStateClientJoins;
+            sendDataToServer(coop_state, tanks_state);
 
             release_mutex((ValueMutex*)ctx, tanks_state);
             return;
@@ -575,8 +607,11 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
     }
 
     // TEST start
-     unsigned char *data = tanks_game_serialize(tanks_state);
-     tanks_game_deserialize_and_render(data, canvas);
+    // if (tanks_state->state == GameStateCooperativeClient) {
+        // unsigned char *data = tanks_game_serialize(tanks_state);
+        // передаем data на клиент
+        // tanks_game_deserialize_and_render(data, canvas);
+    // }
     // TEST enf
 
     release_mutex((ValueMutex*)ctx, tanks_state);
@@ -1139,6 +1174,10 @@ int32_t tanks_game_app(void* p) {
                             } else {
                                 tanks_state->p1->moving = true;
                                 tanks_state->p1->direction = DirectionUp;
+                                if (tanks_state->state == GameStateCooperativeClient) {
+                                    CoopState coop_state = CoopStateClientStateUpdated;
+                                    sendDataToServer(coop_state, tanks_state);
+                                }
                             }
                             break;
                         case InputKeyDown:
@@ -1151,15 +1190,33 @@ int32_t tanks_game_app(void* p) {
                             } else {
                                 tanks_state->p1->moving = true;
                                 tanks_state->p1->direction = DirectionDown;
+                                if (tanks_state->state == GameStateCooperativeClient) {
+                                    CoopState coop_state = CoopStateClientStateUpdated;
+                                    sendDataToServer(coop_state, tanks_state);
+                                }
                             }
                             break;
                         case InputKeyRight:
+                            if (tanks_state->state == GameStateMenu) {
+                                break;
+                            }
                             tanks_state->p1->moving = true;
                             tanks_state->p1->direction = DirectionRight;
+                            if (tanks_state->state == GameStateCooperativeClient) {
+                                CoopState coop_state = CoopStateClientStateUpdated;
+                                sendDataToServer(coop_state, tanks_state);
+                            }
                             break;
                         case InputKeyLeft:
+                            if (tanks_state->state == GameStateMenu) {
+                                break;
+                            }
                             tanks_state->p1->moving = true;
                             tanks_state->p1->direction = DirectionLeft;
+                            if (tanks_state->state == GameStateCooperativeClient) {
+                                CoopState coop_state = CoopStateClientStateUpdated;
+                                sendDataToServer(coop_state, tanks_state);
+                            }
                             break;
                         case InputKeyOk:
                             if (tanks_state->state == GameStateMenu) {
@@ -1172,12 +1229,16 @@ int32_t tanks_game_app(void* p) {
 
                                 if (tanks_state->menu_state == MenuStateCooperativeServerMode) {
                                     tanks_state->server = true;
-                                    tanks_state->menu_state = MenuStateLobbyMode;
+                                    tanks_state->state = GameStateCooperativeServer;
+                                    // tanks_state->menu_state = MenuStateLobbyMode;
+                                    // Инициируем игру, не дожидаясь клиента
+                                    tanks_game_init_game(tanks_state);
                                     break;
                                 }
 
                                 if (tanks_state->menu_state == MenuStateCooperativeClientMode) {
                                     tanks_state->server = false;
+                                    tanks_state->state = GameStateCooperativeClient;
                                     tanks_state->menu_state = MenuStateLobbyMode;
                                     break;
                                 }
@@ -1187,9 +1248,14 @@ int32_t tanks_game_app(void* p) {
                                 tanks_game_init_game(tanks_state);
                             } else {
                                 tanks_state->p1->shooting = true;
+                                if (tanks_state->state == GameStateCooperativeClient) {
+                                    CoopState coop_state = CoopStateClientStateUpdated;
+                                    sendDataToServer(coop_state, tanks_state);
+                                }
                             }
                             break;
                         case InputKeyBack:
+                            // TODO обрабатывать кейс если вышел сервер или клиент
                             processing = false;
                             break;
                     }
