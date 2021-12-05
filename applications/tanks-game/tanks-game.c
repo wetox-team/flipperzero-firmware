@@ -204,6 +204,22 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
         }
     }
 
+    // Info
+    canvas_set_color(canvas, ColorBlack);
+    canvas_set_font(canvas, FontSecondary);
+    char buffer1[13];
+    snprintf(buffer1, sizeof(buffer1), "live: %u", tanks_state->enemies_live);
+    canvas_draw_str_aligned(canvas, 127, 13, AlignRight, AlignBottom, buffer1);
+
+    snprintf(buffer1, sizeof(buffer1), "left: %u", tanks_state->enemies_left);
+    canvas_draw_str_aligned(canvas, 127, 25, AlignRight, AlignBottom, buffer1);
+
+    snprintf(buffer1, sizeof(buffer1), "p1 l: %u", tanks_state->p1->lives);
+    canvas_draw_str_aligned(canvas, 127, 37, AlignRight, AlignBottom, buffer1);
+
+    snprintf(buffer1, sizeof(buffer1), "p1 s: %u", tanks_state->p1->score);
+    canvas_draw_str_aligned(canvas, 127, 49, AlignRight, AlignBottom, buffer1);
+
     // Game Over banner
     if(tanks_state->state == GameStateGameOver) {
         // Screen is 128x64 px
@@ -575,16 +591,19 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
                             tanks_state->bots[i]->coordinates.x == c.x &&
                             tanks_state->bots[i]->coordinates.y == c.y
                             ) {
-                            tanks_state->enemies_live--;
-                            free(tanks_state->bots[i]);
-                            tanks_state->bots[i] = NULL;
-
                             if (projectile->is_p1) {
                                 tanks_state->p1->score++;
                             }
 
                             if (projectile->is_p2) {
                                 tanks_state->p2->score++;
+                            }
+
+                            // No friendly fire
+                            if (projectile->is_p1 || projectile->is_p2) {
+                                tanks_state->enemies_live--;
+                                free(tanks_state->bots[i]);
+                                tanks_state->bots[i] = NULL;
                             }
                         }
                     }
