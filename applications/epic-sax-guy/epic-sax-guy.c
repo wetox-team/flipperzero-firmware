@@ -7,32 +7,32 @@
 #include <input/input.h>
 #include "assets_icons.h"
 
-    // TODO float note freq
-    typedef enum {
-        // Delay
-        N = 0,
-        // Octave 4
-        A4 = 440,
-        B4 = 494,
-        C4 = 262,
-        D4 = 294,
-        E4 = 330,
-        G4 = 392,
-        F4 = 349,
-        // Octave 5
-        C5 = 523,
-        D5 = 587,
-        E5 = 659,
-        F5 = 740,
-        F_5 = 740,
-        G5 = 784,
-        A5 = 880,
-        B5 = 988,
-        // Octave 6
-        C6 = 1046,
-        D6 = 1175,
-        E6 = 1319,
-    } MelodyEventNote;
+// TODO float note freq
+typedef enum {
+    // Delay
+    N = 0,
+    // Octave 4
+    A4 = 440,
+    B4 = 494,
+    C4 = 262,
+    D4 = 294,
+    E4 = 330,
+    G4 = 392,
+    F4 = 349,
+    // Octave 5
+    C5 = 523,
+    D5 = 587,
+    E5 = 659,
+    F5 = 740,
+    F_5 = 740,
+    G5 = 784,
+    A5 = 880,
+    B5 = 988,
+    // Octave 6
+    C6 = 1046,
+    D6 = 1175,
+    E6 = 1319,
+} MelodyEventNote;
 
 typedef enum {
     L1 = 1,
@@ -56,12 +56,38 @@ typedef struct {
 } SongPattern;
 
 const MelodyEventRecord esx_start[] = {
-    {A4,17},{N,17},{N,17},{N,17},{N,17},{N,17},{N,17},{N,17},{A4,17},{N,17},{A4,17},{A4,17},{G4,17},{A4,17},{N,17},{N,17},{A4,17},{N,17},{N,17},{N,17},{N,17},{N,17},{N,17},{N,17},{A4,17},{N,17},{A4,17},{A4,17},{G4,17},{A4,17},{N,17},{N,17},{A4,17},{N,17},{N,17},{N,17},{N,17},{N,17},{C5,17},{N,17},{N,17},{N,17},{A4,17},{N,17},{N,17},{N,17},{G4,17},{N,17},{G4,17},{N,17},{F4,17},{N,17},{N,17},{N,17},{D4,17},{N,17},{D4,17},{N,17},{E4,17},{N,17},{F4,17},{N,17},{D4,17},{N,17},{A4,17},{N,17},{N,17},{N,17},{N,17},{N,17},{N,17},{N,17},{A4,17},{N,17},{A4,17},{A4,17},{G4,17},{A4,17},{N,17},{N,17},{A4,17},{N,17},{N,17},{N,17},{N,17},{N,17},{N,17},{N,17},{A4,17},{N,17},{A4,17},{A4,17},{G4,17},{A4,17},{N,17},{N,17},{A4,17},{N,17},{N,17},{N,17},{N,17},{N,17},{C5,17},{N,17},{N,17},{N,17},{A4,17},{N,17},{N,17},{N,17},{G4,17},{N,17},{G4,17},{N,17},{F4,17},{N,17},{N,17},{N,17},{D4,17},{N,17},{D4,17},{N,17},{E4,17},{N,17},{F4,17},{N,17},{D4,17},{N,17}
-};
+    {A4, 17}, {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {A4, 17},
+    {N, 17},  {A4, 17}, {A4, 17}, {G4, 17}, {A4, 17}, {N, 17},  {N, 17},  {A4, 17}, {N, 17},
+    {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {A4, 17}, {N, 17},  {A4, 17},
+    {A4, 17}, {G4, 17}, {A4, 17}, {N, 17},  {N, 17},  {A4, 17}, {N, 17},  {N, 17},  {N, 17},
+    {N, 17},  {N, 17},  {C5, 17}, {N, 17},  {N, 17},  {N, 17},  {A4, 17}, {N, 17},  {N, 17},
+    {N, 17},  {G4, 17}, {N, 17},  {G4, 17}, {N, 17},  {F4, 17}, {N, 17},  {N, 17},  {N, 17},
+    {D4, 17}, {N, 17},  {D4, 17}, {N, 17},  {E4, 17}, {N, 17},  {F4, 17}, {N, 17},  {D4, 17},
+    {N, 17},  {A4, 17}, {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},
+    {A4, 17}, {N, 17},  {A4, 17}, {A4, 17}, {G4, 17}, {A4, 17}, {N, 17},  {N, 17},  {A4, 17},
+    {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {A4, 17}, {N, 17},
+    {A4, 17}, {A4, 17}, {G4, 17}, {A4, 17}, {N, 17},  {N, 17},  {A4, 17}, {N, 17},  {N, 17},
+    {N, 17},  {N, 17},  {N, 17},  {C5, 17}, {N, 17},  {N, 17},  {N, 17},  {A4, 17}, {N, 17},
+    {N, 17},  {N, 17},  {G4, 17}, {N, 17},  {G4, 17}, {N, 17},  {F4, 17}, {N, 17},  {N, 17},
+    {N, 17},  {D4, 17}, {N, 17},  {D4, 17}, {N, 17},  {E4, 17}, {N, 17},  {F4, 17}, {N, 17},
+    {D4, 17}, {N, 17}};
 
 const MelodyEventRecord esx_loop[] = {
-    {A4,17},{N,17},{N,17},{N,17},{N,17},{N,17},{N,17},{N,17},{A4,17},{N,17},{A4,17},{A4,17},{G4,17},{A4,17},{N,17},{N,17},{A4,17},{N,17},{N,17},{N,17},{N,17},{N,17},{N,17},{N,17},{A4,17},{N,17},{A4,17},{A4,17},{G4,17},{A4,17},{N,17},{N,17},{A4,17},{N,17},{N,17},{N,17},{N,17},{N,17},{C5,17},{N,17},{N,17},{N,17},{A4,17},{N,17},{N,17},{N,17},{G4,17},{N,17},{G4,17},{N,17},{F4,17},{N,17},{N,17},{N,17},{D4,17},{N,17},{D4,17},{N,17},{E4,17},{N,17},{F4,17},{N,17},{D4,17},{N,17},{A4,17},{N,17},{N,17},{N,17},{N,17},{N,17},{N,17},{N,17},{A4,17},{N,17},{A4,17},{A4,17},{G4,17},{A4,17},{N,17},{N,17},{A4,17},{N,17},{N,17},{N,17},{N,17},{N,17},{N,17},{N,17},{A4,17},{N,17},{A4,17},{A4,17},{G4,17},{A4,17},{N,17},{N,17},{A4,17},{N,17},{N,17},{N,17},{N,17},{N,17},{C5,17},{N,17},{N,17},{N,17},{A4,17},{N,17},{N,17},{N,17},{G4,17},{N,17},{G4,17},{N,17},{F4,17},{N,17},{N,17},{N,17},{D4,17},{N,17},{D4,17},{N,17},{E4,17},{N,17},{F4,17},{N,17},{D4,17},{N,17}
-};
+    {A4, 17}, {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {A4, 17},
+    {N, 17},  {A4, 17}, {A4, 17}, {G4, 17}, {A4, 17}, {N, 17},  {N, 17},  {A4, 17}, {N, 17},
+    {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {A4, 17}, {N, 17},  {A4, 17},
+    {A4, 17}, {G4, 17}, {A4, 17}, {N, 17},  {N, 17},  {A4, 17}, {N, 17},  {N, 17},  {N, 17},
+    {N, 17},  {N, 17},  {C5, 17}, {N, 17},  {N, 17},  {N, 17},  {A4, 17}, {N, 17},  {N, 17},
+    {N, 17},  {G4, 17}, {N, 17},  {G4, 17}, {N, 17},  {F4, 17}, {N, 17},  {N, 17},  {N, 17},
+    {D4, 17}, {N, 17},  {D4, 17}, {N, 17},  {E4, 17}, {N, 17},  {F4, 17}, {N, 17},  {D4, 17},
+    {N, 17},  {A4, 17}, {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},
+    {A4, 17}, {N, 17},  {A4, 17}, {A4, 17}, {G4, 17}, {A4, 17}, {N, 17},  {N, 17},  {A4, 17},
+    {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {N, 17},  {A4, 17}, {N, 17},
+    {A4, 17}, {A4, 17}, {G4, 17}, {A4, 17}, {N, 17},  {N, 17},  {A4, 17}, {N, 17},  {N, 17},
+    {N, 17},  {N, 17},  {N, 17},  {C5, 17}, {N, 17},  {N, 17},  {N, 17},  {A4, 17}, {N, 17},
+    {N, 17},  {N, 17},  {G4, 17}, {N, 17},  {G4, 17}, {N, 17},  {F4, 17}, {N, 17},  {N, 17},
+    {N, 17},  {D4, 17}, {N, 17},  {D4, 17}, {N, 17},  {E4, 17}, {N, 17},  {F4, 17}, {N, 17},
+    {D4, 17}, {N, 17}};
 
 typedef enum {
     EventTypeTick,
@@ -95,62 +121,20 @@ typedef struct {
 
 float esx_volumes[] = {0, 0.02, 0.05, 0.1, 0.5};
 
+IconAnimation* ia;
 
 static void esx_render_callback(Canvas* canvas, void* ctx) {
     //    State* state = (State*)acquire_mutex((ValueMutex*)ctx, 25);
-    static int cntr = 0;
-    //    static IconAnimation * ia ;
+    // static int cntr = 0;
+    //    static
 
     canvas_set_color(canvas, ColorBlack);
     canvas_set_font(canvas, FontPrimary);
     //    canvas_draw_str(canvas, 0, 12, "MusicPlayer");
 
-    //    ia = icon_animation_alloc(&A_SaxGuy);
-    //    canvas_draw_icon_animation(canvas, 0,0, ia);
+    canvas_draw_icon_animation(canvas, 0, 0, ia);
 
-    switch(cntr) {
-    case 0:
-        canvas_draw_icon(canvas, 0, 0, &I_frame00);
-        break;
-    case 1:
-        canvas_draw_icon(canvas, 0, 0, &I_frame01);
-        break;
-    case 2:
-        canvas_draw_icon(canvas, 0, 0, &I_frame02);
-        break;
-    case 3:
-        canvas_draw_icon(canvas, 0, 0, &I_frame03);
-        break;
-    case 4:
-        canvas_draw_icon(canvas, 0, 0, &I_frame04);
-        break;
-    case 5:
-        canvas_draw_icon(canvas, 0, 0, &I_frame05);
-        break;
-    case 6:
-        canvas_draw_icon(canvas, 0, 0, &I_frame06);
-        break;
-    case 7:
-        canvas_draw_icon(canvas, 0, 0, &I_frame07);
-        break;
-    case 8:
-        canvas_draw_icon(canvas, 0, 0, &I_frame08);
-        break;
-    case 9:
-        canvas_draw_icon(canvas, 0, 0, &I_frame09);
-        break;
-    case 10:
-        canvas_draw_icon(canvas, 0, 0, &I_frame10);
-        break;
-    case 11:
-        canvas_draw_icon(canvas, 0, 0, &I_frame11);
-        break;
-    }
-    cntr++;
-    if (cntr == 12)
-        cntr = 0;
-
-    //    release_mutex((ValueMutex*)ctx, state);
+    // release_mutex((ValueMutex*)ctx, state);
 }
 
 static void esx_input_callback(InputEvent* input_event, void* ctx) {
@@ -223,6 +207,9 @@ int32_t epic_sax_guy_app(void* p) {
         return 255;
     }
 
+    ia = icon_animation_alloc(&A_SaxGuy);
+    icon_animation_start(ia);
+
     ViewPort* view_port = view_port_alloc();
     view_port_draw_callback_set(view_port, esx_render_callback, &state_mutex);
     view_port_input_callback_set(view_port, esx_input_callback, event_queue);
@@ -294,6 +281,8 @@ int32_t epic_sax_guy_app(void* p) {
         release_mutex(&state_mutex, state);
     }
 
+    icon_animation_stop(ia);
+    icon_animation_free(ia);
     osThreadTerminate(player);
     hal_pwm_stop(&SPEAKER_TIM, SPEAKER_CH);
     view_port_enabled_set(view_port, false);
