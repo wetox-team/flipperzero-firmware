@@ -56,24 +56,15 @@ void telegram_init_chats_callback(const PB_Telegram_TelegramStateResponse* respo
             NULL,
             tg_instance);
     } else {
-        submenu_add_item(
-            tg_instance->submenu,
-            response->dialogs[0].name,
-            TelegramViewDialogue,
-            telegram_submenu_callback,
-            tg_instance);
-        submenu_add_item(
-            tg_instance->submenu,
-            response->dialogs[1].name,
-            TelegramViewDialogue,
-            telegram_submenu_callback,
-            tg_instance);
-        submenu_add_item(
-            tg_instance->submenu,
-            response->dialogs[2].name,
-            TelegramViewDialogue,
-            telegram_submenu_callback,
-            tg_instance);
+        for (size_t i = 0; i < response->dialogs_count; i++)
+        {
+            submenu_add_item(
+                tg_instance->submenu,
+                response->dialogs[i].name,
+                TelegramViewDialogue,
+                telegram_submenu_callback,
+                tg_instance);
+        }
     }
     
 }

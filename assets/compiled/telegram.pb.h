@@ -16,7 +16,7 @@ typedef struct _PB_Telegram_TelegramMessage {
 } PB_Telegram_TelegramMessage;
 
 typedef struct _PB_Telegram_TelegramSendMessageRequest { 
-    int64_t id; 
+    int32_t id; 
     char *msg; 
 } PB_Telegram_TelegramSendMessageRequest;
 
@@ -25,7 +25,7 @@ typedef struct _PB_Telegram_TelegramStateRequest {
 } PB_Telegram_TelegramStateRequest;
 
 typedef struct _PB_Telegram_TelegramDialog { 
-    int64_t id; 
+    int32_t id; 
     char *name; 
     pb_size_t messages_count;
     PB_Telegram_TelegramMessage messages[3]; 
@@ -77,7 +77,7 @@ X(a, STATIC,   SINGULAR, BOOL,     is_our,            2)
 #define PB_Telegram_TelegramMessage_DEFAULT NULL
 
 #define PB_Telegram_TelegramDialog_FIELDLIST(X, a) \
-X(a, STATIC,   SINGULAR, INT64,    id,                1) \
+X(a, STATIC,   SINGULAR, INT32,    id,                1) \
 X(a, POINTER,  SINGULAR, STRING,   name,              2) \
 X(a, STATIC,   REPEATED, MESSAGE,  messages,          3)
 #define PB_Telegram_TelegramDialog_CALLBACK NULL
@@ -91,7 +91,7 @@ X(a, STATIC,   REPEATED, MESSAGE,  dialogs,           1)
 #define PB_Telegram_TelegramStateResponse_dialogs_MSGTYPE PB_Telegram_TelegramDialog
 
 #define PB_Telegram_TelegramSendMessageRequest_FIELDLIST(X, a) \
-X(a, STATIC,   SINGULAR, INT64,    id,                1) \
+X(a, STATIC,   SINGULAR, INT32,    id,                1) \
 X(a, POINTER,  SINGULAR, STRING,   msg,               2)
 #define PB_Telegram_TelegramSendMessageRequest_CALLBACK NULL
 #define PB_Telegram_TelegramSendMessageRequest_DEFAULT NULL
