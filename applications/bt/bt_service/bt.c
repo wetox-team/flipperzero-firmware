@@ -1,6 +1,7 @@
 #include "bt_i.h"
 #include "battery_service.h"
 #include "bt_keys_storage.h"
+#include "furi-hal-ohs.h"
 
 #define TAG "BtSrv"
 
@@ -14,6 +15,8 @@ static void bt_draw_statusbar_callback(Canvas* canvas, void* context) {
     Bt* bt = context;
     if(bt->status == BtStatusAdvertising) {
         canvas_draw_icon(canvas, 0, 0, &I_Bluetooth_5x8);
+    } else if(bt->status == BtStatusOhs) {
+        canvas_draw_icon(canvas, 0, 0, &I_Openhaystack_5x8);
     } else if(bt->status == BtStatusConnected) {
         canvas_draw_icon(canvas, 0, 0, &I_BT_Pair_9x8);
     }
@@ -171,6 +174,10 @@ static void bt_on_gap_event_callback(BleEvent event, void* context) {
         bt->status = BtStatusAdvertising;
         BtMessage message = {.type = BtMessageTypeUpdateStatusbar};
         furi_check(osMessageQueuePut(bt->message_queue, &message, 0, osWaitForever) == osOK);
+    } else if(event.type == BleEventTypeStartOhs) {
+        bt->status = BtStatusOhs;
+        BtMessage message = {.type = BtMessageTypeUpdateStatusbar};
+        furi_check(osMessageQueuePut(bt->message_queue, &message, 0, osWaitForever) == osOK);
     } else if(event.type == BleEventTypeStopAdvertising) {
         bt->status = BtStatusOff;
         BtMessage message = {.type = BtMessageTypeUpdateStatusbar};
@@ -199,6 +206,9 @@ static void bt_statusbar_update(Bt* bt) {
     } else if(bt->status == BtStatusConnected) {
         view_port_set_width(bt->statusbar_view_port, icon_get_width(&I_BT_Pair_9x8));
         view_port_enabled_set(bt->statusbar_view_port, true);
+    } else if(bt->status == BtStatusOhs) {
+        view_port_set_width(bt->statusbar_view_port, icon_get_width(&I_Openhaystack_5x8));
+        view_port_enabled_set(bt->statusbar_view_port, true);
     } else {
         view_port_enabled_set(bt->statusbar_view_port, false);
     }
@@ -219,8 +229,10 @@ int32_t bt_srv() {
         view_port_enabled_set(bt->statusbar_view_port, true);
         if(furi_hal_bt_init_app(bt_on_gap_event_callback, bt)) {
             FURI_LOG_I(TAG, "BLE stack started");
-            if(bt->bt_settings.enabled) {
+            if(bt->bt_settings.mode == BT_MODE_ON) {
                 furi_hal_bt_start_advertising();
+            } else if(bt->bt_settings.mode == BT_MODE_OHS) {
+                furi_hal_ohs_start();
             }
         } else {
             FURI_LOG_E(TAG, "BT App start failed");

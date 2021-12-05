@@ -53,6 +53,14 @@ void submenu_add_item(
     SubmenuItemCallback callback,
     void* callback_context);
 
+void submenu_add_item_with_icon(
+    Submenu* submenu,
+    const char* label,
+    const Icon* icon,
+    uint32_t index,
+    SubmenuItemCallback callback,
+    void* callback_context);
+
 /** Remove all items from submenu
  *
  * @param      submenu  Submenu instance

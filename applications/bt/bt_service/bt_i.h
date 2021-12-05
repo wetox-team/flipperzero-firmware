@@ -19,6 +19,7 @@ typedef enum {
     BtStatusOff,
     BtStatusAdvertising,
     BtStatusConnected,
+    BtStatusOhs,
 } BtStatus;
 
 typedef enum {

@@ -42,6 +42,7 @@ extern int32_t vibro_test_app(void* p);
 
 // Plugins
 extern int32_t music_player_app(void* p);
+extern int32_t epic_sax_guy_app(void* p);
 extern int32_t snake_game_app(void* p);
 
 // On system start hooks declaration
@@ -55,6 +56,7 @@ extern void storage_cli_init();
 extern void subghz_cli_init();
 extern void power_cli_init();
 extern void unit_tests_cli_init();
+extern void ohs_cli_init();
 
 // Settings
 extern int32_t notification_settings_app(void* p);
@@ -184,6 +186,7 @@ const FlipperOnStartHook FLIPPER_ON_SYSTEM_START[] = {
 
 #ifdef SRV_BT
     bt_cli_init,
+    ohs_cli_init,
 #endif
 
 #ifdef SRV_POWER
@@ -207,6 +210,10 @@ const FlipperApplication FLIPPER_PLUGINS[] = {
 
 #ifdef APP_MUSIC_PLAYER
     {.app = music_player_app, .name = "Music Player", .stack_size = 1024, .icon = &A_Plugins_14},
+#endif
+
+#ifdef APP_EPIC_SAX_GUY
+    {.app = epic_sax_guy_app, .name = "Epic Sax Guy", .stack_size = 1024, .icon = &I_EpisSaxGuyIcon},
 #endif
 
 #ifdef APP_SNAKE_GAME

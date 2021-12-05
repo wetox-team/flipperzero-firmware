@@ -38,6 +38,8 @@ bool bt_settings_save(BtSettings* bt_settings) {
     furi_assert(bt_settings);
     bool result = false;
 
+    bt_settings->version = BT_SETTINGS_VERSION;
+
     FileWorker* file_worker = file_worker_alloc(true);
     if(file_worker_open(file_worker, BT_SETTINGS_PATH, FSAM_WRITE, FSOM_OPEN_ALWAYS)) {
         if(file_worker_write(file_worker, bt_settings, sizeof(BtSettings))) {

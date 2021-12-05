@@ -3,11 +3,17 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define BT_SETTINGS_VERSION (0)
+#define BT_SETTINGS_VERSION (3)
+
+typedef enum {
+    BT_MODE_OFF,
+    BT_MODE_ON,
+    BT_MODE_OHS
+} BtMode;
 
 typedef struct {
     uint8_t version;
-    bool enabled;
+    BtMode mode;
 } BtSettings;
 
 bool bt_settings_load(BtSettings* bt_settings);

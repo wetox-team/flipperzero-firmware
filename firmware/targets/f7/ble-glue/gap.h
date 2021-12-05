@@ -11,6 +11,7 @@ typedef enum {
     BleEventTypeConnected,
     BleEventTypeDisconnected,
     BleEventTypeStartAdvertising,
+    BleEventTypeStartOhs,
     BleEventTypeStopAdvertising,
     BleEventTypePinCodeShow,
     BleEventTypeUpdateMTU,
@@ -26,7 +27,7 @@ typedef struct {
     BleEventData data;
 } BleEvent;
 
-typedef void(*BleEventCallback) (BleEvent event, void* context);
+typedef void (*BleEventCallback)(BleEvent event, void* context);
 
 typedef enum {
     GapStateIdle,
@@ -38,6 +39,8 @@ typedef enum {
 bool gap_init(BleEventCallback on_event_cb, void* context);
 
 void gap_start_advertising();
+
+void gap_notify_ohs_start();
 
 void gap_stop_advertising();
 

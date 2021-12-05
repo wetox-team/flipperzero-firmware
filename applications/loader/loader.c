@@ -309,9 +309,10 @@ static void loader_build_menu() {
     FURI_LOG_I(TAG, "Building plugins menu");
     for(i = 0; i < FLIPPER_PLUGINS_COUNT; i++) {
         loader_add_cli_command((FlipperApplication*)&FLIPPER_PLUGINS[i]);
-        submenu_add_item(
+        submenu_add_item_with_icon(
             loader_instance->plugins_menu,
             FLIPPER_PLUGINS[i].name,
+            FLIPPER_PLUGINS[i].icon,
             i,
             loader_menu_callback,
             (void*)&FLIPPER_PLUGINS[i]);
