@@ -84,7 +84,7 @@ static void open_chat_callback(void* context, uint32_t index) {
 
 void telegram_init_chats_callback(const PB_Telegram_TelegramStateResponse* response, void* context) {
     Telegram* instance = (Telegram*)context;
-    submenu_clean(tg_instance->submenu);
+    submenu_clean(instance->submenu);
 
     if (response == NULL) {
         submenu_add_item(
@@ -115,7 +115,7 @@ void telegram_init_chats_callback(const PB_Telegram_TelegramStateResponse* respo
 
     }
 
-    return instance;
+    return;
 
 }
 
