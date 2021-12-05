@@ -35,6 +35,7 @@ typedef enum {
 typedef struct {
     Point coordinates;
     Direction direction;
+    bool explosion;
 } ProjectileState;
 
 typedef struct {
@@ -120,6 +121,15 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
     for(int8_t x = 0; x < 100; x++) {
         if (tanks_state->projectiles[x] != NULL) {
             ProjectileState *projectile = tanks_state->projectiles[x];
+
+            if (projectile->explosion) {
+                canvas_draw_icon(
+                    canvas,
+                    projectile->coordinates.x * CELL_LENGTH_PIXELS,
+                    projectile->coordinates.y * CELL_LENGTH_PIXELS - 1,
+                    &I_tank_explosion);
+                continue;
+            }
 
             switch(projectile->direction) {
             case DirectionUp:
@@ -314,17 +324,24 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
         if(tanks_state->projectiles[x] != NULL) {
             ProjectileState *projectile = tanks_state->projectiles[x];
 
+            if (projectile->explosion) {
+                free(tanks_state->projectiles[x]);
+                tanks_state->projectiles[x] = NULL;
+                continue;
+            }
+
             Point next_step = tanks_game_get_next_step(projectile->coordinates, projectile->direction);
             bool crush = tanks_game_collision(next_step, tanks_state);
+            projectile->coordinates = next_step;
 
-            if(!crush) {
-                projectile->coordinates = next_step;
+            if(crush) {
+                projectile->explosion = true;
             }
         }
     }
 
     if(tanks_state->p1->shooting) {
-        int freeProjectileIndex;
+        uint8_t freeProjectileIndex;
         for (
                 freeProjectileIndex = 0;
                 freeProjectileIndex < 100;
@@ -340,6 +357,7 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
 
         projectile_state->direction = tanks_state->p1->direction;
         projectile_state->coordinates = next_step;
+        projectile_state->explosion = false;
 
         tanks_state->projectiles[freeProjectileIndex] = projectile_state;
     }
