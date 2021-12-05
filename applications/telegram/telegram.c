@@ -173,6 +173,7 @@ Telegram* telegram_alloc() {
     api->instance = instance;
     instance->api = api;
     api->handler = telegram_init_chats_callback;
+    api->get_state(api->rpc);
     return instance;
 }
 

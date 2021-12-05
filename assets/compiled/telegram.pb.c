@@ -9,19 +9,16 @@
 PB_BIND(PB_Telegram_TelegramStateRequest, PB_Telegram_TelegramStateRequest, AUTO)
 
 
-PB_BIND(PB_Telegram_TelegramStateResponse, PB_Telegram_TelegramStateResponse, AUTO)
-
-
-PB_BIND(PB_Telegram_TelegramSendMessageRequest, PB_Telegram_TelegramSendMessageRequest, AUTO)
+PB_BIND(PB_Telegram_TelegramMessage, PB_Telegram_TelegramMessage, AUTO)
 
 
 PB_BIND(PB_Telegram_TelegramDialog, PB_Telegram_TelegramDialog, AUTO)
 
 
-PB_BIND(PB_Telegram_TelegramMessage, PB_Telegram_TelegramMessage, AUTO)
+PB_BIND(PB_Telegram_TelegramStateResponse, PB_Telegram_TelegramStateResponse, AUTO)
 
 
-PB_BIND(PB_Telegram_TelegramUpdate, PB_Telegram_TelegramUpdate, AUTO)
+PB_BIND(PB_Telegram_TelegramSendMessageRequest, PB_Telegram_TelegramSendMessageRequest, AUTO)
 
 
 

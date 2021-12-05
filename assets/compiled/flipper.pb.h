@@ -89,7 +89,6 @@ typedef struct _PB_Main {
         PB_Telegram_TelegramStateRequest tg_state_request;
         PB_Telegram_TelegramStateResponse tg_state_response;
         PB_Telegram_TelegramSendMessageRequest tg_send_msg_request;
-        PB_Telegram_TelegramUpdate tg_update;
     } content; 
 } PB_Main;
 
@@ -143,7 +142,6 @@ extern "C" {
 #define PB_Main_tg_state_request_tag             28
 #define PB_Main_tg_state_response_tag            29
 #define PB_Main_tg_send_msg_request_tag          30
-#define PB_Main_tg_update_tag                    31
 
 /* Struct field encoding specification for nanopb */
 #define PB_Empty_FIELDLIST(X, a) \
@@ -186,8 +184,7 @@ X(a, STATIC,   ONEOF,    MSG_W_CB, (content,gui_start_virtual_display_request,co
 X(a, STATIC,   ONEOF,    MSG_W_CB, (content,gui_stop_virtual_display_request,content.gui_stop_virtual_display_request),  27) \
 X(a, STATIC,   ONEOF,    MSG_W_CB, (content,tg_state_request,content.tg_state_request),  28) \
 X(a, STATIC,   ONEOF,    MSG_W_CB, (content,tg_state_response,content.tg_state_response),  29) \
-X(a, STATIC,   ONEOF,    MSG_W_CB, (content,tg_send_msg_request,content.tg_send_msg_request),  30) \
-X(a, STATIC,   ONEOF,    MSG_W_CB, (content,tg_update,content.tg_update),  31)
+X(a, STATIC,   ONEOF,    MSG_W_CB, (content,tg_send_msg_request,content.tg_send_msg_request),  30)
 #define PB_Main_CALLBACK NULL
 #define PB_Main_DEFAULT NULL
 #define PB_Main_content_empty_MSGTYPE PB_Empty
@@ -217,7 +214,6 @@ X(a, STATIC,   ONEOF,    MSG_W_CB, (content,tg_update,content.tg_update),  31)
 #define PB_Main_content_tg_state_request_MSGTYPE PB_Telegram_TelegramStateRequest
 #define PB_Main_content_tg_state_response_MSGTYPE PB_Telegram_TelegramStateResponse
 #define PB_Main_content_tg_send_msg_request_MSGTYPE PB_Telegram_TelegramSendMessageRequest
-#define PB_Main_content_tg_update_MSGTYPE PB_Telegram_TelegramUpdate
 
 extern const pb_msgdesc_t PB_Empty_msg;
 extern const pb_msgdesc_t PB_StopSession_msg;
@@ -231,9 +227,9 @@ extern const pb_msgdesc_t PB_Main_msg;
 /* Maximum encoded size of messages (where known) */
 #define PB_Empty_size                            0
 #define PB_StopSession_size                      0
-#if defined(PB_Status_PingRequest_size) && defined(PB_Status_PingResponse_size) && defined(PB_Storage_ListRequest_size) && defined(PB_Storage_ListResponse_size) && defined(PB_Storage_ReadRequest_size) && defined(PB_Storage_ReadResponse_size) && defined(PB_Storage_WriteRequest_size) && defined(PB_Storage_DeleteRequest_size) && defined(PB_Storage_MkdirRequest_size) && defined(PB_Storage_Md5sumRequest_size) && defined(PB_Storage_Md5sumResponse_size) && defined(PB_App_StartRequest_size) && defined(PB_App_LockStatusRequest_size) && defined(PB_App_LockStatusResponse_size) && defined(PB_Gui_StartScreenStreamRequest_size) && defined(PB_Gui_StopScreenStreamRequest_size) && defined(PB_Gui_ScreenFrame_size) && defined(PB_Gui_SendInputEventRequest_size) && defined(PB_Storage_StatRequest_size) && defined(PB_Storage_StatResponse_size) && defined(PB_Gui_StartVirtualDisplayRequest_size) && defined(PB_Gui_StopVirtualDisplayRequest_size) && defined(PB_Telegram_TelegramStateRequest_size) && defined(PB_Telegram_TelegramStateResponse_size) && defined(PB_Telegram_TelegramSendMessageRequest_size) && defined(PB_Telegram_TelegramUpdate_size)
+#if defined(PB_Status_PingRequest_size) && defined(PB_Status_PingResponse_size) && defined(PB_Storage_ListRequest_size) && defined(PB_Storage_ListResponse_size) && defined(PB_Storage_ReadRequest_size) && defined(PB_Storage_ReadResponse_size) && defined(PB_Storage_WriteRequest_size) && defined(PB_Storage_DeleteRequest_size) && defined(PB_Storage_MkdirRequest_size) && defined(PB_Storage_Md5sumRequest_size) && defined(PB_App_StartRequest_size) && defined(PB_Gui_ScreenFrame_size) && defined(PB_Storage_StatRequest_size) && defined(PB_Storage_StatResponse_size) && defined(PB_Telegram_TelegramStateResponse_size) && defined(PB_Telegram_TelegramSendMessageRequest_size)
 #define PB_Main_size                             (10 + sizeof(union PB_Main_content_size_union))
-union PB_Main_content_size_union {char f5[(6 + PB_Status_PingRequest_size)]; char f6[(6 + PB_Status_PingResponse_size)]; char f7[(6 + PB_Storage_ListRequest_size)]; char f8[(6 + PB_Storage_ListResponse_size)]; char f9[(6 + PB_Storage_ReadRequest_size)]; char f10[(6 + PB_Storage_ReadResponse_size)]; char f11[(6 + PB_Storage_WriteRequest_size)]; char f12[(6 + PB_Storage_DeleteRequest_size)]; char f13[(6 + PB_Storage_MkdirRequest_size)]; char f14[(6 + PB_Storage_Md5sumRequest_size)]; char f15[(6 + PB_Storage_Md5sumResponse_size)]; char f16[(7 + PB_App_StartRequest_size)]; char f17[(7 + PB_App_LockStatusRequest_size)]; char f18[(7 + PB_App_LockStatusResponse_size)]; char f20[(7 + PB_Gui_StartScreenStreamRequest_size)]; char f21[(7 + PB_Gui_StopScreenStreamRequest_size)]; char f22[(7 + PB_Gui_ScreenFrame_size)]; char f23[(7 + PB_Gui_SendInputEventRequest_size)]; char f24[(7 + PB_Storage_StatRequest_size)]; char f25[(7 + PB_Storage_StatResponse_size)]; char f26[(7 + PB_Gui_StartVirtualDisplayRequest_size)]; char f27[(7 + PB_Gui_StopVirtualDisplayRequest_size)]; char f28[(7 + PB_Telegram_TelegramStateRequest_size)]; char f29[(7 + PB_Telegram_TelegramStateResponse_size)]; char f30[(7 + PB_Telegram_TelegramSendMessageRequest_size)]; char f31[(7 + PB_Telegram_TelegramUpdate_size)]; char f0[3];};
+union PB_Main_content_size_union {char f5[(6 + PB_Status_PingRequest_size)]; char f6[(6 + PB_Status_PingResponse_size)]; char f7[(6 + PB_Storage_ListRequest_size)]; char f8[(6 + PB_Storage_ListResponse_size)]; char f9[(6 + PB_Storage_ReadRequest_size)]; char f10[(6 + PB_Storage_ReadResponse_size)]; char f11[(6 + PB_Storage_WriteRequest_size)]; char f12[(6 + PB_Storage_DeleteRequest_size)]; char f13[(6 + PB_Storage_MkdirRequest_size)]; char f14[(6 + PB_Storage_Md5sumRequest_size)]; char f16[(7 + PB_App_StartRequest_size)]; char f22[(7 + PB_Gui_ScreenFrame_size)]; char f24[(7 + PB_Storage_StatRequest_size)]; char f25[(7 + PB_Storage_StatResponse_size)]; char f29[(7 + PB_Telegram_TelegramStateResponse_size)]; char f30[(7 + PB_Telegram_TelegramSendMessageRequest_size)]; char f0[36];};
 #endif
 
 #ifdef __cplusplus
