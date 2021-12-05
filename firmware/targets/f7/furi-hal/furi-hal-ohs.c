@@ -141,7 +141,7 @@ bool furi_hal_ohs_get_mac(uint8_t* mac_address) {
 //    furi_assert(mac_address != NULL);
 //    furi_assert(sizeof(mac_address) == CONFIG_DATA_PUBADDR_LEN);
     printf("DO aci_hal_read_config_data\r\n");
-    aci_hal_read_config_data(CONFIG_DATA_PUBADDR_OFFSET, (uint8_t*)CONFIG_DATA_PUBADDR_LEN, mac_address);
+    hci_read_bd_addr(mac_address);
     printf("POSLE aci_hal_read_config_data\r\n");
 //    furi_assert(mac_address != NULL);
     return true;

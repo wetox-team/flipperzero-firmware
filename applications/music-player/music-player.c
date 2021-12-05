@@ -240,77 +240,60 @@ const char* get_note_len_name(const MelodyEventRecord* note_record) {
 }
 
 static void render_callback(Canvas* canvas, void* ctx) {
-    State* state = (State*)acquire_mutex((ValueMutex*)ctx, 25);
+//    State* state = (State*)acquire_mutex((ValueMutex*)ctx, 25);
+    static int cntr = 0;
+//    static IconAnimation * ia ;
 
     canvas_set_color(canvas, ColorBlack);
     canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, 0, 12, "MusicPlayer");
+//    canvas_draw_str(canvas, 0, 12, "MusicPlayer");
 
-    uint8_t x_pos = 0;
-    uint8_t y_pos = 24;
-    const uint8_t white_w = 10;
-    const uint8_t white_h = 40;
+//    ia = icon_animation_alloc(&A_SaxGuy);
+//    canvas_draw_icon_animation(canvas, 0,0, ia);
 
-    const int8_t black_x = 6;
-    const int8_t black_y = -5;
-    const uint8_t black_w = 8;
-    const uint8_t black_h = 32;
-
-    // white keys
-    for(size_t i = 0; i < 7; i++) {
-        if(is_white_note(state->note_record, i)) {
-            canvas_draw_box(canvas, x_pos + white_w * i, y_pos, white_w + 1, white_h);
-        } else {
-            canvas_draw_frame(canvas, x_pos + white_w * i, y_pos, white_w + 1, white_h);
-        }
+    switch(cntr) {
+    case 0:
+        canvas_draw_icon(canvas, 0, 0, &I_frame00);
+        break;
+    case 1:
+        canvas_draw_icon(canvas, 0, 0, &I_frame01);
+        break;
+    case 2:
+        canvas_draw_icon(canvas, 0, 0, &I_frame02);
+        break;
+    case 3:
+        canvas_draw_icon(canvas, 0, 0, &I_frame03);
+        break;
+    case 4:
+        canvas_draw_icon(canvas, 0, 0, &I_frame04);
+        break;
+    case 5:
+        canvas_draw_icon(canvas, 0, 0, &I_frame05);
+        break;
+    case 6:
+        canvas_draw_icon(canvas, 0, 0, &I_frame06);
+        break;
+    case 7:
+        canvas_draw_icon(canvas, 0, 0, &I_frame07);
+        break;
+    case 8:
+        canvas_draw_icon(canvas, 0, 0, &I_frame08);
+        break;
+    case 9:
+        canvas_draw_icon(canvas, 0, 0, &I_frame09);
+        break;
+    case 10:
+        canvas_draw_icon(canvas, 0, 0, &I_frame10);
+        break;
+    case 11:
+        canvas_draw_icon(canvas, 0, 0, &I_frame11);
+        break;
     }
+    cntr++;
+    if (cntr == 12)
+        cntr = 0;
 
-    // black keys
-    for(size_t i = 0; i < 7; i++) {
-        if(i != 2 && i != 6) {
-            canvas_set_color(canvas, ColorWhite);
-            canvas_draw_box(
-                canvas, x_pos + white_w * i + black_x, y_pos + black_y, black_w + 1, black_h);
-            canvas_set_color(canvas, ColorBlack);
-            if(is_black_note(state->note_record, i)) {
-                canvas_draw_box(
-                    canvas, x_pos + white_w * i + black_x, y_pos + black_y, black_w + 1, black_h);
-            } else {
-                canvas_draw_frame(
-                    canvas, x_pos + white_w * i + black_x, y_pos + black_y, black_w + 1, black_h);
-            }
-        }
-    }
-
-    // volume view_port
-    x_pos = 124;
-    y_pos = 0;
-    const uint8_t volume_h = (64 / (state->volume_id_max - 1)) * state->volume_id;
-    canvas_draw_frame(canvas, x_pos, y_pos, 4, 64);
-    canvas_draw_box(canvas, x_pos, y_pos + (64 - volume_h), 4, volume_h);
-
-    // note stack view_port
-    x_pos = 73;
-    y_pos = 0;
-    canvas_set_color(canvas, ColorBlack);
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_frame(canvas, x_pos, y_pos, 49, 64);
-    canvas_draw_line(canvas, x_pos + 28, 0, x_pos + 28, 64);
-
-    for(uint8_t i = 0; i < note_stack_size; i++) {
-        if(i == 0) {
-            canvas_draw_box(canvas, x_pos, y_pos + 48, 49, 16);
-            canvas_set_color(canvas, ColorWhite);
-        } else {
-            canvas_set_color(canvas, ColorBlack);
-        }
-        canvas_draw_str(canvas, x_pos + 4, 64 - 16 * i - 3, get_note_name(state->note_stack[i]));
-        canvas_draw_str(
-            canvas, x_pos + 31, 64 - 16 * i - 3, get_note_len_name(state->note_stack[i]));
-        canvas_draw_line(canvas, x_pos, 64 - 16 * i, x_pos + 48, 64 - 16 * i);
-    }
-
-    release_mutex((ValueMutex*)ctx, state);
+//    release_mutex((ValueMutex*)ctx, state);
 }
 
 static void input_callback(InputEvent* input_event, void* ctx) {
