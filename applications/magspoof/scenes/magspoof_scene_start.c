@@ -34,13 +34,13 @@ void magspoof_scene_start_on_enter(void* context) {
 }
 
 bool magspoof_scene_start_on_event(void* context, SceneManagerEvent event) {
-    // Magspoof* magspoof = (Magspoof*)context;
+    Magspoof* magspoof = (Magspoof*)context;
     bool consumed = false;
 
     if(event.type == SceneManagerEventTypeCustom) {
         if(event.event == SubmenuIndexRead) {
-            // scene_manager_set_scene_state(magspoof->scene_manager, MagspoofSceneStart, SubmenuIndexRead);
-            // scene_manager_next_scene(magspoof->scene_manager, MagspoofSceneReadCard);
+            scene_manager_set_scene_state(magspoof->scene_manager, MagspoofSceneStart, SubmenuIndexRead);
+            scene_manager_next_scene(magspoof->scene_manager, MagspoofSceneReadCard);
             consumed = true;
         } else if(event.event == SubmenuIndexRunScript) {
             // scene_manager_set_scene_state(

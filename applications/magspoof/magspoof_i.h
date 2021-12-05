@@ -64,4 +64,4 @@ int32_t magspoof_task(void* p);
 
 void magspoof_text_store_set(Magspoof* magspoof, const char* text, ...);
 
-void magspoof_text_store_clear(Magspoof* nfc);
+void magspoof_text_store_clear(Magspoof* app);
