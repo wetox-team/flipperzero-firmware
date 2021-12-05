@@ -409,9 +409,19 @@ bool magspoof_scene_read_card_on_event(void* context, SceneManagerEvent event) {
             // string_t v;
             // string_init(v);
             // string_set_str(v,";123456781234567=YYMMSSSDDDDDDDDDDDDDD?");
-            magspoof_spoof(app->dev->data,0);
+            
+            string_t v1;
+            string_t v2;
+            string_init_set(v1, app->dev->data);
+            string_init_set(v2, v1);
+            magspoof_spoof(v1, 0);
             delay(500);
-            magspoof_spoof(app->dev->data,1);
+            magspoof_spoof(v2, 1);
+
+            // printf("%s",deb);
+            string_clear(v1);
+            string_clear(v2);
+            
             return true;
         } else if(event.event == DialogExResultCenter) {
             magspoof_clear_list(app);
