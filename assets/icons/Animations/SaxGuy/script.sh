@@ -1,10 +1,12 @@
-
-convert frame03.png -rotate 90 frame03.png
-convert frame04.png -rotate 90 frame04.png
-convert frame05.png -rotate 90 frame05.png
-convert frame06.png -rotate 90 frame06.png
-convert frame07.png -rotate 90 frame07.png
-convert frame08.png -rotate 90 frame08.png
-convert frame09.png -rotate 90 frame09.png
-convert frame10.png -rotate 90 frame10.png
-convert frame11.png -rotate 90 frame11.png
+convert frame00.png -rotate 90 frame_00.png
+convert frame01.png -rotate 90 frame_01.png
+convert frame02.png -rotate 90 frame_02.png
+convert frame03.png -rotate 90 frame_03.png
+convert frame04.png -rotate 90 frame_04.png
+convert frame05.png -rotate 90 frame_05.png
+convert frame06.png -rotate 90 frame_06.png
+convert frame07.png -rotate 90 frame_07.png
+convert frame08.png -rotate 90 frame_08.png
+convert frame09.png -rotate 90 frame_09.png
+convert frame10.png -rotate 90 frame_10.png
+convert frame11.png -rotate 90 frame_11.png
