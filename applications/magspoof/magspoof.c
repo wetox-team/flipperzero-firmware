@@ -64,6 +64,13 @@ static Magspoof* magspoof_alloc() {
     view_dispatcher_add_view(app->view_dispatcher, MagspoofViewMenu, submenu_get_view(app->submenu));
 
 
+    // Dialog
+    app->dialog_ex = dialog_ex_alloc();
+    view_dispatcher_add_view(
+        app->view_dispatcher, MagspoofViewDialogEx, dialog_ex_get_view(app->dialog_ex));
+
+
+
     // view_set_previous_callback(app->view, magspoof_exit);
 
     // view_dispatcher_add_view(app->view_dispatcher, 0, app->view);
