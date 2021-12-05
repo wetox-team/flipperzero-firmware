@@ -238,7 +238,7 @@ static void tanks_game_init_game(TanksState* const tanks_state) {
         c,
         0,
         4,
-        DirectionUp,
+        DirectionRight,
         0,
         0,
         SHOT_COOLDOWN,
@@ -269,9 +269,13 @@ static bool tanks_game_collision(Point const next_step, TanksState const* const 
     return false;
 }
 
-static Point tanks_game_get_next_step(TanksState const* const tanks_state) {
-    Point next_step = tanks_state->p1->coordinates;
-    switch(tanks_state->p1->direction) {
+static Point tanks_game_get_next_step(Point coordinates, Direction direction) {
+    Point next_step = {
+        coordinates.x,
+        coordinates.y
+    };
+
+    switch(direction) {
         // +-----x
         // |
         // |
@@ -298,11 +302,24 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
     }
 
     if(tanks_state->p1->moving) {
-        Point next_step = tanks_game_get_next_step(tanks_state);
+        Point next_step = tanks_game_get_next_step(tanks_state->p1->coordinates, tanks_state->p1->direction);
         bool crush = tanks_game_collision(next_step, tanks_state);
 
         if(!crush) {
             tanks_state->p1->coordinates = next_step;
+        }
+    }
+
+    for(int8_t x = 0; x < 100; x++) {
+        if(tanks_state->projectiles[x] != NULL) {
+            ProjectileState *projectile = tanks_state->projectiles[x];
+
+            Point next_step = tanks_game_get_next_step(projectile->coordinates, projectile->direction);
+            bool crush = tanks_game_collision(next_step, tanks_state);
+
+            if(!crush) {
+                projectile->coordinates = next_step;
+            }
         }
     }
 
@@ -319,13 +336,10 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
         }
 
         ProjectileState* projectile_state = furi_alloc(sizeof(ProjectileState));
-        Point p_c = {
-            tanks_state->p1->coordinates.x,
-            tanks_state->p1->coordinates.y
-        };
+        Point next_step = tanks_game_get_next_step(tanks_state->p1->coordinates, tanks_state->p1->direction);
 
         projectile_state->direction = tanks_state->p1->direction;
-        projectile_state->coordinates = p_c;
+        projectile_state->coordinates = next_step;
 
         tanks_state->projectiles[freeProjectileIndex] = projectile_state;
     }
