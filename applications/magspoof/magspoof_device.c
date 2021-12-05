@@ -47,6 +47,7 @@ bool magspoof_device_load_common_data(FlipperFile* file, MagspoofDevice* dev) {
     do {
         if(!flipper_file_read_string(file, "Data", dev->data)) break;
         // strlcpy(data->data, temp_str, sizeof(data->data));
+        parsed = true;
     } while(false);
 
     // string_clear(temp_str);
