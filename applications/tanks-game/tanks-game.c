@@ -89,21 +89,25 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
 
     // Player
     Point coordinates = tanks_state->p1->coordinates;
-
+    const Icon *icon;
     switch (tanks_state->p1->direction) {
-        case DirectionUp:
-            canvas_draw_icon(canvas, coordinates.x * CELL_LENGTH_PIXELS, coordinates.y * CELL_LENGTH_PIXELS - 1, &I_tank_up);
-            break;
-        case DirectionDown:
-            canvas_draw_icon(canvas, coordinates.x * CELL_LENGTH_PIXELS, coordinates.y * CELL_LENGTH_PIXELS - 1, &I_tank_down);
-            break;
-        case DirectionRight:
-            canvas_draw_icon(canvas, coordinates.x * CELL_LENGTH_PIXELS, coordinates.y * CELL_LENGTH_PIXELS - 1, &I_tank_right);
-            break;
-        case DirectionLeft:
-            canvas_draw_icon(canvas, coordinates.x * CELL_LENGTH_PIXELS, coordinates.y * CELL_LENGTH_PIXELS - 1, &I_tank_left);
-            break;
+    case DirectionUp:
+        icon = &I_tank_up;
+        break;
+    case DirectionDown:
+        icon = &I_tank_down;
+        break;
+    case DirectionRight:
+        icon = &I_tank_right;
+        break;
+    case DirectionLeft:
+        icon = &I_tank_left;
+        break;
+    default:
+        icon = &I_tank_explosion;
     }
+
+    canvas_draw_icon(canvas, coordinates.x * CELL_LENGTH_PIXELS, coordinates.y * CELL_LENGTH_PIXELS - 1, icon);
 
     for(int8_t x = 0; x < FIELD_WIDTH; x++) {
         for(int8_t y = 0; y < FIELD_HEIGHT; y++) {
@@ -133,11 +137,30 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
         i++
     ) {
         if (tanks_state->bots[i] != NULL) {
+            const Icon *icon;
+
+            switch(tanks_state->bots[i]->direction) {
+            case DirectionUp:
+                icon = &I_enemy_up;
+                break;
+            case DirectionDown:
+                icon = &I_enemy_down;
+                break;
+            case DirectionRight:
+                icon = &I_enemy_right;
+                break;
+            case DirectionLeft:
+                icon = &I_enemy_left;
+                break;
+            default:
+                icon = &I_tank_explosion;
+            }
+
             canvas_draw_icon(
                 canvas,
                 tanks_state->bots[i]->coordinates.x * CELL_LENGTH_PIXELS,
                 tanks_state->bots[i]->coordinates.y * CELL_LENGTH_PIXELS - 1,
-                &I_enemy_left);
+                icon);
         }
     }
 
@@ -154,36 +177,30 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
                 continue;
             }
 
+            const Icon *icon;
+
             switch(projectile->direction) {
             case DirectionUp:
-                canvas_draw_icon(
-                    canvas,
-                    projectile->coordinates.x * CELL_LENGTH_PIXELS,
-                    projectile->coordinates.y * CELL_LENGTH_PIXELS - 1,
-                    &I_projectile_up);
+                icon = &I_projectile_up;
                 break;
             case DirectionDown:
-                canvas_draw_icon(
-                    canvas,
-                    projectile->coordinates.x * CELL_LENGTH_PIXELS,
-                    projectile->coordinates.y * CELL_LENGTH_PIXELS - 1,
-                    &I_projectile_down);
+                icon = &I_projectile_down;
                 break;
             case DirectionRight:
-                canvas_draw_icon(
-                    canvas,
-                    projectile->coordinates.x * CELL_LENGTH_PIXELS,
-                    projectile->coordinates.y * CELL_LENGTH_PIXELS - 1,
-                    &I_projectile_right);
+                icon = &I_projectile_right;
                 break;
             case DirectionLeft:
-                canvas_draw_icon(
-                    canvas,
-                    projectile->coordinates.x * CELL_LENGTH_PIXELS,
-                    projectile->coordinates.y * CELL_LENGTH_PIXELS - 1,
-                    &I_projectile_left);
+                icon = &I_projectile_left;
                 break;
+            default:
+                icon = &I_tank_explosion;
             }
+
+            canvas_draw_icon(
+                canvas,
+                projectile->coordinates.x * CELL_LENGTH_PIXELS,
+                projectile->coordinates.y * CELL_LENGTH_PIXELS - 1,
+                icon);
         }
     }
 
