@@ -19,33 +19,40 @@ const NotificationSequence magspoof_sequence_notification = {
 
 uint8_t magspoof_bit_dir = 0;
 
-static void magspoof_view_draw_callback(Canvas* canvas, void* _model) {
-    UartDumpModel* model = _model;
+void magspoof_scene_read_card_dialog_callback(DialogExResult result, void* context) {
+    Magspoof* magspoof = (Magspoof*)context;
 
-    // Prepare canvas
-    canvas_clear(canvas);
-    canvas_set_color(canvas, ColorBlack);
-    canvas_set_font(canvas, FontKeyboard);
-
-    for(size_t i = 0; i < LINES_ON_SCREEN; i++) {
-        canvas_draw_str(
-            canvas,
-            0,
-            (i + 1) * (canvas_current_font_height(canvas) - 1),
-            string_get_cstr(model->list[i]->text));
-
-        if(i == model->line) {
-            uint8_t width = canvas_string_width(canvas, string_get_cstr(model->list[i]->text));
-
-            canvas_draw_box(
-                canvas,
-                width,
-                (i) * (canvas_current_font_height(canvas) - 1) + 2,
-                2,
-                canvas_current_font_height(canvas) - 2);
-        }
-    }
+    view_dispatcher_send_custom_event(magspoof->view_dispatcher, result);
 }
+
+
+// static void magspoof_view_draw_callback(Canvas* canvas, void* _model) {
+//     UartDumpModel* model = _model;
+
+//     // Prepare canvas
+//     canvas_clear(canvas);
+//     canvas_set_color(canvas, ColorBlack);
+//     canvas_set_font(canvas, FontKeyboard);
+
+//     for(size_t i = 0; i < LINES_ON_SCREEN; i++) {
+//         canvas_draw_str(
+//             canvas,
+//             0,
+//             (i + 1) * (canvas_current_font_height(canvas) - 1),
+//             string_get_cstr(model->list[i]->text));
+
+//         if(i == model->line) {
+//             uint8_t width = canvas_string_width(canvas, string_get_cstr(model->list[i]->text));
+
+//             canvas_draw_box(
+//                 canvas,
+//                 width,
+//                 (i) * (canvas_current_font_height(canvas) - 1) + 2,
+//                 2,
+//                 canvas_current_font_height(canvas) - 2);
+//         }
+//     }
+// }
 
 // Start spoof code
 static void playBit(uint8_t sendBit)
@@ -64,20 +71,46 @@ static void playBit(uint8_t sendBit)
   delay_us(CLOCK_US);
 }
 
-// static void magspoof_spoof(string_t track_str) {
-static void magspoof_spoof() {
+static void magspoof_spoof(string_t track_str, uint8_t track) {
     // TODO
     // string_set_str(data, "\%qwe;test?");
     // track_str -> data
-    char* data = ";123;test?\0";
+    // char* data = "%B123456781234567^LASTNAME/FIRST^YYMMSSSDDDDDDDDDDDDDDDDDDDDDDDDD?";
+    // char* data = ";123456781234567=YYMMSSSDDDDDDDDDDDDDD?\0";
+    
     furi_hal_power_enable_otg();
+
+    size_t from;
+    size_t to;
+
+    // TODO ';' in first track case
+    if (track == 0) {
+        from = string_search_char(track_str, '%');
+        to = string_search_char(track_str, '?', from);
+    } else if (track == 1) {
+        from = string_search_char(track_str, ';');
+        to = string_search_char(track_str, '?', from);
+    } else {
+        from = 0;
+        to = string_size(track_str);
+    }
+    if (from >= to) {
+        return;
+    }
+    string_mid(track_str, from, to-from +1);
+
+    const char* data = string_get_cstr(track_str);
+
+    printf("%s",data);
+    
     gpio_item_configure_all_pins(GpioModeOutputPushPull);
-    delay(200);
+    delay(300);
 
     FURI_CRITICAL_ENTER();
 
-    // gpio_item_set_pin(0, 1);
-    const uint8_t track = 1;
+    // TRECK NUM +1
+    // const uint8_t track = 0;
+
     const uint8_t bitlen[] = {
         7, 5, 5 };
     const int sublen[] = {
@@ -131,12 +164,12 @@ static void magspoof_spoof() {
 
     FURI_CRITICAL_EXIT();
 
-    delay(100);
     gpio_item_configure_all_pins(GpioModeAnalog);
     furi_hal_power_disable_otg();
 }
 
 // end my code
+
 static void magspoof_clear_list(void* context) {
     Magspoof* app = context;
     with_view_model(app->view, (UartDumpModel * model) {
@@ -149,33 +182,36 @@ static void magspoof_clear_list(void* context) {
             });
 }
 
-static bool magspoof_view_input_callback(InputEvent* event, void* context) {
-    furi_assert(context);
+// static bool magspoof_view_input_callback(InputEvent* event, void* context) {
+//     furi_assert(context);
 
-    bool consumed = false;
-    Magspoof* app = context;
+//     bool consumed = false;
+//     Magspoof* app = context;
 
-    if(event->type == InputTypeShort) {
-        if(event->key == InputKeyOk) {
-            consumed = true;
-            // furi_assert();
-            // model->list;
-            // string_reset(model->list[0]->text);
+//     if(event->type == InputTypeShort) {
+//         if(event->key == InputKeyOk) {
+//             consumed = true;
+//             // furi_assert();
+//             // model->list;
+//             // string_reset(model->list[0]->text);
             
-            // printf("%i", model->line);
-            // for(size_t i = 0; i < LINES_ON_SCREEN; i++) {
-            //     string_reset(model->list[i]->text);
-            // }
-            // model->line = 0;
-            // model->escape = false;
-            magspoof_clear_list(app);
-        }
-        if(event->key == InputKeyLeft) {
-            magspoof_spoof();
-        }
-    }
-    return consumed;
-}
+//             // printf("%i", model->line);
+//             // for(size_t i = 0; i < LINES_ON_SCREEN; i++) {
+//             //     string_reset(model->list[i]->text);
+//             // }
+//             // model->line = 0;
+//             // model->escape = false;
+//             magspoof_clear_list(app);
+//         }
+//         if(event->key == InputKeyLeft) {
+//             string_t v;
+//             string_init(v);
+//             string_set_str(v,";123456781234567=YYMMSSSDDDDDDDDDDDDDD?")
+//             magspoof_spoof(v,1);
+//         }
+//     }
+//     return consumed;
+// }
 
 
 static void magspoof_on_irq_cb(UartIrqEvent ev, uint8_t data, void* context) {
@@ -267,10 +303,10 @@ static int32_t magspoof_worker(void* context) {
     return 0;
 }
 
-void magspoof_read_card_worker_callback(void* context) {
-    Magspoof* app = (Magspoof*)context;
-    view_dispatcher_send_custom_event(app->view_dispatcher, MAGSPOOF_READ_CARD_CUSTOM_EVENT);
-}
+// void magspoof_read_card_worker_callback(void* context) {
+//     Magspoof* app = (Magspoof*)context;
+//     view_dispatcher_send_custom_event(app->view_dispatcher, MAGSPOOF_READ_CARD_CUSTOM_EVENT);
+// }
 
 void magspoof_scene_read_card_on_enter(void* context) {
     Magspoof* app = (Magspoof*)context;
@@ -286,11 +322,28 @@ void magspoof_scene_read_card_on_enter(void* context) {
     // magspoof_worker_start(
     //     app->worker, NfcWorkerStateDetect, &app->dev->dev_data, app_read_card_worker_callback, app);
 
-    view_set_draw_callback(app->view, magspoof_view_draw_callback);
-    view_set_input_callback(app->view, magspoof_view_input_callback);
+    // view_set_draw_callback(app->view, magspoof_view_draw_callback);
+    // view_set_input_callback(app->view, magspoof_view_input_callback);
 
 
-    // TODO free
+    // Setup view
+    // XXX
+    // MagspoofDeviceCommonData* data = &app->dev->dev_data.magspoof_data;
+
+    DialogEx* dialog_ex = app->dialog_ex;
+    dialog_ex_set_left_button_text(dialog_ex, "Emulate");
+    dialog_ex_set_right_button_text(dialog_ex, "Save");
+    dialog_ex_set_center_button_text(dialog_ex, "Clear");
+
+    // XXX TODO: fill data
+
+    dialog_ex_set_text(dialog_ex, app->text_store, 0, 0, AlignLeft, AlignTop);
+    dialog_ex_set_context(dialog_ex, app);
+    dialog_ex_set_result_callback(dialog_ex, magspoof_scene_read_card_dialog_callback);
+
+    view_dispatcher_switch_to_view(app->view_dispatcher, MagspoofViewDialogEx);
+
+    // Worker
     app->worker_thread = furi_thread_alloc();
     furi_thread_set_name(app->worker_thread, "MagspoofWorker");
     furi_thread_set_stack_size(app->worker_thread, 1024);
@@ -305,11 +358,18 @@ void magspoof_scene_read_card_on_enter(void* context) {
 }
 
 bool magspoof_scene_read_card_on_event(void* context, SceneManagerEvent event) {
-    // Magspoof* app = (Magspoof*)context;
+    Magspoof* app = (Magspoof*)context;
 
     if(event.type == SceneManagerEventTypeCustom) {
         if(event.event == MAGSPOOF_READ_CARD_CUSTOM_EVENT) {
             // scene_manager_next_scene(app->scene_manager, NfcSceneReadCardSuccess);
+            string_t v;
+            string_init(v);
+            string_set_str(v,";123456781234567=YYMMSSSDDDDDDDDDDDDDD?");
+            magspoof_spoof(v,1);
+
+
+            magspoof_clear_list(app);
             return true;
         }
     } 
