@@ -26,7 +26,7 @@
 
 #define TAG "Telegram"
 #define TG_TEXT_STORE_SIZE 128
-#define TG_MESSAGE_MAX_LEN 22
+#define TG_MESSAGE_MAX_LEN 20
 
 typedef struct {
     Gui* gui;
@@ -50,13 +50,20 @@ typedef enum {
 
 void telegram_send_message(void* context) {
     Telegram* instance = (Telegram*)context;
-    view_dispatcher_send_custom_event(instance->view_dispatcher, (0UL));
+    view_dispatcher_switch_to_view(instance->view_dispatcher, TelegramViewChats);
 }
 
 void compose_message(void* context, uint32_t index) {
     Telegram* instance = (Telegram*)context;
     TextInput* text_input = instance->text_input;
     text_input_set_header_text(text_input, "Your message");
+    text_input_set_result_callback(
+        text_input,
+        telegram_send_message,
+        instance,
+        instance->text_store,
+        TG_MESSAGE_MAX_LEN,
+        true);
 
     view_dispatcher_switch_to_view(instance->view_dispatcher, TelegramTextInput);
 }
@@ -103,8 +110,6 @@ Telegram* telegram_init_chats_callback(Telegram* instance) {
 Telegram* telegram_alloc() {
     Telegram* instance = furi_alloc(sizeof(Telegram));
     instance->text_input = text_input_alloc();
-    view_dispatcher_add_view(
-        instance->view_dispatcher, TelegramTextInput, text_input_get_view(instance->text_input));
 
     View* view = NULL;
 
@@ -119,6 +124,8 @@ Telegram* telegram_alloc() {
     instance->submenu = submenu_alloc();
     view = submenu_get_view(instance->submenu);
     view_set_previous_callback(view, telegram_exit_callback);
+    view_dispatcher_add_view(
+        instance->view_dispatcher, TelegramTextInput, text_input_get_view(instance->text_input));
     view_dispatcher_add_view(instance->view_dispatcher, TelegramViewChats, view);
     submenu_add_item(
         instance->submenu,
