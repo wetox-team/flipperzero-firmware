@@ -15,6 +15,24 @@ typedef struct {
 } Point;
 
 typedef enum {
+    CellEmpty = 1,
+    CellWall,
+    CellExplosion,
+    CellTankUp,
+    CellTankRight,
+    CellTankDown,
+    CellTankLeft,
+    CellEnemyUp,
+    CellEnemyRight,
+    CellEnemyDown,
+    CellEnemyLeft,
+    CellProjectileUp,
+    CellProjectileRight,
+    CellProjectileDown,
+    CellProjectileLeft,
+} GameCellState;
+
+typedef enum {
     MenuStateSingleMode,
     MenuStateCooperativeServerMode,
     MenuStateCooperativeClientMode,
@@ -67,6 +85,7 @@ typedef struct {
     Point team_one_respawn_points[3];
     Point team_two_respawn_points[3];
     Mode mode;
+    bool server;
     GameState state;
     MenuState menu_state;
     ProjectileState *projectiles[100];
@@ -88,6 +107,262 @@ typedef struct {
     InputEvent input;
 } TanksEvent;
 
+//char map[FIELD_HEIGHT][FIELD_WIDTH + 1] = {
+char map[11][16 + 1] = {
+    "*       -  *   -",
+    "  -  -  =       ",
+    "        -  -   2",
+    "1    =     - -- ",
+    "--   =     - -- ",
+    "a-1  =  -  =   2",
+    "--   =     - -- ",
+    "1    =     - -- ",
+    "        -  -   2",
+    "  -  -  =       ",
+    "*       -  *   -",
+};
+
+static void tanks_game_write_sell(unsigned char* data, int8_t x, int8_t y, GameCellState cell) {
+    uint8_t index = (y * 16 / 2) + (x / 2);
+    if (x % 2) {
+        data[index] = (data[index] & 0b00001111) + (cell << 4);
+    } else {
+        data[index] = (data[index] & 0b0000) + cell;
+    }
+}
+
+// Enum with < 16 items => 4 bits in cell, 2 cells in byte
+static unsigned char* tanks_game_serialize(const TanksState* const tanks_state) {
+    static unsigned char result[11 * 16 / 2];
+
+    for(int8_t x = 0; x < FIELD_WIDTH; x++) {
+        for(int8_t y = 0; y < FIELD_HEIGHT; y++) {
+            result[(y * FIELD_WIDTH + x) / 2] = 0;
+
+            GameCellState cell = CellEmpty;
+
+            if (tanks_state->map[x][y] == '-') {
+                cell = CellWall;
+
+                tanks_game_write_sell(
+                    result,
+                    x,
+                    y,
+                    cell
+                );
+            }
+        }
+    }
+
+    for(uint8_t i = 0; i < 6; i++) {
+        if(tanks_state->bots[i] != NULL) {
+            GameCellState cell = CellEmpty;
+
+            switch(tanks_state->bots[i]->direction) {
+                case DirectionUp:
+                    cell = CellEnemyUp;
+                    break;
+                case DirectionDown:
+                    cell = CellEnemyDown;
+                    break;
+                case DirectionRight:
+                    cell = CellEnemyRight;
+                    break;
+                case DirectionLeft:
+                    cell = CellEnemyLeft;
+                    break;
+            }
+
+            tanks_game_write_sell(
+                result,
+                tanks_state->bots[i]->coordinates.x,
+                tanks_state->bots[i]->coordinates.y,
+                cell
+                );
+        }
+    }
+
+
+    for(int8_t x = 0; x < 100; x++) {
+        if (tanks_state->projectiles[x] != NULL) {
+            GameCellState cell = CellEmpty;
+
+            switch(tanks_state->projectiles[x]->direction) {
+            case DirectionUp:
+                cell = CellProjectileUp;
+                break;
+            case DirectionDown:
+                cell = CellProjectileDown;
+                break;
+            case DirectionRight:
+                cell = CellProjectileRight;
+                break;
+            case DirectionLeft:
+                cell = CellProjectileLeft;
+                break;
+            }
+
+            tanks_game_write_sell(
+                result,
+                tanks_state->projectiles[x]->coordinates.x,
+                tanks_state->projectiles[x]->coordinates.y,
+                cell
+            );
+        }
+    }
+
+    if (tanks_state->p1 != NULL) {
+        GameCellState cell = CellEmpty;;
+
+        switch(tanks_state->p1->direction) {
+        case DirectionUp:
+            cell = CellTankUp;
+            break;
+        case DirectionDown:
+            cell = CellTankDown;
+            break;
+        case DirectionRight:
+            cell = CellTankRight;
+            break;
+        case DirectionLeft:
+            cell = CellTankLeft;
+            break;
+        }
+
+        tanks_game_write_sell(
+            result,
+            tanks_state->p1->coordinates.x,
+            tanks_state->p1->coordinates.y,
+            cell
+        );
+    }
+
+    if (tanks_state->p2 != NULL) {
+        GameCellState cell = CellEmpty;
+
+        switch(tanks_state->p2->direction) {
+        case DirectionUp:
+            cell = CellTankUp;
+            break;
+        case DirectionDown:
+            cell = CellTankDown;
+            break;
+        case DirectionRight:
+            cell = CellTankRight;
+            break;
+        case DirectionLeft:
+            cell = CellTankLeft;
+            break;
+        }
+
+        tanks_game_write_sell(
+            result,
+            tanks_state->p2->coordinates.x,
+            tanks_state->p2->coordinates.y,
+            cell
+        );
+    }
+
+    return result;
+}
+
+static void tanks_game_render_cell(GameCellState cell, uint8_t x, uint8_t y, Canvas* const canvas) {
+    const Icon *icon;
+
+    if (cell == CellEmpty) {
+        return;
+    }
+
+    switch (cell) {
+    case CellWall:
+        icon = &I_tank_wall;
+        break;
+    case CellExplosion:
+        icon = &I_tank_explosion;
+        break;
+    case CellTankUp:
+        icon = &I_tank_up;
+        break;
+    case CellTankRight:
+        icon = &I_tank_right;
+        break;
+    case CellTankDown:
+        icon = &I_tank_down;
+        break;
+    case CellTankLeft:
+        icon = &I_tank_left;
+        break;
+    case CellEnemyUp:
+        icon = &I_enemy_up;
+        break;
+    case CellEnemyRight:
+        icon = &I_enemy_right;
+        break;
+    case CellEnemyDown:
+        icon = &I_enemy_down;
+        break;
+    case CellEnemyLeft:
+        icon = &I_enemy_left;
+        break;
+    case CellProjectileUp:
+        icon = &I_projectile_up;
+        break;
+    case CellProjectileRight:
+        icon = &I_projectile_right;
+        break;
+    case CellProjectileDown:
+        icon = &I_projectile_down;
+        break;
+    case CellProjectileLeft:
+        icon = &I_projectile_left;
+        break;
+    default:
+        icon = &I_tank_explosion;
+        break;
+    }
+
+    canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, icon);
+}
+
+static void tanks_game_render_constant_cells(Canvas* const canvas) {
+    for(int8_t x = 0; x < FIELD_WIDTH; x++) {
+        for(int8_t y = 0; y < FIELD_HEIGHT; y++) {
+            char cell = map[x][y];
+
+            if (cell == '=') {
+                canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, &I_tank_stone);
+                continue;
+            }
+
+            if (cell == '*') {
+                canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, &I_tank_hedgehog);
+                continue;
+            }
+
+            if (cell == 'a') {
+                canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, &I_tank_base);
+                continue;
+            }
+        }
+    }
+}
+
+static void tanks_game_deserialize_and_render(unsigned char data[11 * 16 / 2], Canvas* const canvas) {
+    for (uint8_t i = 0; i < 11 * 16 / 2; i++) {
+        char cell = data[i];
+        uint8_t x = i % 8; // One line (16 cells) = 8 bytes
+        uint8_t y = i / 8;
+
+        GameCellState first = cell >> 4;
+        GameCellState second = cell & 0b00001111;
+
+        tanks_game_render_cell(first, x, y, canvas);
+        tanks_game_render_cell(second, x + 1, y, canvas);
+    }
+
+    tanks_game_render_constant_cells(canvas);
+}
+
 static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
     const TanksState* tanks_state = acquire_mutex((ValueMutex*)ctx, 25);
     if(tanks_state == NULL) {
@@ -95,10 +370,16 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
     }
 
     // Before the function is called, the state is set with the canvas_reset(canvas)
-
-    canvas_draw_box(canvas, FIELD_WIDTH * CELL_LENGTH_PIXELS, 0, 2, SCREEN_HEIGHT);
-
     if (tanks_state->state == GameStateMenu) {
+        if (tanks_state->menu_state == MenuStateLobbyMode) {
+            canvas_draw_frame(canvas, 0, 0, 128, 64);
+
+            canvas_draw_str_aligned(canvas, 0, 32, AlignCenter, AlignCenter, "Waiting for the other player...");
+
+            release_mutex((ValueMutex*)ctx, tanks_state);
+            return;
+        }
+
         canvas_draw_icon(
             canvas,
             0,
@@ -129,6 +410,9 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
         release_mutex((ValueMutex*)ctx, tanks_state);
         return;
     }
+
+    // Field right border
+    canvas_draw_box(canvas, FIELD_WIDTH * CELL_LENGTH_PIXELS, 0, 2, SCREEN_HEIGHT);
 
     // Player
     Point coordinates = tanks_state->p1->coordinates;
@@ -288,6 +572,13 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
         canvas_draw_str_aligned(canvas, 64, 41, AlignCenter, AlignBottom, buffer);
     }
 
+    // TEST start
+    unsigned char *data = tanks_game_serialize(tanks_state);
+    // printf(data);
+    tanks_game_deserialize_and_render(data, canvas);
+    free(data);
+    // TEST enf
+
     release_mutex((ValueMutex*)ctx, tanks_state);
 }
 
@@ -307,23 +598,6 @@ static void tanks_game_update_timer_callback(osMessageQueueId_t event_queue) {
 
 static void tanks_game_init_game(TanksState* const tanks_state) {
     srand(DWT->CYCCNT);
-
-    tanks_state->state = GameStateSingle;
-
-    //char map[FIELD_HEIGHT][FIELD_WIDTH + 1] = {
-    char map[11][16 + 1] = {
-        "*       -  *   -",
-        "  -  -  =       ",
-        "        -  -   2",
-        "1    =     - -- ",
-        "--   =     - -- ",
-        "a-1  =  -  =   2",
-        "--   =     - -- ",
-        "1    =     - -- ",
-        "        -  -   2",
-        "  -  -  =       ",
-        "*       -  *   -",
-    };
 
     for(int8_t x = 0; x < 100; x++) {
         if(tanks_state->projectiles[x] != NULL) {
@@ -386,7 +660,7 @@ static void tanks_game_init_game(TanksState* const tanks_state) {
     *p1_state = p1;
 
     tanks_state->p1 = p1_state;
-    tanks_state->state = GameStateSingle;
+
     tanks_state->enemies_left = 5;
     tanks_state->enemies_live = 0;
     tanks_state->enemies_respawn_cooldown = RESPAWN_COOLDOWN;
@@ -821,7 +1095,6 @@ int32_t tanks_game_app(void* p) {
     osMessageQueueId_t event_queue = osMessageQueueNew(8, sizeof(TanksEvent), NULL);
 
     TanksState* tanks_state = furi_alloc(sizeof(TanksState));
-    // tanks_game_init_game(tanks_state);
 
     tanks_state->state = GameStateMenu;
     tanks_state->menu_state = MenuStateSingleMode;
@@ -891,7 +1164,21 @@ int32_t tanks_game_app(void* p) {
                         case InputKeyOk:
                             if (tanks_state->state == GameStateMenu) {
                                 if (tanks_state->menu_state == MenuStateSingleMode) {
+                                    tanks_state->state = GameStateSingle;
+                                    tanks_state->server = true;
                                     tanks_game_init_game(tanks_state);
+                                    break;
+                                }
+
+                                if (tanks_state->menu_state == MenuStateCooperativeServerMode) {
+                                    tanks_state->server = true;
+                                    tanks_state->menu_state = MenuStateLobbyMode;
+                                    break;
+                                }
+
+                                if (tanks_state->menu_state == MenuStateCooperativeClientMode) {
+                                    tanks_state->server = false;
+                                    tanks_state->menu_state = MenuStateLobbyMode;
                                     break;
                                 }
                             }
