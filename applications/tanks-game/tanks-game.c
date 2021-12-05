@@ -586,7 +586,23 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
                 bot->cooldown--;
             }
 
-            if (bot->cooldown == 0) {
+            // Rotate
+            if (rand() % 3 == 0) {
+                bot->direction = (rand() % 4);
+            }
+
+            // Move
+            if (rand() % 2 == 0) {
+                Point next_step = tanks_game_get_next_step(bot->coordinates, bot->direction);
+                bool crush = tanks_game_collision(next_step, false, tanks_state);
+
+                if(!crush) {
+                    bot->coordinates = next_step;
+                }
+            }
+
+            // Shoot
+            if (bot->cooldown == 0 && rand() % 3 != 0) {
                 tanks_game_shoot(tanks_state, bot, false, false);
             }
         }
