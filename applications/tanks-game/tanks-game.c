@@ -50,9 +50,15 @@ typedef struct {
 typedef struct {
     // char map[FIELD_WIDTH][FIELD_HEIGHT];
     char map[16][11];
+    Point team_one_respawn_points[3];
+    Point team_two_respawn_points[3];
     Mode mode;
     GameState state;
     ProjectileState *projectiles[100];
+    PlayerState *bots[6];
+    uint8_t enemies_left;
+    uint8_t enemies_live;
+    uint8_t enemies_respawn_cooldown;
     PlayerState *p1;
     PlayerState *p2;
 } TanksState;
@@ -199,6 +205,8 @@ static void tanks_game_update_timer_callback(osMessageQueueId_t event_queue) {
 }
 
 static void tanks_game_init_game(TanksState* const tanks_state) {
+    srand(DWT->CYCCNT);
+
     //char map[FIELD_HEIGHT][FIELD_WIDTH + 1] = {
     char map[11][16 + 1] = {
         "*       -  *   -",
@@ -206,7 +214,7 @@ static void tanks_game_init_game(TanksState* const tanks_state) {
         "        -  -   2",
         "1    =     - -- ",
         "--   =     - -- ",
-        "a-   =  -  =   2",
+        "a-1  =  -  =   2",
         "--   =     - -- ",
         "1    =     - -- ",
         "        -  -   2",
@@ -221,15 +229,21 @@ static void tanks_game_init_game(TanksState* const tanks_state) {
         }
     }
 
-    Point c = {5, 5};
+    int8_t team_one_respawn_points_counter = 0;
+    int8_t team_two_respawn_points_counter = 0;
 
     for(int8_t x = 0; x < FIELD_WIDTH; x++) {
         for(int8_t y = 0; y < FIELD_HEIGHT; y++) {
             tanks_state->map[x][y] = ' ';
 
             if (map[y][x] == '1') {
-                c.x = x;
-                c.y = y;
+                Point respawn = {x, y};
+                tanks_state->team_one_respawn_points[team_one_respawn_points_counter++] = respawn;
+            }
+
+            if (map[y][x] == '2') {
+                Point respawn = {x, y};
+                tanks_state->team_two_respawn_points[team_two_respawn_points_counter++] = respawn;
             }
 
             if (map[y][x] == '-') {
@@ -250,6 +264,9 @@ static void tanks_game_init_game(TanksState* const tanks_state) {
         }
     }
 
+    uint8_t respawn_point_index = rand() % 3;
+    Point c = {tanks_state->team_one_respawn_points[respawn_point_index].x, tanks_state->team_one_respawn_points[respawn_point_index].y};
+
     PlayerState p1 = {
         c,
         0,
@@ -265,6 +282,9 @@ static void tanks_game_init_game(TanksState* const tanks_state) {
 
     tanks_state->p1 = p1_state;
     tanks_state->state = GameStateLife;
+    tanks_state->enemies_left = 20;
+    tanks_state->enemies_live = 0;
+    tanks_state->enemies_respawn_cooldown = RESPAWN_COOLDOWN;
 }
 
 static bool tanks_game_collision(Point const next_step, bool shoot, TanksState const* const tanks_state) {
@@ -360,7 +380,13 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
         }
     }
 
-    if(tanks_state->p1->shooting) {
+    if (tanks_state->p1->cooldown > 0) {
+        tanks_state->p1->cooldown--;
+    }
+
+    if(tanks_state->p1->shooting && tanks_state->p1->cooldown == 0) {
+        tanks_state->p1->cooldown = SHOT_COOLDOWN;
+
         uint8_t freeProjectileIndex;
         for (
                 freeProjectileIndex = 0;
