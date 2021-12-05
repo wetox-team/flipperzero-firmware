@@ -5,7 +5,7 @@
 
 static const char* magspoof_app_folder = "/any/magspoof";
 static const char* magspoof_app_extension = ".magspoof";
-static const char* magspoof_app_shadow_extension = ".shd";
+// static const char* magspoof_app_shadow_extension = ".shd";
 static const char* magspoof_file_header = "Flipper Magspoof device";
 static const uint32_t magspoof_file_version = 1;
 
@@ -26,7 +26,7 @@ void magspoof_device_free(MagspoofDevice* magspoof_dev) {
 static bool magspoof_device_save_data(FlipperFile* file, MagspoofDevice* dev) {
     bool saved = false;
     MagspoofDeviceCommonData* data = &dev->dev_data.magspoof_data;
-    uint32_t data_temp = 0;
+    // uint32_t data_temp = 0;
 
     do {
         if(!flipper_file_write_string(file, "Data", data->data)) break;
@@ -39,17 +39,16 @@ static bool magspoof_device_save_data(FlipperFile* file, MagspoofDevice* dev) {
 bool magspoof_device_load_common_data(FlipperFile* file, MagspoofDevice* dev) {
     bool parsed = false;
     MagspoofDeviceCommonData* data = &dev->dev_data.magspoof_data;
-    memset(data, 0, sizeof(MagspoofDeviceCommonData));
-    uint32_t data_cnt = 0;
-    string_t temp_str;
-    string_init(temp_str);
+    // memset(data, 0, sizeof(MagspoofDeviceCommonData));
+    // uint32_t data_cnt = 0;
+    string_init(data->data);
 
     do {
-        if(!flipper_file_read_string(file, "Data", temp_str)) break;
-        strlcpy(data->data, string_get(temp_str), sizeof(data->data));
+        if(!flipper_file_read_string(file, "Data", data->data)) break;
+        // strlcpy(data->data, temp_str, sizeof(data->data));
     } while(false);
 
-    string_clear(temp_str);
+    // string_clear(temp_str);
     return parsed;
 }
 
@@ -68,7 +67,7 @@ static bool magspoof_device_save_file(
 
     bool saved = false;
     FlipperFile* file = flipper_file_alloc(dev->storage);
-    MagspoofDeviceCommonData* data = &dev->dev_data.magspoof_data;
+    // MagspoofDeviceCommonData* data = &dev->dev_data.magspoof_data;
     string_t temp_str;
     string_init(temp_str);
 
@@ -100,11 +99,11 @@ bool magspoof_device_save(MagspoofDevice* dev, const char* dev_name) {
     return magspoof_device_save_file(dev, dev_name, magspoof_app_folder, magspoof_app_extension);
 }
 
-static bool maspoof_device_load_data(MagspoofDevice* dev, string_t path) {
+static bool magspoof_device_load_data(MagspoofDevice* dev, string_t path) {
     bool parsed = false;
     FlipperFile* file = flipper_file_alloc(dev->storage);
-    MagspoofDeviceCommonData* data = &dev->dev_data.magspoof_data;
-    uint32_t data_cnt = 0;
+    // MagspoofDeviceCommonData* data = &dev->dev_data.magspoof_data;
+    // uint32_t data_cnt = 0;
     string_t temp_str;
     string_init(temp_str);
     bool depricated_version = false;

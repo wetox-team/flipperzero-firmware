@@ -1,4 +1,5 @@
 #include "magspoof.h"
+#include "magspoof_device.h"
 #include "magspoof_i.h"
 
 // static uint32_t magspoof_exit(void* context) {
@@ -80,6 +81,8 @@ static Magspoof* magspoof_alloc() {
     // furi_thread_set_callback(app->worker_thread, magspoof_worker);
     // furi_thread_start(app->worker_thread);
 
+    app->dev = magspoof_device_alloc();
+
     return app;
 }
 
@@ -89,6 +92,8 @@ static void magspoof_free(Magspoof* app) {
     // osThreadFlagsSet(furi_thread_get_thread_id(app->worker_thread), WorkerEventStop);
     // furi_thread_join(app->worker_thread);
     // furi_thread_free(app->worker_thread);
+
+    magspoof_device_free(app->dev);
 
     furi_hal_console_enable();
 

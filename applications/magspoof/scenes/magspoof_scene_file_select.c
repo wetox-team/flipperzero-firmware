@@ -1,4 +1,5 @@
 #include "../magspoof_i.h"
+#include "../magspoof_device.h"
 
 void magspoof_scene_file_select_on_enter(void* context) {
     Magspoof* app = (Magspoof*)context;

@@ -290,6 +290,7 @@ void magspoof_scene_read_card_on_enter(void* context) {
     view_set_input_callback(app->view, magspoof_view_input_callback);
 
 
+    // TODO free
     app->worker_thread = furi_thread_alloc();
     furi_thread_set_name(app->worker_thread, "MagspoofWorker");
     furi_thread_set_stack_size(app->worker_thread, 1024);

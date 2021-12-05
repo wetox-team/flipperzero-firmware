@@ -27,7 +27,7 @@ void magspoof_scene_saved_menu_on_enter(void* context) {
         submenu, "Info", SubmenuIndexInfo, magspoof_scene_saved_menu_submenu_callback, app);
     submenu_set_selected_item(
         app->submenu, scene_manager_get_scene_state(app->scene_manager, MagspoofSceneSavedMenu));
-    }
+    
 
     view_dispatcher_switch_to_view(app->view_dispatcher, MagspoofViewMenu);
 }
@@ -49,11 +49,12 @@ bool magspoof_scene_saved_menu_on_event(void* context, SceneManagerEvent event) 
             // scene_manager_next_scene(nfc->scene_manager, NfcSceneSetUid);
             // consumed = true;
         } else if(event.event == SubmenuIndexDelete) {
-            scene_manager_next_scene(nfc->scene_manager, MagspoofSceneDelete);
-            consumed = true;
+            // scene_manager_next_scene(app->scene_manager, MagspoofSceneDelete);
+            // consumed = true;
         } else if(event.event == SubmenuIndexInfo) {
             // scene_manager_next_scene(nfc->scene_manager, NfcSceneDeviceInfo);
             // consumed = true;
+        }
     }
 
     return consumed;

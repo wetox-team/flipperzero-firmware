@@ -15,7 +15,7 @@
 
 
 typedef struct {
-    string_t data[21*6];
+    string_t data;
 } MagspoofDeviceCommonData;
 
 typedef struct {
@@ -33,7 +33,7 @@ typedef struct {
 
 MagspoofDevice* magspoof_device_alloc();
 
-void magspoof_device_free(MagspoofDevice* nfc_dev);
+void magspoof_device_free(MagspoofDevice* magspoof_dev);
 
 void magspoof_device_free_device_set_name(MagspoofDevice* dev, const char* name);
 

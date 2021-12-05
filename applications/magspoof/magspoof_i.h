@@ -1,6 +1,7 @@
 #pragma once
 
 #include "magspoof.h"
+#include "magspoof_device.h"
 
 #include <furi.h>
 
@@ -30,6 +31,9 @@ struct Magspoof {
     NotificationApp* notification;
     SceneManager* scene_manager;
     
+    MagspoofDevice* dev;
+    MagspoofDeviceCommonData dev_edit_data;
+
     char text_store[MAGSPOOF_TEXT_STORE_SIZE + 1];
     string_t text_box_store;
 
