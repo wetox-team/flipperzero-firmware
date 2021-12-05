@@ -197,6 +197,7 @@ extern const Icon I_tank_down;
 extern const Icon I_enemy_down;
 extern const Icon I_projectile_right;
 extern const Icon I_tank_hedgehog;
+extern const Icon I_TanksSplashScreen_128x51;
 extern const Icon I_projectile_down;
 extern const Icon I_enemy_right;
 extern const Icon I_projectile_up;
