@@ -261,7 +261,7 @@ static void tanks_game_init_game(TanksState* const tanks_state) {
     tanks_state->state = GameStateLife;
 }
 
-static bool tanks_game_collision(Point const next_step, TanksState const* const tanks_state) {
+static bool tanks_game_collision(Point const next_step, bool shoot, TanksState const* const tanks_state) {
     if (next_step.x < 0 || next_step.y < 0) {
         return true;
     }
@@ -272,7 +272,11 @@ static bool tanks_game_collision(Point const next_step, TanksState const* const 
 
     char tile = tanks_state->map[next_step.x][next_step.y];
 
-    if (tile == '-' || tile == '=' || tile == '*' || tile == 'a') {
+    if (tile == '*' && !shoot) {
+        return true;
+    }
+
+    if (tile == '-' || tile == '=' || tile == 'a') {
         return true;
     }
 
@@ -313,7 +317,7 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
 
     if(tanks_state->p1->moving) {
         Point next_step = tanks_game_get_next_step(tanks_state->p1->coordinates, tanks_state->p1->direction);
-        bool crush = tanks_game_collision(next_step, tanks_state);
+        bool crush = tanks_game_collision(next_step, false, tanks_state);
 
         if(!crush) {
             tanks_state->p1->coordinates = next_step;
@@ -336,7 +340,7 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
             }
 
             Point next_step = tanks_game_get_next_step(projectile->coordinates, projectile->direction);
-            bool crush = tanks_game_collision(next_step, tanks_state);
+            bool crush = tanks_game_collision(next_step, true, tanks_state);
             projectile->coordinates = next_step;
 
             if(crush) {
@@ -363,7 +367,7 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
         projectile_state->direction = tanks_state->p1->direction;
         projectile_state->coordinates = next_step;
 
-        bool crush = tanks_game_collision(projectile_state->coordinates, tanks_state);
+        bool crush = tanks_game_collision(projectile_state->coordinates, true, tanks_state);
         projectile_state->explosion = crush;
 
         tanks_state->projectiles[freeProjectileIndex] = projectile_state;
@@ -428,10 +432,10 @@ int32_t tanks_game_app(void* p) {
                             tanks_state->p1->direction = DirectionLeft;
                             break;
                         case InputKeyOk:
-                            tanks_state->p1->shooting = true;
-
                             if(tanks_state->state == GameStateGameOver) {
                                 tanks_game_init_game(tanks_state);
+                            } else {
+                                tanks_state->p1->shooting = true;
                             }
                             break;
                         case InputKeyBack:
