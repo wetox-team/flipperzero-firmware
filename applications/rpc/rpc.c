@@ -478,9 +478,7 @@ bool rpc_pb_stream_read(pb_istream_t* istream, pb_byte_t* buf, size_t count) {
         }
     }
 
-#if SRV_RPC_DEBUG
     rpc_print_data("INPUT", buf, bytes_received);
-#endif
 
     return (count == bytes_received);
 }
@@ -491,10 +489,8 @@ void rpc_send_and_release(Rpc* rpc, PB_Main* message) {
     RpcSession* session = &rpc->session;
     pb_ostream_t ostream = PB_OSTREAM_SIZING;
 
-#if SRV_RPC_DEBUG
     FURI_LOG_I(TAG, "OUTPUT:");
     rpc_print_message(message);
-#endif
 
     bool result = pb_encode_ex(&ostream, &PB_Main_msg, message, PB_ENCODE_DELIMITED);
     furi_check(result && ostream.bytes_written);
@@ -504,9 +500,7 @@ void rpc_send_and_release(Rpc* rpc, PB_Main* message) {
 
     pb_encode_ex(&ostream, &PB_Main_msg, message, PB_ENCODE_DELIMITED);
 
-#if SRV_RPC_DEBUG
     rpc_print_data("OUTPUT", buffer, ostream.bytes_written);
-#endif
 
     osMutexAcquire(session->callbacks_mutex, osWaitForever);
     if(session->send_bytes_callback) {
@@ -549,10 +543,8 @@ int32_t rpc_srv(void* p) {
         };
 
         if(pb_decode_ex(&istream, &PB_Main_msg, rpc->decoded_message, PB_DECODE_DELIMITED)) {
-#if SRV_RPC_DEBUG
             FURI_LOG_I(TAG, "INPUT:");
             rpc_print_message(rpc->decoded_message);
-#endif
             RpcHandler* handler =
                 RpcHandlerDict_get(rpc->handlers, rpc->decoded_message->which_content);
 

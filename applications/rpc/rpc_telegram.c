@@ -15,6 +15,25 @@ static void state_callback(const PB_Main* request, void* context) {
     rpcSystem->api->handler(&request->content.tg_state_response, rpcSystem->api->instance);
 }
 
+void rpc_get_state_request(Rpc* rpc) {
+    //TelegramApi* tg_api = furi_record_open("tg");
+    PB_Telegram_TelegramStateRequest innerRequest = {
+        .count = 3,
+    };
+
+    PB_Main request = {
+        .command_id = 1,
+        .has_next = false,
+        .which_content = PB_Main_tg_state_request_tag,
+        .command_status = PB_CommandStatus_OK,
+    };
+
+    request.content.tg_state_request = innerRequest;
+
+    //FURI_LOG_I(TAG, request);
+    rpc_send_and_release(rpc, &request);
+}
+
 void* rpc_tg_alloc(Rpc* rpc) {
     furi_assert(rpc);
 
@@ -24,6 +43,8 @@ void* rpc_tg_alloc(Rpc* rpc) {
     
     rpc_tg->rpc = rpc;
     rpc_tg->api = tg_api;
+    tg_api->get_state = rpc_get_state_request;
+    tg_api->rpc = rpc;
 
     RpcHandler rpc_handler = {
         .message_handler = NULL,
