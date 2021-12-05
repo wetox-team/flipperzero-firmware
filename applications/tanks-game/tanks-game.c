@@ -210,9 +210,8 @@ unsigned char* tanks_game_serialize(const TanksState* const tanks_state) {
         }
     }
 
-    if(tanks_state->p1 != NULL) {
+    if(tanks_state->p1 != NULL && tanks_state->p1->live) {
         GameCellState cell = CellEmpty;
-        ;
 
         switch(tanks_state->p1->direction) {
         case DirectionUp:
@@ -233,7 +232,7 @@ unsigned char* tanks_game_serialize(const TanksState* const tanks_state) {
             result, tanks_state->p1->coordinates.x, tanks_state->p1->coordinates.y, cell);
     }
 
-    if(tanks_state->p2 != NULL) {
+    if(tanks_state->p2 != NULL && tanks_state->p2->live) {
         GameCellState cell = CellEmpty;
 
         switch(tanks_state->p2->direction) {
