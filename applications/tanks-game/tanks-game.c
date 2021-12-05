@@ -499,6 +499,40 @@ static uint8_t tanks_get_random_free_respawn_point_index(
     return -1;
 }
 
+static uint8_t tanks_game_get_free_projectile_index(TanksState* const tanks_state) {
+    uint8_t freeProjectileIndex;
+    for (
+        freeProjectileIndex = 0;
+        freeProjectileIndex < 100;
+        freeProjectileIndex++
+    ) {
+        if (tanks_state->projectiles[freeProjectileIndex] == NULL) {
+            return freeProjectileIndex;
+        }
+    }
+
+    return 0;
+}
+
+static void tanks_game_shoot(TanksState* const tanks_state, PlayerState *tank_state, bool is_p1, bool is_p2) {
+    tank_state->cooldown = SHOT_COOLDOWN;
+
+    uint8_t freeProjectileIndex = tanks_game_get_free_projectile_index(tanks_state);
+
+    ProjectileState* projectile_state = furi_alloc(sizeof(ProjectileState));
+    Point next_step = tanks_game_get_next_step(tank_state->coordinates, tank_state->direction);
+
+    projectile_state->direction = tank_state->direction;
+    projectile_state->coordinates = next_step;
+    projectile_state->is_p1 = is_p1;
+    projectile_state->is_p2 = is_p2;
+
+    bool crush = tanks_game_collision(projectile_state->coordinates, true, tanks_state);
+    projectile_state->explosion = crush;
+
+    tanks_state->projectiles[freeProjectileIndex] = projectile_state;
+}
+
 static void tanks_game_process_game_step(TanksState* const tanks_state) {
     if(tanks_state->enemies_left == 0 && tanks_state->enemies_live == 0) {
         tanks_state->state = GameStateGameOver;
@@ -508,6 +542,21 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
         return;
     }
 
+    // Bot turn
+    for(uint8_t i = 0; i < 6; i++) {
+        if(tanks_state->bots[i] != NULL) {
+            PlayerState * bot = tanks_state->bots[i];
+            if (bot->cooldown) {
+                bot->cooldown--;
+            }
+
+            if (bot->cooldown == 0) {
+                tanks_game_shoot(tanks_state, bot, false, false);
+            }
+        }
+    }
+
+    // Bot spawn
     if (tanks_state->enemies_respawn_cooldown) {
         tanks_state->enemies_respawn_cooldown--;
     }
@@ -635,31 +684,7 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
     }
 
     if(tanks_state->p1->shooting && tanks_state->p1->cooldown == 0) {
-        tanks_state->p1->cooldown = SHOT_COOLDOWN;
-
-        uint8_t freeProjectileIndex;
-        for (
-                freeProjectileIndex = 0;
-                freeProjectileIndex < 100;
-                freeProjectileIndex++
-            ) {
-            if (tanks_state->projectiles[freeProjectileIndex] == NULL) {
-                break;
-            }
-        }
-
-        ProjectileState* projectile_state = furi_alloc(sizeof(ProjectileState));
-        Point next_step = tanks_game_get_next_step(tanks_state->p1->coordinates, tanks_state->p1->direction);
-
-        projectile_state->direction = tanks_state->p1->direction;
-        projectile_state->coordinates = next_step;
-        projectile_state->is_p1 = true;
-        projectile_state->is_p2 = false;
-
-        bool crush = tanks_game_collision(projectile_state->coordinates, true, tanks_state);
-        projectile_state->explosion = crush;
-
-        tanks_state->projectiles[freeProjectileIndex] = projectile_state;
+        tanks_game_shoot(tanks_state, tanks_state->p1, true, false);
     }
 
     tanks_state->p1->moving = false;
