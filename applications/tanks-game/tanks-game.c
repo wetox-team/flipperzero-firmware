@@ -402,10 +402,11 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
 
     // Before the function is called, the state is set with the canvas_reset(canvas)
     if (tanks_state->state == GameStateMenu) {
-        if (tanks_state->menu_state == MenuStateLobbyMode && tanks_state->state == GameStateCooperativeClient) {
+        // TODO  добавить условие, что показываем сообщение, если клиент ещё не подключился
+        if (tanks_state->menu_state == MenuStateLobbyMode && tanks_state->state == GameStateCooperativeServer) {
             canvas_draw_frame(canvas, 0, 0, 128, 64);
 
-            canvas_draw_str_aligned(canvas, 0, 32, AlignCenter, AlignCenter, "Retrieving info...");
+            canvas_draw_str_aligned(canvas, 0, 32, AlignCenter, AlignCenter, "Waiting for other player...");
 
             CoopState coop_state = CoopStateClientJoins;
             sendDataToServer(coop_state, tanks_state);
