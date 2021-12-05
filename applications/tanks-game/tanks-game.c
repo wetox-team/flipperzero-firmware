@@ -344,6 +344,14 @@ static void tanks_game_render_constant_cells(Canvas* const canvas) {
     }
 }
 
+void tanks_game_deserialize_and_write_to_state(unsigned char* data, TanksState* const tanks_state) {
+    for(uint8_t i = 0; i < 11 * 16; i++) {
+        uint8_t x = i % 16;
+        uint8_t y = i / 16;
+        tanks_state->map[x][y] = data[i];
+    }
+}
+
 void tanks_game_deserialize_and_render(unsigned char* data, Canvas* const canvas) {
     //for (uint8_t i = 0; i < 11 * 16 / 2; i++) {
     for(uint8_t i = 0; i < 11 * 16; i++) {
