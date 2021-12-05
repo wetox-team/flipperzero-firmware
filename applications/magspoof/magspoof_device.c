@@ -23,35 +23,6 @@ void magspoof_device_free(MagspoofDevice* magspoof_dev) {
     free(magspoof_dev);
 }
 
-void nfc_device_prepare_format_string(NfcDevice* dev, string_t format_string) {
-    if(dev->format == NfcDeviceSaveFormatUid) {
-        string_set_str(format_string, "UID");
-    } else if(dev->format == NfcDeviceSaveFormatBankCard) {
-        string_set_str(format_string, "Bank card");
-    } else if(dev->format == NfcDeviceSaveFormatMifareUl) {
-        string_set_str(format_string, "Mifare Ultralight");
-    } else {
-        string_set_str(format_string, "Unknown");
-    }
-}
-
-bool nfc_device_parse_format_string(NfcDevice* dev, string_t format_string) {
-    if(string_start_with_str_p(format_string, "UID")) {
-        dev->format = NfcDeviceSaveFormatUid;
-        dev->dev_data.nfc_data.protocol = NfcDeviceProtocolUnknown;
-        return true;
-    } else if(string_start_with_str_p(format_string, "Bank card")) {
-        dev->format = NfcDeviceSaveFormatBankCard;
-        dev->dev_data.nfc_data.protocol = NfcDeviceProtocolEMV;
-        return true;
-    } else if(string_start_with_str_p(format_string, "Mifare Ultralight")) {
-        dev->format = NfcDeviceSaveFormatMifareUl;
-        dev->dev_data.nfc_data.protocol = NfcDeviceProtocolMifareUl;
-        return true;
-    }
-    return false;
-}
-
 static bool magspoof_device_save_data(FlipperFile* file, MagspoofDevice* dev) {
     bool saved = false;
     MagspoofDeviceCommonData* data = &dev->dev_data.magspoof_data;
@@ -65,7 +36,7 @@ static bool magspoof_device_save_data(FlipperFile* file, MagspoofDevice* dev) {
     return saved;
 }
 
-bool magspoof_device_load_common_data(FlipperFile* file, NfcDevice* dev) {
+bool magspoof_device_load_common_data(FlipperFile* file, MagspoofDevice* dev) {
     bool parsed = false;
     MagspoofDeviceCommonData* data = &dev->dev_data.magspoof_data;
     memset(data, 0, sizeof(MagspoofDeviceCommonData));
@@ -88,7 +59,7 @@ void magspoof_device_set_name(MagspoofDevice* dev, const char* name) {
     strlcpy(dev->dev_name, name, MAGSPOOF_DEV_NAME_MAX_LEN);
 }
 
-static bool nfc_device_save_file(
+static bool magspoof_device_save_file(
     MagspoofDevice* dev,
     const char* dev_name,
     const char* folder,
@@ -109,9 +80,9 @@ static bool nfc_device_save_file(
         // Open file
         if(!flipper_file_open_always(file, string_get_cstr(temp_str))) break;
         // Write header
-        if(!flipper_file_write_header_cstr(file, nfc_file_header, nfc_file_version)) break;
+        if(!flipper_file_write_header_cstr(file, magspoof_file_header, magspoof_file_version)) break;
         
-        if(!nfc_device_save_data(file, dev)) break;
+        if(!magspoof_device_save_data(file, dev)) break;
         
         saved = true;
     } while(0);
@@ -126,7 +97,7 @@ static bool nfc_device_save_file(
 }
 
 bool magspoof_device_save(MagspoofDevice* dev, const char* dev_name) {
-    return nfc_device_save_file(dev, dev_name, nfc_app_folder, nfc_app_extension);
+    return magspoof_device_save_file(dev, dev_name, magspoof_app_folder, magspoof_app_extension);
 }
 
 static bool maspoof_device_load_data(MagspoofDevice* dev, string_t path) {
@@ -143,12 +114,12 @@ static bool maspoof_device_load_data(MagspoofDevice* dev, string_t path) {
         // Read and verify file header
         uint32_t version = 0;
         if(!flipper_file_read_header(file, temp_str, &version)) break;
-        if(string_cmp_str(temp_str, nfc_file_header) || (version != nfc_file_version)) {
+        if(string_cmp_str(temp_str, magspoof_file_header) || (version != magspoof_file_version)) {
             depricated_version = true;
             break;
         }
     
-        if(!nfc_device_load_common_data(file, dev)) break;
+        if(!magspoof_device_load_common_data(file, dev)) break;
 
         parsed = true;
     } while(false);
