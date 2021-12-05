@@ -35,6 +35,8 @@ typedef struct {
     Point coordinates;
     Direction direction;
     bool explosion;
+    bool is_p1;
+    bool is_p2;
 } ProjectileState;
 
 typedef struct {
@@ -545,6 +547,7 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
                     tanks_state->map[c.x][c.y] = ' ';
                 }
 
+                // Kill a bot
                 for (
                     uint8_t i = 0;
                     i < 6;
@@ -558,6 +561,14 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
                             tanks_state->enemies_live--;
                             free(tanks_state->bots[i]);
                             tanks_state->bots[i] = NULL;
+
+                            if (projectile->is_p1) {
+                                tanks_state->p1->score++;
+                            }
+
+                            if (projectile->is_p2) {
+                                tanks_state->p2->score++;
+                            }
                         }
                     }
                 }
@@ -606,6 +617,8 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
 
         projectile_state->direction = tanks_state->p1->direction;
         projectile_state->coordinates = next_step;
+        projectile_state->is_p1 = true;
+        projectile_state->is_p2 = false;
 
         bool crush = tanks_game_collision(projectile_state->coordinates, true, tanks_state);
         projectile_state->explosion = crush;
