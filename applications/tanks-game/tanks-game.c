@@ -122,7 +122,7 @@ char map[11][16 + 1] = {
     "*       -  *   -",
 };
 
-static void tanks_game_write_sell(unsigned char* data, int8_t x, int8_t y, GameCellState cell) {
+static void tanks_game_write_cell(unsigned char* data, int8_t x, int8_t y, GameCellState cell) {
     uint8_t index = y * 16 + x;
     data[index] = cell;
 //    if (x % 2) {
@@ -145,7 +145,7 @@ unsigned char* tanks_game_serialize(const TanksState* const tanks_state) {
             if (tanks_state->map[x][y] == '-') {
                 cell = CellWall;
 
-                tanks_game_write_sell(
+                tanks_game_write_cell(
                     result,
                     x,
                     y,
@@ -174,7 +174,7 @@ unsigned char* tanks_game_serialize(const TanksState* const tanks_state) {
                     break;
             }
 
-            tanks_game_write_sell(
+            tanks_game_write_cell(
                 result,
                 tanks_state->bots[i]->coordinates.x,
                 tanks_state->bots[i]->coordinates.y,
@@ -189,21 +189,21 @@ unsigned char* tanks_game_serialize(const TanksState* const tanks_state) {
             GameCellState cell = CellEmpty;
 
             switch(tanks_state->projectiles[x]->direction) {
-            case DirectionUp:
-                cell = CellProjectileUp;
-                break;
-            case DirectionDown:
-                cell = CellProjectileDown;
-                break;
-            case DirectionRight:
-                cell = CellProjectileRight;
-                break;
-            case DirectionLeft:
-                cell = CellProjectileLeft;
-                break;
+                case DirectionUp:
+                    cell = CellProjectileUp;
+                    break;
+                case DirectionDown:
+                    cell = CellProjectileDown;
+                    break;
+                case DirectionRight:
+                    cell = CellProjectileRight;
+                    break;
+                case DirectionLeft:
+                    cell = CellProjectileLeft;
+                    break;
             }
 
-            tanks_game_write_sell(
+            tanks_game_write_cell(
                 result,
                 tanks_state->projectiles[x]->coordinates.x,
                 tanks_state->projectiles[x]->coordinates.y,
@@ -216,21 +216,21 @@ unsigned char* tanks_game_serialize(const TanksState* const tanks_state) {
         GameCellState cell = CellEmpty;;
 
         switch(tanks_state->p1->direction) {
-        case DirectionUp:
-            cell = CellTankUp;
-            break;
-        case DirectionDown:
-            cell = CellTankDown;
-            break;
-        case DirectionRight:
-            cell = CellTankRight;
-            break;
-        case DirectionLeft:
-            cell = CellTankLeft;
-            break;
+            case DirectionUp:
+                cell = CellTankUp;
+                break;
+            case DirectionDown:
+                cell = CellTankDown;
+                break;
+            case DirectionRight:
+                cell = CellTankRight;
+                break;
+            case DirectionLeft:
+                cell = CellTankLeft;
+                break;
         }
 
-        tanks_game_write_sell(
+        tanks_game_write_cell(
             result,
             tanks_state->p1->coordinates.x,
             tanks_state->p1->coordinates.y,
@@ -242,21 +242,21 @@ unsigned char* tanks_game_serialize(const TanksState* const tanks_state) {
         GameCellState cell = CellEmpty;
 
         switch(tanks_state->p2->direction) {
-        case DirectionUp:
-            cell = CellTankUp;
-            break;
-        case DirectionDown:
-            cell = CellTankDown;
-            break;
-        case DirectionRight:
-            cell = CellTankRight;
-            break;
-        case DirectionLeft:
-            cell = CellTankLeft;
-            break;
+            case DirectionUp:
+                cell = CellTankUp;
+                break;
+            case DirectionDown:
+                cell = CellTankDown;
+                break;
+            case DirectionRight:
+                cell = CellTankRight;
+                break;
+            case DirectionLeft:
+                cell = CellTankLeft;
+                break;
         }
 
-        tanks_game_write_sell(
+        tanks_game_write_cell(
             result,
             tanks_state->p2->coordinates.x,
             tanks_state->p2->coordinates.y,
