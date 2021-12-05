@@ -10,7 +10,7 @@ const uint8_t FIELD_HEIGHT = 11;
 const uint16_t TURN_LENGTH = 300;
 const uint16_t LONG_PRESS_LENGTH = 10;
 
-const uint8_t SHOT_COOLDOWN = 3;
+const uint8_t SHOT_COOLDOWN = 5;
 const uint8_t RESPAWN_COOLDOWN = 4;
 
 const uint8_t CELL_LENGTH_PIXELS = 6;
