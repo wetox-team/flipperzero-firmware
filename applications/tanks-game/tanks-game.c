@@ -99,6 +99,8 @@ typedef struct {
     uint8_t enemies_left;
     uint8_t enemies_live;
     uint8_t enemies_respawn_cooldown;
+    uint8_t received;
+    uint8_t sent;
     PlayerState* p1;
     PlayerState* p2;
 } TanksState;
@@ -560,11 +562,21 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
     canvas_draw_str_aligned(canvas, 127, 38, AlignRight, AlignBottom, buffer1);
 
     if(tanks_state->state == GameStateCooperativeServer && tanks_state->p2) {
-        snprintf(buffer1, sizeof(buffer1), "p2 l: %u", tanks_state->p2->lives);
+        snprintf(buffer1, sizeof(buffer1), "rec: %u", tanks_state->received);
         canvas_draw_str_aligned(canvas, 127, 48, AlignRight, AlignBottom, buffer1);
 
-        snprintf(buffer1, sizeof(buffer1), "p2 s: %u", tanks_state->p2->score);
+        snprintf(buffer1, sizeof(buffer1), "snt: %u", tanks_state->sent);
         canvas_draw_str_aligned(canvas, 127, 58, AlignRight, AlignBottom, buffer1);
+//        snprintf(buffer1, sizeof(buffer1), "p2 l: %u", tanks_state->p2->lives);
+//        canvas_draw_str_aligned(canvas, 127, 48, AlignRight, AlignBottom, buffer1);
+//
+//        snprintf(buffer1, sizeof(buffer1), "p2 s: %u", tanks_state->p2->score);
+//        canvas_draw_str_aligned(canvas, 127, 58, AlignRight, AlignBottom, buffer1);
+    }
+
+    if(tanks_state->state == GameStateCooperativeClient) {
+        snprintf(buffer1, sizeof(buffer1), "rec: %u", tanks_state->received);
+        canvas_draw_str_aligned(canvas, 127, 48, AlignRight, AlignBottom, buffer1);
     }
 
     // Game Over banner
@@ -580,7 +592,7 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
         if(tanks_state->enemies_left == 0 && tanks_state->enemies_live == 0) {
             canvas_draw_frame(canvas, 0, 0, 128, 64);
             canvas_draw_icon(canvas, 0, 0, &I_TanksSplashScreen_128x51);
-            canvas_draw_str_aligned(canvas, 124, 10, AlignRight, AlignBottom, "You win!"));
+            canvas_draw_str_aligned(canvas, 124, 10, AlignRight, AlignBottom, "You win!");
         } else {
             canvas_draw_frame(canvas, 34, 20, 62, 24);
             canvas_draw_str(canvas, 37, 31, "Game Over");
@@ -792,6 +804,8 @@ static void tanks_game_init_game(TanksState* const tanks_state, GameState type) 
     tanks_state->enemies_left = 5;
     tanks_state->enemies_live = 0;
     tanks_state->enemies_respawn_cooldown = RESPAWN_COOLDOWN;
+    tanks_state->received = 0;
+    tanks_state->sent = 0;
 
     if (type == GameStateCooperativeClient) {
         for(int8_t x = 0; x < FIELD_WIDTH; x++) {
@@ -1334,12 +1348,14 @@ int32_t tanks_game_app(void* p) {
                     }
                 }
             } else if(event.type == EventTypeTick) {
-                if (tanks_state->state == GameStateSingle) {
+                if (tanks_state->state == GameStateCooperativeServer) {
                     if(subghz_tx_rx_worker_available(subghz_txrx)) {
                         memset(incomingMessage, 0x00, message_max_len);
                         subghz_tx_rx_worker_read(subghz_txrx, incomingMessage, message_max_len);
 
                         if(incomingMessage != NULL) {
+                            tanks_state->received++;
+
                             switch(incomingMessage[0]) {
                             case GoesUp:
                                 tanks_state->p2->moving = true;
@@ -1384,12 +1400,17 @@ int32_t tanks_game_app(void* p) {
                         subghz_txrx,
                         (uint8_t*)string_get_cstr(serializedData),
                         strlen(string_get_cstr(serializedData)));
-                } else if(tanks_state->state == GameStateCooperativeServer) {
+
+                    tanks_state->sent++;
+                } else if(tanks_state->state == GameStateSingle) {
                     tanks_game_process_game_step(tanks_state);
                 } else if(tanks_state->state == GameStateCooperativeClient) {
                     if(subghz_tx_rx_worker_available(subghz_txrx)) {
                         memset(incomingMessage, 0x00, message_max_len);
                         subghz_tx_rx_worker_read(subghz_txrx, incomingMessage, message_max_len);
+
+                        tanks_state->received++;
+
                         tanks_game_deserialize_and_write_to_state(
                             (unsigned char*)incomingMessage, tanks_state);
                     }
