@@ -797,8 +797,8 @@ static void tanks_game_init_game(TanksState* const tanks_state, GameState type) 
         tanks_state->p2 = p2_state;
     }
 
-    tanks_state->enemies_left = 0;
-    tanks_state->enemies_live = 5;
+    tanks_state->enemies_left = 5;
+    tanks_state->enemies_live = 0;
     tanks_state->enemies_respawn_cooldown = RESPAWN_COOLDOWN;
     tanks_state->received = 0;
     tanks_state->sent = 0;
