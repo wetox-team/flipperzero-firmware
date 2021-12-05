@@ -123,21 +123,22 @@ char map[11][16 + 1] = {
 };
 
 static void tanks_game_write_sell(unsigned char* data, int8_t x, int8_t y, GameCellState cell) {
-    uint8_t index = (y * 16 / 2) + (x / 2);
-    if (x % 2) {
-        data[index] = (data[index] & 0b00001111) + (cell << 4);
-    } else {
-        data[index] = (data[index] & 0b0000) + cell;
-    }
+    uint8_t index = y * 16 + x;
+    data[index] = cell;
+//    if (x % 2) {
+//        data[index] = (data[index] & 0b00001111) + (cell << 4);
+//    } else {
+//        data[index] = (data[index] & 0b0000) + cell;
+//    }
 }
 
 // Enum with < 16 items => 4 bits in cell, 2 cells in byte
-static unsigned char* tanks_game_serialize(const TanksState* const tanks_state) {
-    static unsigned char result[11 * 16 / 2];
+unsigned char* tanks_game_serialize(const TanksState* const tanks_state) {
+    static unsigned char result[11 * 16 + 1];
 
     for(int8_t x = 0; x < FIELD_WIDTH; x++) {
         for(int8_t y = 0; y < FIELD_HEIGHT; y++) {
-            result[(y * FIELD_WIDTH + x) / 2] = 0;
+            result[(y * FIELD_WIDTH + x)] = 0;
 
             GameCellState cell = CellEmpty;
 
@@ -317,7 +318,7 @@ static void tanks_game_render_cell(GameCellState cell, uint8_t x, uint8_t y, Can
         icon = &I_projectile_left;
         break;
     default:
-        icon = &I_tank_explosion;
+        return;
         break;
     }
 
@@ -327,7 +328,7 @@ static void tanks_game_render_cell(GameCellState cell, uint8_t x, uint8_t y, Can
 static void tanks_game_render_constant_cells(Canvas* const canvas) {
     for(int8_t x = 0; x < FIELD_WIDTH; x++) {
         for(int8_t y = 0; y < FIELD_HEIGHT; y++) {
-            char cell = map[x][y];
+            char cell = map[y][x];
 
             if (cell == '=') {
                 canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, &I_tank_stone);
@@ -347,17 +348,18 @@ static void tanks_game_render_constant_cells(Canvas* const canvas) {
     }
 }
 
-static void tanks_game_deserialize_and_render(unsigned char data[11 * 16 / 2], Canvas* const canvas) {
-    for (uint8_t i = 0; i < 11 * 16 / 2; i++) {
+void tanks_game_deserialize_and_render(unsigned char* data, Canvas* const canvas) {
+    //for (uint8_t i = 0; i < 11 * 16 / 2; i++) {
+    for (uint8_t i = 0; i < 11 * 16; i++) {
         char cell = data[i];
-        uint8_t x = i % 8; // One line (16 cells) = 8 bytes
-        uint8_t y = i / 8;
+        uint8_t x = i % 16; // One line (16 cells) = 8 bytes
+        uint8_t y = i / 16;
 
-        GameCellState first = cell >> 4;
-        GameCellState second = cell & 0b00001111;
+//        GameCellState first = cell >> 4;
+//        GameCellState second = cell & 0b00001111;
 
-        tanks_game_render_cell(first, x, y, canvas);
-        tanks_game_render_cell(second, x + 1, y, canvas);
+        tanks_game_render_cell(cell, x, y, canvas);
+//        tanks_game_render_cell(second, x + 1, y, canvas);
     }
 
     tanks_game_render_constant_cells(canvas);
@@ -415,123 +417,123 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
     canvas_draw_box(canvas, FIELD_WIDTH * CELL_LENGTH_PIXELS, 0, 2, SCREEN_HEIGHT);
 
     // Player
-    Point coordinates = tanks_state->p1->coordinates;
-    const Icon *icon;
-    switch (tanks_state->p1->direction) {
-    case DirectionUp:
-        icon = &I_tank_up;
-        break;
-    case DirectionDown:
-        icon = &I_tank_down;
-        break;
-    case DirectionRight:
-        icon = &I_tank_right;
-        break;
-    case DirectionLeft:
-        icon = &I_tank_left;
-        break;
-    default:
-        icon = &I_tank_explosion;
-    }
+//    Point coordinates = tanks_state->p1->coordinates;
+//    const Icon *icon;
+//    switch (tanks_state->p1->direction) {
+//    case DirectionUp:
+//        icon = &I_tank_up;
+//        break;
+//    case DirectionDown:
+//        icon = &I_tank_down;
+//        break;
+//    case DirectionRight:
+//        icon = &I_tank_right;
+//        break;
+//    case DirectionLeft:
+//        icon = &I_tank_left;
+//        break;
+//    default:
+//        icon = &I_tank_explosion;
+//    }
 
-    if (tanks_state->p1->live) {
-        canvas_draw_icon(canvas, coordinates.x * CELL_LENGTH_PIXELS, coordinates.y * CELL_LENGTH_PIXELS - 1, icon);
-    }
+//    if (tanks_state->p1->live) {
+//        canvas_draw_icon(canvas, coordinates.x * CELL_LENGTH_PIXELS, coordinates.y * CELL_LENGTH_PIXELS - 1, icon);
+//    }
+//
+//    for(int8_t x = 0; x < FIELD_WIDTH; x++) {
+//        for(int8_t y = 0; y < FIELD_HEIGHT; y++) {
+//            switch (tanks_state->map[x][y]) {
+//            case '-':
+//                canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, &I_tank_wall);
+//                break;
+//
+//            case '=':
+//                canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, &I_tank_stone);
+//                break;
+//
+//            case '*':
+//                canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, &I_tank_hedgehog);
+//                break;
+//
+//            case 'a':
+//                canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, &I_tank_base);
+//                break;
+//            }
+//        }
+//    }
 
-    for(int8_t x = 0; x < FIELD_WIDTH; x++) {
-        for(int8_t y = 0; y < FIELD_HEIGHT; y++) {
-            switch (tanks_state->map[x][y]) {
-            case '-':
-                canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, &I_tank_wall);
-                break;
+//    for (
+//        uint8_t i = 0;
+//        i < 6;
+//        i++
+//    ) {
+//        if (tanks_state->bots[i] != NULL) {
+//            const Icon *icon;
+//
+//            switch(tanks_state->bots[i]->direction) {
+//            case DirectionUp:
+//                icon = &I_enemy_up;
+//                break;
+//            case DirectionDown:
+//                icon = &I_enemy_down;
+//                break;
+//            case DirectionRight:
+//                icon = &I_enemy_right;
+//                break;
+//            case DirectionLeft:
+//                icon = &I_enemy_left;
+//                break;
+//            default:
+//                icon = &I_tank_explosion;
+//            }
+//
+//            canvas_draw_icon(
+//                canvas,
+//                tanks_state->bots[i]->coordinates.x * CELL_LENGTH_PIXELS,
+//                tanks_state->bots[i]->coordinates.y * CELL_LENGTH_PIXELS - 1,
+//                icon);
+//        }
+//    }
 
-            case '=':
-                canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, &I_tank_stone);
-                break;
-
-            case '*':
-                canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, &I_tank_hedgehog);
-                break;
-
-            case 'a':
-                canvas_draw_icon(canvas, x * CELL_LENGTH_PIXELS, y * CELL_LENGTH_PIXELS - 1, &I_tank_base);
-                break;
-            }
-        }
-    }
-
-    for (
-        uint8_t i = 0;
-        i < 6;
-        i++
-    ) {
-        if (tanks_state->bots[i] != NULL) {
-            const Icon *icon;
-
-            switch(tanks_state->bots[i]->direction) {
-            case DirectionUp:
-                icon = &I_enemy_up;
-                break;
-            case DirectionDown:
-                icon = &I_enemy_down;
-                break;
-            case DirectionRight:
-                icon = &I_enemy_right;
-                break;
-            case DirectionLeft:
-                icon = &I_enemy_left;
-                break;
-            default:
-                icon = &I_tank_explosion;
-            }
-
-            canvas_draw_icon(
-                canvas,
-                tanks_state->bots[i]->coordinates.x * CELL_LENGTH_PIXELS,
-                tanks_state->bots[i]->coordinates.y * CELL_LENGTH_PIXELS - 1,
-                icon);
-        }
-    }
-
-    for(int8_t x = 0; x < 100; x++) {
-        if (tanks_state->projectiles[x] != NULL) {
-            ProjectileState *projectile = tanks_state->projectiles[x];
-
-            if (projectile->explosion) {
-                canvas_draw_icon(
-                    canvas,
-                    projectile->coordinates.x * CELL_LENGTH_PIXELS,
-                    projectile->coordinates.y * CELL_LENGTH_PIXELS - 1,
-                    &I_tank_explosion);
-                continue;
-            }
-
-            const Icon *icon;
-
-            switch(projectile->direction) {
-            case DirectionUp:
-                icon = &I_projectile_up;
-                break;
-            case DirectionDown:
-                icon = &I_projectile_down;
-                break;
-            case DirectionRight:
-                icon = &I_projectile_right;
-                break;
-            case DirectionLeft:
-                icon = &I_projectile_left;
-                break;
-            default:
-                icon = &I_tank_explosion;
-            }
-
-            canvas_draw_icon(
-                canvas,
-                projectile->coordinates.x * CELL_LENGTH_PIXELS,
-                projectile->coordinates.y * CELL_LENGTH_PIXELS - 1,
-                icon);
-        }
-    }
+//    for(int8_t x = 0; x < 100; x++) {
+//        if (tanks_state->projectiles[x] != NULL) {
+//            ProjectileState *projectile = tanks_state->projectiles[x];
+//
+//            if (projectile->explosion) {
+//                canvas_draw_icon(
+//                    canvas,
+//                    projectile->coordinates.x * CELL_LENGTH_PIXELS,
+//                    projectile->coordinates.y * CELL_LENGTH_PIXELS - 1,
+//                    &I_tank_explosion);
+//                continue;
+//            }
+//
+//            const Icon *icon;
+//
+//            switch(projectile->direction) {
+//            case DirectionUp:
+//                icon = &I_projectile_up;
+//                break;
+//            case DirectionDown:
+//                icon = &I_projectile_down;
+//                break;
+//            case DirectionRight:
+//                icon = &I_projectile_right;
+//                break;
+//            case DirectionLeft:
+//                icon = &I_projectile_left;
+//                break;
+//            default:
+//                icon = &I_tank_explosion;
+//            }
+//
+//            canvas_draw_icon(
+//                canvas,
+//                projectile->coordinates.x * CELL_LENGTH_PIXELS,
+//                projectile->coordinates.y * CELL_LENGTH_PIXELS - 1,
+//                icon);
+//        }
+//    }
 
     // Info
     canvas_set_color(canvas, ColorBlack);
@@ -573,10 +575,8 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
     }
 
     // TEST start
-    unsigned char *data = tanks_game_serialize(tanks_state);
-    // printf(data);
-    tanks_game_deserialize_and_render(data, canvas);
-    free(data);
+     unsigned char *data = tanks_game_serialize(tanks_state);
+     tanks_game_deserialize_and_render(data, canvas);
     // TEST enf
 
     release_mutex((ValueMutex*)ctx, tanks_state);
