@@ -362,7 +362,9 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
 
         projectile_state->direction = tanks_state->p1->direction;
         projectile_state->coordinates = next_step;
-        projectile_state->explosion = false;
+
+        bool crush = tanks_game_collision(projectile_state->coordinates, tanks_state);
+        projectile_state->explosion = crush;
 
         tanks_state->projectiles[freeProjectileIndex] = projectile_state;
     }
