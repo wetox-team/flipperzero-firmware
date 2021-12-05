@@ -70,7 +70,7 @@ static void submenu_view_draw_callback(Canvas* canvas, void* _model) {
             if(SubmenuItemArray_cref(it)->icon) {
                 canvas_draw_icon(
                     canvas,
-                    3,
+                    4,
                     y_offset + (item_position * item_height) + 1,
                     SubmenuItemArray_cref(it)->icon);
 
