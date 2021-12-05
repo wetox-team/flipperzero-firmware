@@ -16,7 +16,6 @@ typedef struct {
 
 typedef enum {
     GameStateLife,
-    GameStateLastChance,
     GameStateGameOver,
 } GameState;
 
@@ -215,6 +214,13 @@ static void tanks_game_init_game(TanksState* const tanks_state) {
         "*       -  *   -",
     };
 
+    for(int8_t x = 0; x < 100; x++) {
+        if(tanks_state->projectiles[x] != NULL) {
+            free(tanks_state->projectiles[x]);
+            tanks_state->projectiles[x] = NULL;
+        }
+    }
+
     Point c = {5, 5};
 
     for(int8_t x = 0; x < FIELD_WIDTH; x++) {
@@ -332,6 +338,11 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
             if (projectile->explosion) {
                 if (tanks_state->map[c.x][c.y] == '-') {
                     tanks_state->map[c.x][c.y] = ' ';
+                }
+
+                if (tanks_state->map[c.x][c.y] == 'a') {
+                    tanks_state->state = GameStateGameOver;
+                    return;
                 }
 
                 free(tanks_state->projectiles[x]);
