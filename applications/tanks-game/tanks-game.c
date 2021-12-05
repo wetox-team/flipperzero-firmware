@@ -44,7 +44,9 @@ typedef struct {
     Direction direction;
     bool moving;
     bool shooting;
+    bool live;
     uint8_t cooldown;
+    uint8_t respawn_cooldown;
 } PlayerState;
 
 typedef struct {
@@ -169,6 +171,20 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
         }
     }
 
+    for (
+        uint8_t i = 0;
+        i < 6;
+        i++
+    ) {
+        if (tanks_state->bots[i] != NULL) {
+            canvas_draw_icon(
+                canvas,
+                tanks_state->bots[i]->coordinates.x * CELL_LENGTH_PIXELS,
+                tanks_state->bots[i]->coordinates.y * CELL_LENGTH_PIXELS - 1,
+                &I_enemy_left);
+        }
+    }
+
     // Game Over banner
     if(tanks_state->state == GameStateGameOver) {
         // Screen is 128x64 px
@@ -274,7 +290,9 @@ static void tanks_game_init_game(TanksState* const tanks_state) {
         DirectionRight,
         0,
         0,
+        1,
         SHOT_COOLDOWN,
+        PLAYER_RESPAWN_COOLDOWN,
     };
 
     PlayerState* p1_state = furi_alloc(sizeof(PlayerState));
@@ -336,9 +354,149 @@ static Point tanks_game_get_next_step(Point coordinates, Direction direction) {
     return next_step;
 }
 
+static bool tanks_get_cell_is_free(TanksState* const tanks_state, Point point) {
+    // Tiles
+    if (tanks_state->map[point.x][point.y] != ' ') {
+        return false;
+    }
+
+    // Projectiles
+    for(int8_t x = 0; x < 100; x++) {
+        if(tanks_state->projectiles[x] != NULL) {
+            if (
+                tanks_state->projectiles[x]->coordinates.x == point.x &&
+                tanks_state->projectiles[x]->coordinates.y == point.y
+                ) {
+                return false;
+            }
+        }
+    }
+
+    // Player 1
+    if (tanks_state->p1 != NULL) {
+        if (
+            tanks_state->p1->coordinates.x == point.x &&
+            tanks_state->p1->coordinates.y == point.y
+           ) {
+            return false;
+        }
+    }
+
+    // Player 2
+    if (tanks_state->p2 != NULL) {
+        if (
+            tanks_state->p2->coordinates.x == point.x &&
+            tanks_state->p2->coordinates.y == point.y
+        ) {
+            return false;
+        }
+    }
+
+    // Bots
+    for(int8_t x = 0; x < 6; x++) {
+        if(tanks_state->bots[x] != NULL) {
+            if (
+                tanks_state->bots[x]->coordinates.x == point.x &&
+                tanks_state->bots[x]->coordinates.y == point.y
+            ) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+static uint8_t tanks_get_random_free_respawn_point_index(
+    TanksState* const tanks_state,
+    Point respawn_points[3]
+    ) {
+
+    uint8_t first = rand() % 3;
+    int8_t add = rand() % 2 ? +1 : -1;
+    int8_t second = first + add;
+    uint8_t third;
+
+    if (second == 4) {
+        second = 0;
+    } else if (second == -1) {
+        second = 3;
+    }
+
+    for (uint8_t i = 0; i < 3; i++) {
+        if (i != first && i != second) {
+            third = i;
+        }
+    }
+
+    if (tanks_get_cell_is_free(tanks_state, respawn_points[first])) {
+        return first;
+    }
+
+    if (tanks_get_cell_is_free(tanks_state, respawn_points[second])) {
+        return second;
+    }
+
+    if (tanks_get_cell_is_free(tanks_state, respawn_points[third])) {
+        return third;
+    }
+
+    return -1;
+}
+
 static void tanks_game_process_game_step(TanksState* const tanks_state) {
     if(tanks_state->state == GameStateGameOver) {
         return;
+    }
+
+    if (tanks_state->enemies_respawn_cooldown) {
+        tanks_state->enemies_respawn_cooldown--;
+    }
+
+    if (
+        tanks_state->enemies_left > 0 &&
+        tanks_state->enemies_live <= 4 &&
+        tanks_state->enemies_respawn_cooldown == 0)
+    {
+        int8_t index = tanks_get_random_free_respawn_point_index(
+            tanks_state,
+            tanks_state->team_two_respawn_points
+            );
+
+        if (index != -1) {
+            tanks_state->enemies_respawn_cooldown = RESPAWN_COOLDOWN;
+            Point point = tanks_state->team_two_respawn_points[index];
+
+            Point c = {point.x, point.y};
+
+            PlayerState bot = {
+                c,
+                0,
+                0,
+                DirectionLeft,
+                0,
+                0,
+                1,
+                SHOT_COOLDOWN,
+                PLAYER_RESPAWN_COOLDOWN,
+            };
+
+            uint8_t freeEnemyIndex;
+            for (
+                freeEnemyIndex = 0;
+                freeEnemyIndex < 6;
+                freeEnemyIndex++
+            ) {
+                if (tanks_state->bots[freeEnemyIndex] == NULL) {
+                    break;
+                }
+            }
+
+            PlayerState* bot_state = furi_alloc(sizeof(PlayerState));
+            *bot_state = bot;
+
+            tanks_state->bots[freeEnemyIndex] = bot_state;
+        }
     }
 
     if(tanks_state->p1->moving) {

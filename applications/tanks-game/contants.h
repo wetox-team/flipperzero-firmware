@@ -12,6 +12,7 @@ const uint16_t LONG_PRESS_LENGTH = 10;
 
 const uint8_t SHOT_COOLDOWN = 5;
 const uint8_t RESPAWN_COOLDOWN = 4;
+const uint8_t PLAYER_RESPAWN_COOLDOWN = 1;
 
 const uint8_t CELL_LENGTH_PIXELS = 6;
 
