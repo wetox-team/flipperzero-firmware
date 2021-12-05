@@ -540,23 +540,23 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
     canvas_set_font(canvas, FontSecondary);
     char buffer1[13];
     snprintf(buffer1, sizeof(buffer1), "live: %u", tanks_state->enemies_live);
-    canvas_draw_str_aligned(canvas, 127, 13, AlignRight, AlignBottom, buffer1);
+    canvas_draw_str_aligned(canvas, 127, 8, AlignRight, AlignBottom, buffer1);
 
     snprintf(buffer1, sizeof(buffer1), "left: %u", tanks_state->enemies_left);
-    canvas_draw_str_aligned(canvas, 127, 25, AlignRight, AlignBottom, buffer1);
+    canvas_draw_str_aligned(canvas, 127, 18, AlignRight, AlignBottom, buffer1);
 
     snprintf(buffer1, sizeof(buffer1), "p1 l: %u", tanks_state->p1->lives);
-    canvas_draw_str_aligned(canvas, 127, 37, AlignRight, AlignBottom, buffer1);
+    canvas_draw_str_aligned(canvas, 127, 28, AlignRight, AlignBottom, buffer1);
 
     snprintf(buffer1, sizeof(buffer1), "p1 s: %u", tanks_state->p1->score);
-    canvas_draw_str_aligned(canvas, 127, 49, AlignRight, AlignBottom, buffer1);
+    canvas_draw_str_aligned(canvas, 127, 38, AlignRight, AlignBottom, buffer1);
 
     if(tanks_state->state == GameStateCooperativeServer && tanks_state->p2) {
         snprintf(buffer1, sizeof(buffer1), "p2 l: %u", tanks_state->p2->lives);
-        canvas_draw_str_aligned(canvas, 127, 61, AlignRight, AlignBottom, buffer1);
+        canvas_draw_str_aligned(canvas, 127, 48, AlignRight, AlignBottom, buffer1);
 
         snprintf(buffer1, sizeof(buffer1), "p2 s: %u", tanks_state->p2->score);
-        canvas_draw_str_aligned(canvas, 127, 73, AlignRight, AlignBottom, buffer1);
+        canvas_draw_str_aligned(canvas, 127, 58, AlignRight, AlignBottom, buffer1);
     }
 
     // Game Over banner
@@ -1287,7 +1287,7 @@ int32_t tanks_game_app(void* p) {
                     }
                 }
             } else if(event.type == EventTypeTick) {
-                if(tanks_state->state == GameStateCooperativeServer) {
+                if(tanks_state->state == GameStateCooperativeServer || tanks_state->state == GameStateSingle) {
                     tanks_game_process_game_step(tanks_state);
                 } else if(tanks_state->state == GameStateCooperativeClient) {
                     if(subghz_tx_rx_worker_available(subghz_txrx)) {
