@@ -34,6 +34,26 @@ void rpc_get_state_request(Rpc* rpc) {
     rpc_send_and_release(rpc, &request);
 }
 
+void rpc_tg_send_msg(Rpc* rpc, int32_t id, char* message) {
+    char* msg = furi_alloc(20);
+    strcpy(msg, message);
+    PB_Telegram_TelegramSendMessageRequest innerRequest = {
+        .id = id,
+        .msg = msg
+    };
+
+    PB_Main request = {
+        .command_id = 1,
+        .has_next = false,
+        .which_content = PB_Main_tg_send_msg_request_tag,
+        .command_status = PB_CommandStatus_OK,
+    };
+
+    request.content.tg_send_msg_request = innerRequest;
+
+    rpc_send_and_release(rpc, &request);
+}
+
 void* rpc_tg_alloc(Rpc* rpc) {
     furi_assert(rpc);
 
@@ -43,6 +63,7 @@ void* rpc_tg_alloc(Rpc* rpc) {
     
     rpc_tg->rpc = rpc;
     rpc_tg->api = tg_api;
+    tg_api->send_msg = rpc_tg_send_msg;
     tg_api->get_state = rpc_get_state_request;
     tg_api->rpc = rpc;
 

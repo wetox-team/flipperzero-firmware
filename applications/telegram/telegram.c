@@ -24,8 +24,8 @@
 #include "view_dialogue.h"
 
 #define TAG "Telegram"
-#define TG_TEXT_STORE_SIZE 128
-#define TG_MESSAGE_MAX_LEN 20
+#define TG_TEXT_STORE_SIZE 20
+#define TG_MESSAGE_MAX_LEN TG_TEXT_STORE_SIZE
 
 typedef struct {
     Gui* gui;
@@ -36,6 +36,7 @@ typedef struct {
     TelegramApi* api;
     TextInput* text_input;
     PB_Telegram_TelegramStateResponse* response;
+    int32_t currId;
 
     char text_store[TG_TEXT_STORE_SIZE + 1];
 } Telegram;
@@ -50,6 +51,8 @@ typedef enum {
 
 void telegram_send_message(void* context) {
     Telegram* instance = (Telegram*)context;
+    instance->api->send_msg(instance->api->rpc, instance->currId, instance->text_store);
+
     view_dispatcher_switch_to_view(instance->view_dispatcher, TelegramViewChats);
 }
 
@@ -74,10 +77,15 @@ static uint32_t telegram_exit_callback(void* context) {
 
 static void open_chat_callback(void* context, uint32_t index) {
     Telegram* instance = (Telegram*)context;
+    instance->currId = instance->response->dialogs[index-1].id;
     submenu_clean(instance->submenu);
-    submenu_add_item(instance->submenu, "Message 1", TelegramMessage, NULL, instance);
-    submenu_add_item(instance->submenu, "Message 2", TelegramMessage, NULL, instance);
-    submenu_add_item(instance->submenu, "Message 3", TelegramMessage, NULL, instance);
+    FURI_LOG_I(TAG, "%i dc", instance->response->dialogs_count);
+    FURI_LOG_I(TAG, "%i mc", instance->response->dialogs[index-1].messages_count);
+    for (int32_t i = 0; i < instance->response->dialogs[index-1].messages_count; i++)
+    {
+        submenu_add_item(instance->submenu, instance->response->dialogs[index-1].messages[i].text, TelegramMessage, NULL, instance);
+    }
+    
     submenu_add_item(instance->submenu, "Send...", TelegramSendMessage, compose_message, instance);
 
     return;
@@ -95,19 +103,23 @@ void telegram_init_chats_callback(const PB_Telegram_TelegramStateResponse* respo
             NULL,
             instance);
     } else {
-        FURI_LOG_I(TAG, "%i", response->dialogs_count);
-        FURI_LOG_I(TAG, "%s", response->dialogs[0].name);
-        FURI_LOG_I(TAG, "%i", response->dialogs[0].messages_count);
-        FURI_LOG_I(TAG, "%i", response->dialogs[0].id);
-
-        //instance->response = response;
-        for (int i = 0; i < response->dialogs_count; i++)
+        memcpy(instance->response, response, sizeof(PB_Telegram_TelegramStateResponse));
+        for (int32_t i = 0; i < response->dialogs_count; i++)
         {
-            char* str = furi_alloc(10);
-            strcpy(str, response->dialogs[0].name);
+            FURI_LOG_I(TAG, "%s", instance->response->dialogs[i].name);
+            instance->response->dialogs[i].name = strdup(response->dialogs[i].name);
+
+            for (int32_t j = 0; j < response->dialogs[i].messages_count; j++)
+            {
+                instance->response->dialogs[i].messages[j].text = strdup(response->dialogs[i].messages[j].text);
+                FURI_LOG_I(TAG, "%s", instance->response->dialogs[i].messages[j].text);
+                FURI_LOG_I(TAG, "%s", response->dialogs[i].messages[j].text);
+            }
+            
+            instance->response->dialogs[i].messages_count = response->dialogs[i].messages_count;
             submenu_add_item(
                 instance->submenu,
-                str,
+                instance->response->dialogs[i].name,
                 TelegramViewDialogue,
                 open_chat_callback,
                 instance);
@@ -150,6 +162,7 @@ Telegram* telegram_alloc() {
 
     telegram_init_chats_callback(NULL, instance);
     TelegramApi* api = furi_record_open("tg");
+    instance->response = furi_alloc(sizeof(PB_Telegram_TelegramStateResponse));
     api->instance = instance;
     instance->api = api;
     api->handler = telegram_init_chats_callback;
