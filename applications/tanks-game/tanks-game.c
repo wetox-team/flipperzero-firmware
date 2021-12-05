@@ -43,7 +43,6 @@ typedef enum {
     MenuStateSingleMode,
     MenuStateCooperativeServerMode,
     MenuStateCooperativeClientMode,
-    MenuStateLobbyMode
 } MenuState;
 
 typedef enum {
@@ -259,14 +258,6 @@ unsigned char* tanks_game_serialize(const TanksState* const tanks_state) {
     return result;
 }
 
-void tanks_game_deserialize_and_write_to_state(unsigned char* data, TanksState* const tanks_state) {
-    for(uint8_t i = 0; i < 11 * 16; i++) {
-        uint8_t x = i % 16;
-        uint8_t y = i / 16;
-        tanks_state->map[x][y] = data[i];
-    }
-}
-
 static void
     tanks_game_render_cell(GameCellState cell, uint8_t x, uint8_t y, Canvas* const canvas) {
     const Icon* icon;
@@ -385,16 +376,6 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
 
     // Before the function is called, the state is set with the canvas_reset(canvas)
     if(tanks_state->state == GameStateMenu) {
-        if(tanks_state->menu_state == MenuStateLobbyMode) {
-            canvas_draw_frame(canvas, 0, 0, 128, 64);
-
-            canvas_draw_str_aligned(
-                canvas, 0, 32, AlignCenter, AlignCenter, "Waiting for the other player...");
-
-            release_mutex((ValueMutex*)ctx, tanks_state);
-            return;
-        }
-
         canvas_draw_icon(canvas, 0, 0, &I_TanksSplashScreen_128x64);
         canvas_set_font(canvas, FontPrimary);
         canvas_draw_str_aligned(canvas, 124, 10, AlignRight, AlignBottom, "Single");
@@ -410,8 +391,6 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
             break;
         case MenuStateCooperativeClientMode:
             canvas_draw_icon(canvas, 78, 43, &I_tank_right);
-            break;
-        case MenuStateLobbyMode:
             break;
         }
 
@@ -618,8 +597,10 @@ static void tanks_game_update_timer_callback(osMessageQueueId_t event_queue) {
     osMessageQueuePut(event_queue, &event, 0, 0);
 }
 
-static void tanks_game_init_game(TanksState* const tanks_state) {
+static void tanks_game_init_game(TanksState* const tanks_state, GameState type) {
     srand(DWT->CYCCNT);
+
+    tanks_state->state = type;
 
     for(int8_t x = 0; x < 100; x++) {
         if(tanks_state->projectiles[x] != NULL) {
@@ -663,10 +644,11 @@ static void tanks_game_init_game(TanksState* const tanks_state) {
         }
     }
 
-    uint8_t respawn_point_index = rand() % 3;
+    int8_t index1 = tanks_get_random_free_respawn_point_index(
+        tanks_state, tanks_state->team_one_respawn_points);
     Point c = {
-        tanks_state->team_one_respawn_points[respawn_point_index].x,
-        tanks_state->team_one_respawn_points[respawn_point_index].y};
+        tanks_state->team_one_respawn_points[index1].x,
+        tanks_state->team_one_respawn_points[index1].y};
 
     PlayerState p1 = {
         c,
@@ -685,9 +667,42 @@ static void tanks_game_init_game(TanksState* const tanks_state) {
 
     tanks_state->p1 = p1_state;
 
+    if (type == GameStateCooperativeServer) {
+        int8_t index2 = tanks_get_random_free_respawn_point_index(
+            tanks_state, tanks_state->team_one_respawn_points);
+        Point c = {
+            tanks_state->team_one_respawn_points[index2].x,
+            tanks_state->team_one_respawn_points[index2].y};
+
+        PlayerState p2 = {
+            c,
+            0,
+            4,
+            DirectionRight,
+            0,
+            0,
+            1,
+            SHOT_COOLDOWN,
+            PLAYER_RESPAWN_COOLDOWN,
+        };
+
+        PlayerState* p2_state = furi_alloc(sizeof(PlayerState));
+        *p2_state = p2;
+
+        tanks_state->p2 = p2_state;
+    }
+
     tanks_state->enemies_left = 5;
     tanks_state->enemies_live = 0;
     tanks_state->enemies_respawn_cooldown = RESPAWN_COOLDOWN;
+
+    if (type == GameStateCooperativeClient) {
+        for(int8_t x = 0; x < FIELD_WIDTH; x++) {
+            for(int8_t y = 0; y < FIELD_HEIGHT; y++) {
+                tanks_state->map[x][y] = CellEmpty;
+            }
+        }
+    }
 }
 
 static bool
@@ -1173,21 +1188,20 @@ int32_t tanks_game_app(void* p) {
                     case InputKeyOk:
                         if(tanks_state->state == GameStateMenu) {
                             if(tanks_state->menu_state == MenuStateSingleMode) {
-                                tanks_state->state = GameStateSingle;
                                 tanks_state->server = true;
-                                tanks_game_init_game(tanks_state);
+                                tanks_game_init_game(tanks_state, GameStateSingle);
                                 break;
                             } else if(tanks_state->menu_state == MenuStateCooperativeServerMode) {
                                 tanks_state->server = true;
-                                tanks_state->menu_state = MenuStateLobbyMode;
+                                tanks_game_init_game(tanks_state, GameStateCooperativeServer);
                                 break;
                             } else if(tanks_state->menu_state == MenuStateCooperativeClientMode) {
                                 tanks_state->server = false;
-                                tanks_state->menu_state = MenuStateLobbyMode;
+                                tanks_game_init_game(tanks_state, GameStateCooperativeClient);
                                 break;
                             }
                         } else if(tanks_state->state == GameStateGameOver) {
-                            tanks_game_init_game(tanks_state);
+                            tanks_game_init_game(tanks_state, tanks_state->state);
                         } else if(tanks_state->state == GameStateCooperativeClient) {
                             // TODO: Send dieretion to server.
                             // tanks_state->p2->shooting = true;
@@ -1207,7 +1221,7 @@ int32_t tanks_game_app(void* p) {
                     if(subghz_tx_rx_worker_available(subghz_txrx)) {
                         memset(incomingMessage, 0x00, message_max_len);
                         subghz_tx_rx_worker_read(subghz_txrx, incomingMessage, message_max_len);
-                        tanks_game_deserialize_and_write_to_state((char*)incomingMessage, tanks_state);
+                        tanks_game_deserialize_and_write_to_state((unsigned char*)incomingMessage, tanks_state);
                     }
                 }
             }
