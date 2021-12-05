@@ -184,6 +184,7 @@ extern const Icon I_Unlock_7x8;
 extern const Icon I_MHz_25x11;
 extern const Icon I_Lock_7x8;
 extern const Icon I_tank_explosion;
+extern const Icon I_TanksSplashScreen_128x64;
 extern const Icon I_tank_stone;
 extern const Icon I_projectile_left;
 extern const Icon I_tank_up;

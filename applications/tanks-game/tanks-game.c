@@ -15,7 +15,17 @@ typedef struct {
 } Point;
 
 typedef enum {
-    GameStateLife,
+    MenuStateSingleMode,
+    MenuStateCooperativeServerMode,
+    MenuStateCooperativeClientMode,
+    MenuStateLobbyMode
+} MenuState;
+
+typedef enum {
+    GameStateMenu,
+    GameStateSingle,
+    GameStateCooperativeServer,
+    GameStateCooperativeClient,
     GameStateGameOver,
 } GameState;
 
@@ -58,6 +68,7 @@ typedef struct {
     Point team_two_respawn_points[3];
     Mode mode;
     GameState state;
+    MenuState menu_state;
     ProjectileState *projectiles[100];
     PlayerState *bots[6];
     uint8_t enemies_left;
@@ -86,6 +97,38 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
     // Before the function is called, the state is set with the canvas_reset(canvas)
 
     canvas_draw_box(canvas, FIELD_WIDTH * CELL_LENGTH_PIXELS, 0, 2, SCREEN_HEIGHT);
+
+    if (tanks_state->state == GameStateMenu) {
+        canvas_draw_icon(
+            canvas,
+            0,
+            0,
+            &I_TanksSplashScreen_128x64
+        );
+        canvas_set_font(canvas, FontPrimary);
+        canvas_draw_str_aligned(canvas, 124, 10, AlignRight, AlignBottom, "Single");
+        canvas_draw_str_aligned(canvas, 124, 30, AlignRight, AlignBottom, "Co-op 1");
+        canvas_draw_str_aligned(canvas, 124, 50, AlignRight, AlignBottom, "Co-op 2");
+
+        switch (tanks_state->menu_state) {
+        case MenuStateSingleMode:
+            canvas_draw_icon(canvas, 78, 3, &I_tank_right);
+            break;
+        case MenuStateCooperativeServerMode:
+            canvas_draw_icon(canvas, 78, 23, &I_tank_right);
+            break;
+        case MenuStateCooperativeClientMode:
+            canvas_draw_icon(canvas, 78, 43, &I_tank_right);
+            break;
+        case MenuStateLobbyMode:
+            break;
+        }
+
+        canvas_draw_frame(canvas, 0, 0, 128, 64);
+
+        release_mutex((ValueMutex*)ctx, tanks_state);
+        return;
+    }
 
     // Player
     Point coordinates = tanks_state->p1->coordinates;
@@ -265,6 +308,8 @@ static void tanks_game_update_timer_callback(osMessageQueueId_t event_queue) {
 static void tanks_game_init_game(TanksState* const tanks_state) {
     srand(DWT->CYCCNT);
 
+    tanks_state->state = GameStateSingle;
+
     //char map[FIELD_HEIGHT][FIELD_WIDTH + 1] = {
     char map[11][16 + 1] = {
         "*       -  *   -",
@@ -341,7 +386,7 @@ static void tanks_game_init_game(TanksState* const tanks_state) {
     *p1_state = p1;
 
     tanks_state->p1 = p1_state;
-    tanks_state->state = GameStateLife;
+    tanks_state->state = GameStateSingle;
     tanks_state->enemies_left = 5;
     tanks_state->enemies_live = 0;
     tanks_state->enemies_respawn_cooldown = RESPAWN_COOLDOWN;
@@ -542,6 +587,10 @@ static void tanks_game_shoot(TanksState* const tanks_state, PlayerState *tank_st
 }
 
 static void tanks_game_process_game_step(TanksState* const tanks_state) {
+    if(tanks_state->state == GameStateMenu) {
+        return;
+    }
+
     if(tanks_state->enemies_left == 0 && tanks_state->enemies_live == 0) {
         tanks_state->state = GameStateGameOver;
     }
@@ -772,7 +821,10 @@ int32_t tanks_game_app(void* p) {
     osMessageQueueId_t event_queue = osMessageQueueNew(8, sizeof(TanksEvent), NULL);
 
     TanksState* tanks_state = furi_alloc(sizeof(TanksState));
-    tanks_game_init_game(tanks_state);
+    // tanks_game_init_game(tanks_state);
+
+    tanks_state->state = GameStateMenu;
+    tanks_state->menu_state = MenuStateSingleMode;
 
     ValueMutex state_mutex;
     if(!init_mutex(&state_mutex, tanks_state, sizeof(TanksState))) {
@@ -805,12 +857,28 @@ int32_t tanks_game_app(void* p) {
                 if(event.input.type == InputTypePress) {
                     switch(event.input.key) {
                         case InputKeyUp:
-                            tanks_state->p1->moving = true;
-                            tanks_state->p1->direction = DirectionUp;
+                            if (tanks_state->state == GameStateMenu) {
+                                if (tanks_state->menu_state == MenuStateCooperativeServerMode) {
+                                    tanks_state->menu_state = MenuStateSingleMode;
+                                } else if (tanks_state->menu_state == MenuStateCooperativeClientMode) {
+                                    tanks_state->menu_state = MenuStateCooperativeServerMode;
+                                }
+                            } else {
+                                tanks_state->p1->moving = true;
+                                tanks_state->p1->direction = DirectionUp;
+                            }
                             break;
                         case InputKeyDown:
-                            tanks_state->p1->moving = true;
-                            tanks_state->p1->direction = DirectionDown;
+                            if (tanks_state->state == GameStateMenu) {
+                                if (tanks_state->menu_state == MenuStateSingleMode) {
+                                    tanks_state->menu_state = MenuStateCooperativeServerMode;
+                                } else if (tanks_state->menu_state == MenuStateCooperativeServerMode) {
+                                    tanks_state->menu_state = MenuStateCooperativeClientMode;
+                                }
+                            } else {
+                                tanks_state->p1->moving = true;
+                                tanks_state->p1->direction = DirectionDown;
+                            }
                             break;
                         case InputKeyRight:
                             tanks_state->p1->moving = true;
@@ -821,6 +889,13 @@ int32_t tanks_game_app(void* p) {
                             tanks_state->p1->direction = DirectionLeft;
                             break;
                         case InputKeyOk:
+                            if (tanks_state->state == GameStateMenu) {
+                                if (tanks_state->menu_state == MenuStateSingleMode) {
+                                    tanks_game_init_game(tanks_state);
+                                    break;
+                                }
+                            }
+
                             if(tanks_state->state == GameStateGameOver) {
                                 tanks_game_init_game(tanks_state);
                             } else {
