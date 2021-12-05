@@ -35,6 +35,7 @@ typedef struct {
     Submenu* submenu;
     TelegramApi* api;
     TextInput* text_input;
+    PB_Telegram_TelegramStateResponse* response;
 
     char text_store[TG_TEXT_STORE_SIZE + 1];
 } Telegram;
@@ -94,13 +95,21 @@ void telegram_init_chats_callback(const PB_Telegram_TelegramStateResponse* respo
             NULL,
             instance);
     } else {
-        for (size_t i = 0; i < response->dialogs_count; i++)
+        FURI_LOG_I(TAG, "%i", response->dialogs_count);
+        FURI_LOG_I(TAG, "%s", response->dialogs[0].name);
+        FURI_LOG_I(TAG, "%i", response->dialogs[0].messages_count);
+        FURI_LOG_I(TAG, "%i", response->dialogs[0].id);
+
+        //instance->response = response;
+        for (int i = 0; i < response->dialogs_count; i++)
         {
+            char* str = furi_alloc(10);
+            strcpy(str, response->dialogs[0].name);
             submenu_add_item(
-                tg_instance->submenu,
-                response->dialogs[i].name,
+                instance->submenu,
+                str,
                 TelegramViewDialogue,
-                telegram_submenu_callback,
+                open_chat_callback,
                 instance);
         }
     }
@@ -138,25 +147,6 @@ Telegram* telegram_alloc() {
 
         return instance;
     }
-
-    submenu_add_item(
-        instance->submenu,
-        "Chat 1",
-        TelegramViewDialogue,
-        open_chat_callback,
-        instance);
-    submenu_add_item(
-        instance->submenu,
-        "Chat 2",
-        TelegramViewDialogue,
-        open_chat_callback,
-        instance);
-    submenu_add_item(
-        instance->submenu,
-        "Chat 3",
-        TelegramViewDialogue,
-        open_chat_callback,
-        instance);
 
     telegram_init_chats_callback(NULL, instance);
     TelegramApi* api = furi_record_open("tg");
