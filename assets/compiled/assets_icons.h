@@ -117,6 +117,7 @@ extern const Icon I_DoorLocked_10x56;
 extern const Icon I_PassportBottom_128x17;
 extern const Icon I_DoorLeft_70x55;
 extern const Icon I_LockPopup_100x49;
+extern const Icon I_EpisSaxGuyIcon;
 extern const Icon I_DoorRight_70x55;
 extern const Icon I_SaxGuyIcon;
 extern const Icon I_PassportLeft_6x47;

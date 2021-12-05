@@ -35,6 +35,7 @@ APP_ABOUT	= 1
 
 # Plugins
 APP_MUSIC_PLAYER = 1
+APP_EPIC_SAX_GUY = 1
 APP_SNAKE_GAME = 1
 
 # Debug
@@ -179,6 +180,11 @@ CFLAGS		+= -DAPP_GPIO
 SRV_GUI		= 1
 endif
 
+APP_EPIC_SAX_GUY ?= 0
+ifeq ($(APP_EPIC_SAX_GUY), 1)
+CFLAGS		+= -DAPP_EPIC_SAX_GUY
+SRV_GUI		= 1
+endif
 
 APP_MUSIC_PLAYER ?= 0
 ifeq ($(APP_MUSIC_PLAYER), 1)
