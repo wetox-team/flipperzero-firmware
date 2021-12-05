@@ -9,10 +9,11 @@
 
 void ohs_cli_init() {
     Cli* cli = furi_record_open("cli");
-        cli_add_command(cli, "ohs_start", CliCommandFlagDefault, ohs_cli_command, NULL);
-    cli_add_command(cli, "ohs_stop", CliCommandFlagDefault, ohs_cli_stop, NULL);
-    cli_add_command(cli, "ohs_save_key", CliCommandFlagDefault, ohs_cli_key_save, NULL);
-    cli_add_command(cli, "ohs_get_key", CliCommandFlagDefault, ohs_cli_key_get, NULL);
+//    cli_add_command(cli, "ohs_start", CliCommandFlagDefault, ohs_cli_command, NULL);
+//    cli_add_command(cli, "ohs_stop", CliCommandFlagDefault, ohs_cli_stop, NULL);
+    cli_add_command(cli, "ohs_enter_key", CliCommandFlagDefault, ohs_cli_key_enter, NULL);
+    cli_add_command(cli, "ohs_print_key", CliCommandFlagDefault, ohs_cli_key_print, NULL);
+    cli_add_command(cli, "ohs_print_mac_addr", CliCommandFlagDefault, ohs_cli_mac_print, NULL);
     furi_record_close("cli");
 }
 
@@ -35,8 +36,8 @@ void ohs_cli_command(Cli* cli, string_t args, void* context) {
     furi_hal_ohs_start();
 }
 
-void ohs_cli_key_save(Cli* cli, string_t args, void* context){
-    if (strlen(args) != 56){
+void ohs_cli_key_enter(Cli* cli, string_t args, void* context){
+    if (string_size(args) != 56){
         printf("Incorrect input. Save aborted.\r\n");
         printf("Use 56-symbol hex\r\n");
     }
@@ -44,18 +45,36 @@ void ohs_cli_key_save(Cli* cli, string_t args, void* context){
         uint8_t key[28];
 
         for(size_t i = 0; i < 28; i++) {
-            sscanf(string_get_cstr(args) + i * 2, "%02x", (unsigned int*)&key[i]);
+            if(sscanf(string_get_cstr(args) + i * 2, "%02x", (unsigned int*)&key[i]) != 1) {
+                printf("Something went wrong with this key\r\n");
+                return;
+            }
         }
-        printf("\n");
         furi_hal_ohs_save_key(key);
     }
 }
 
-void ohs_cli_key_get(Cli* cli, string_t args, void* context){
+void ohs_cli_key_print(Cli* cli, string_t args, void* context){
     uint8_t ohs_key[28] = {};
     furi_hal_ohs_load_key(ohs_key);
 
+    printf("Currently saved key in %s: ", OHS_KEY_PATH);
     for (int i = 0; i < 28; i++){
         printf("%02x ", ohs_key[i]);
+    }
+    printf("\r\n");
+}
+
+void ohs_cli_mac_print(Cli* cli, string_t args, void* context) {
+    uint8_t mac_addr[6] = {};
+    furi_assert(mac_addr != NULL);
+    printf("DO furi_hal_ohs_get_mac\r\n");
+    furi_hal_ohs_get_mac(mac_addr);
+    printf("POSLE furi_hal_ohs_get_mac\r\n");
+    furi_assert(mac_addr != NULL);
+    for (int i = 0; i < 6; i++) {
+        printf("%02x", (unsigned int) mac_addr[i]);
+        if (i != 5)
+            printf(":");
     }
 }

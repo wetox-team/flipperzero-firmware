@@ -8,16 +8,24 @@
 #include <file-worker.h>
 
 #define TAG "FuriHalOhs"
-#define OHS_KEY_PATH "/int/ohs.key"
 
-#define CHECK_ERR(ret) \
-    do {               \
-        return false;  \
+#define LOG_I(fmt, ...)                      \
+    do {                                     \
+        FURI_LOG_I(TAG, fmt, ##__VA_ARGS__); \
+    } while (0)
+
+#define LOG_E(fmt, ...)                      \
+    do {                                     \
+        FURI_LOG_E(TAG, fmt, ##__VA_ARGS__); \
+    } while (0)
+
+#define CHECK_ERR(ret)                                                                     \
+    do {                                                                                   \
+        if((ret) != BLE_STATUS_SUCCESS) printf("Error: 0x%X on line %d\r\n", (ret), __LINE__); \
     } while(0)
 
 bool furi_hal_ohs_stop() {
-    FURI_LOG_I(TAG, "Stopping to advertize");
-    printf("Stopping to advertize\r\n");
+    LOG_I("Stopping to advertise");
     hci_le_set_advertise_enable(0x00);
     return true;
 }
@@ -65,27 +73,19 @@ bool furi_hal_ohs_start() {
     hci_le_set_advertising_parameters(0x0640, 0x0C80, 0x03, 0x00, 0x00, peer_addr, 0x07, 0x00);
     hci_le_set_advertising_data(31, adv_data);
     hci_le_set_advertise_enable(0x01);
-    printf("Started to advertize OHS with key: ");
+
+    char key_str[57] = "";
     for (int i = 0; i < 28; i++) {
-        printf(" %02x", ohs_key[i]);
+        sprintf(key_str + 2 * i, "%02x", ohs_key[i]);
     }
-    printf(
-        "\nStarted to advertize OHS with random addr: %02x:%02x:%02x:%02x:%02x:%02x\r\n",
-        rnd_addr[5],
-        rnd_addr[4],
-        rnd_addr[3],
-        rnd_addr[2],
-        rnd_addr[1],
-        rnd_addr[0]);
-    FURI_LOG_I(
-        TAG,
-        "Started to advertize OHS with random addr: %02x:%02x:%02x:%02x:%02x:%02x",
-        rnd_addr[5],
-        rnd_addr[4],
-        rnd_addr[3],
-        rnd_addr[2],
-        rnd_addr[1],
-        rnd_addr[0]);
+    char rnd_addr_str[17] = "";
+    for (int i = 0; i < 6; i++) {
+        sprintf(rnd_addr_str + 2 * i, "%02x", rnd_addr[5 - i]);
+        if (i != 5)
+            sprintf(rnd_addr_str + 2 * i + 2, "%s", ":");
+    }
+
+    LOG_I("Start advertising of key %s with random address %s", key_str, rnd_addr);
 
     gap_notify_ohs_start();
 
@@ -97,7 +97,7 @@ bool furi_hal_ohs_load_key(uint8_t* key) {
     bool file_loaded = false;
     uint8_t settings[28] = {};
 
-    FURI_LOG_I(TAG, "Loading settings from \"%s\"", OHS_KEY_PATH);
+    LOG_I("Loading settings from \"%s\"", OHS_KEY_PATH);
     FileWorker* file_worker = file_worker_alloc(true);
     if(file_worker_open(file_worker, OHS_KEY_PATH, FSAM_READ, FSOM_OPEN_EXISTING)) {
         if(file_worker_read(file_worker, &settings, sizeof(settings))) {
@@ -107,12 +107,12 @@ bool furi_hal_ohs_load_key(uint8_t* key) {
     file_worker_free(file_worker);
 
     if(file_loaded) {
-        FURI_LOG_I(TAG, "Settings load success");
+        LOG_I("Settings load success");
         osKernelLock();
         memcpy(key, settings, 28);
         osKernelUnlock();
     } else {
-        FURI_LOG_E(TAG, "Settings load failed");
+        LOG_E("Settings load failed");
     }
     return file_loaded;
 }
@@ -124,15 +124,25 @@ bool furi_hal_ohs_save_key(uint8_t* key) {
     FileWorker* file_worker = file_worker_alloc(true);
     if(file_worker_open(file_worker, OHS_KEY_PATH, FSAM_WRITE, FSOM_OPEN_ALWAYS)) {
         if(file_worker_write(file_worker, key, 28)) {
-            FURI_LOG_I(TAG, "Settings saved to \"%s\"", OHS_KEY_PATH);
+            LOG_I("Settings saved to \"%s\"", OHS_KEY_PATH);
             result = true;
         }
     }
 
     if (!result){
-        FURI_LOG_I(TAG, "Failed to save OHS key");
+        LOG_I("Failed to save OHS key");
     }
 
     file_worker_free(file_worker);
     return result;
+}
+
+bool furi_hal_ohs_get_mac(uint8_t* mac_address) {
+//    furi_assert(mac_address != NULL);
+//    furi_assert(sizeof(mac_address) == CONFIG_DATA_PUBADDR_LEN);
+    printf("DO aci_hal_read_config_data\r\n");
+    aci_hal_read_config_data(CONFIG_DATA_PUBADDR_OFFSET, (uint8_t*)CONFIG_DATA_PUBADDR_LEN, mac_address);
+    printf("POSLE aci_hal_read_config_data\r\n");
+//    furi_assert(mac_address != NULL);
+    return true;
 }
