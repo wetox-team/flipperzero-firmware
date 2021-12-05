@@ -378,18 +378,18 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
         canvas_draw_icon(canvas, 0, 0, &I_TanksSplashScreen_128x64);
         canvas_set_font(canvas, FontPrimary);
         canvas_draw_str_aligned(canvas, 124, 10, AlignRight, AlignBottom, "Single");
-        canvas_draw_str_aligned(canvas, 124, 30, AlignRight, AlignBottom, "Co-op S");
-        canvas_draw_str_aligned(canvas, 124, 50, AlignRight, AlignBottom, "Co-op C");
+        canvas_draw_str_aligned(canvas, 124, 25, AlignRight, AlignBottom, "Co-op S");
+        canvas_draw_str_aligned(canvas, 124, 40, AlignRight, AlignBottom, "Co-op C");
 
         switch(tanks_state->menu_state) {
         case MenuStateSingleMode:
-            canvas_draw_icon(canvas, 78, 3, &I_tank_right);
+            canvas_draw_icon(canvas, 74, 3, &I_tank_right);
             break;
         case MenuStateCooperativeServerMode:
-            canvas_draw_icon(canvas, 78, 23, &I_tank_right);
+            canvas_draw_icon(canvas, 74, 18, &I_tank_right);
             break;
         case MenuStateCooperativeClientMode:
-            canvas_draw_icon(canvas, 78, 43, &I_tank_right);
+            canvas_draw_icon(canvas, 74, 33, &I_tank_right);
             break;
         }
 
@@ -566,13 +566,15 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
         canvas_draw_box(canvas, 34, 20, 62, 24);
 
         canvas_set_color(canvas, ColorBlack);
-        canvas_draw_frame(canvas, 34, 20, 62, 24);
 
         canvas_set_font(canvas, FontPrimary);
 
         if(tanks_state->enemies_left == 0 && tanks_state->enemies_live == 0) {
-            canvas_draw_str(canvas, 42, 31, "You win!");
+            canvas_draw_frame(canvas, 0, 0, 128, 64);
+            canvas_draw_icon(canvas, 0, 0, &I_TanksSplashScreen_128x51);
+            canvas_draw_str_aligned(canvas, 124, 10, AlignRight, AlignBottom, "You win!"));
         } else {
+            canvas_draw_frame(canvas, 34, 20, 62, 24);
             canvas_draw_str(canvas, 37, 31, "Game Over");
         }
 
