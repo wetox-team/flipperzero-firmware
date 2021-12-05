@@ -195,7 +195,12 @@ static void tanks_game_render_callback(Canvas* const canvas, void* ctx) {
         canvas_draw_frame(canvas, 34, 20, 62, 24);
 
         canvas_set_font(canvas, FontPrimary);
-        canvas_draw_str(canvas, 37, 31, "Game Over");
+
+        if (tanks_state->enemies_left == 0 && tanks_state->enemies_live == 0) {
+            canvas_draw_str(canvas, 38, 31, "You win!");
+        } else {
+            canvas_draw_str(canvas, 37, 31, "Game Over");
+        }
 
         canvas_set_font(canvas, FontSecondary);
         char buffer[13];
@@ -300,7 +305,7 @@ static void tanks_game_init_game(TanksState* const tanks_state) {
 
     tanks_state->p1 = p1_state;
     tanks_state->state = GameStateLife;
-    tanks_state->enemies_left = 20;
+    tanks_state->enemies_left = 5;
     tanks_state->enemies_live = 0;
     tanks_state->enemies_respawn_cooldown = RESPAWN_COOLDOWN;
 }
@@ -322,6 +327,21 @@ static bool tanks_game_collision(Point const next_step, bool shoot, TanksState c
 
     if (tile == '-' || tile == '=' || tile == 'a') {
         return true;
+    }
+
+    for (
+        uint8_t i = 0;
+        i < 6;
+        i++
+    ) {
+        if (tanks_state->bots[i] != NULL) {
+            if (
+                tanks_state->bots[i]->coordinates.x == next_step.x &&
+                tanks_state->bots[i]->coordinates.y == next_step.y
+                ) {
+                return true;
+            }
+        }
     }
 
     return false;
@@ -445,6 +465,10 @@ static uint8_t tanks_get_random_free_respawn_point_index(
 }
 
 static void tanks_game_process_game_step(TanksState* const tanks_state) {
+    if(tanks_state->enemies_left == 0 && tanks_state->enemies_live == 0) {
+        tanks_state->state = GameStateGameOver;
+    }
+
     if(tanks_state->state == GameStateGameOver) {
         return;
     }
@@ -464,6 +488,8 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
             );
 
         if (index != -1) {
+            tanks_state->enemies_left--;
+            tanks_state->enemies_live++;
             tanks_state->enemies_respawn_cooldown = RESPAWN_COOLDOWN;
             Point point = tanks_state->team_two_respawn_points[index];
 
@@ -514,10 +540,29 @@ static void tanks_game_process_game_step(TanksState* const tanks_state) {
             Point c = projectile->coordinates;
 
             if (projectile->explosion) {
+                // Break a wall
                 if (tanks_state->map[c.x][c.y] == '-') {
                     tanks_state->map[c.x][c.y] = ' ';
                 }
 
+                for (
+                    uint8_t i = 0;
+                    i < 6;
+                    i++
+                ) {
+                    if (tanks_state->bots[i] != NULL) {
+                        if (
+                            tanks_state->bots[i]->coordinates.x == c.x &&
+                            tanks_state->bots[i]->coordinates.y == c.y
+                            ) {
+                            tanks_state->enemies_live--;
+                            free(tanks_state->bots[i]);
+                            tanks_state->bots[i] = NULL;
+                        }
+                    }
+                }
+
+                // Destroy the flag
                 if (tanks_state->map[c.x][c.y] == 'a') {
                     tanks_state->state = GameStateGameOver;
                     return;
