@@ -10,12 +10,22 @@
 #include <gui/view_dispatcher.h>
 #include <gui/modules/submenu.h>
 #include <gui/modules/variable-item-list.h>
+#include <gui/modules/text_input.h>
+#include <gui/modules/submenu.h>
+#include <gui/modules/dialog_ex.h>
+#include <gui/modules/popup.h>
+#include <gui/modules/text_input.h>
+#include <gui/modules/byte_input.h>
+#include <gui/modules/text_box.h>
+#include <gui/modules/widget.h>
 
 #include <rpc/rpc_telegram.h>
 
 #include "view_dialogue.h"
 
 #define TAG "Telegram"
+#define TG_TEXT_STORE_SIZE 128
+#define TG_MESSAGE_MAX_LEN 20
 
 typedef struct {
     Gui* gui;
@@ -24,30 +34,58 @@ typedef struct {
     VariableItemList* variable_item_list;
     Submenu* submenu;
     TelegramApi* api;
+    TextInput* text_input;
+
+    char text_store[TG_TEXT_STORE_SIZE + 1];
 } Telegram;
 
 typedef enum {
     TelegramViewChats,
     TelegramViewDialogue,
+    TelegramMessage,
+    TelegramSendMessage,
+    TelegramTextInput,
 } TelegramView;
 
-static void telegram_submenu_callback(void* context, uint32_t index) {
+void telegram_send_message(void* context) {
     Telegram* instance = (Telegram*)context;
-    view_dispatcher_switch_to_view(instance->view_dispatcher, index);
+    view_dispatcher_switch_to_view(instance->view_dispatcher, TelegramViewChats);
+}
+
+void compose_message(void* context, uint32_t index) {
+    Telegram* instance = (Telegram*)context;
+    TextInput* text_input = instance->text_input;
+    text_input_set_header_text(text_input, "Your message");
+    text_input_set_result_callback(
+        text_input,
+        telegram_send_message,
+        instance,
+        instance->text_store,
+        TG_MESSAGE_MAX_LEN,
+        true);
+
+    view_dispatcher_switch_to_view(instance->view_dispatcher, TelegramTextInput);
 }
 
 static uint32_t telegram_exit_callback(void* context) {
     return VIEW_NONE;
 }
 
-static uint32_t telegram_previous_callback(void* context) {
-    return TelegramViewChats;
+static void open_chat_callback(void* context, uint32_t index) {
+    Telegram* instance = (Telegram*)context;
+    submenu_clean(instance->submenu);
+    submenu_add_item(instance->submenu, "Message 1", TelegramMessage, NULL, instance);
+    submenu_add_item(instance->submenu, "Message 2", TelegramMessage, NULL, instance);
+    submenu_add_item(instance->submenu, "Message 3", TelegramMessage, NULL, instance);
+    submenu_add_item(instance->submenu, "Send...", TelegramSendMessage, compose_message, instance);
+
+    return;
 }
 
-void telegram_init_chats_callback(const PB_Telegram_TelegramStateResponse* response, void* instance) {
-    Telegram* tg_instance = instance;
+void telegram_init_chats_callback(const PB_Telegram_TelegramStateResponse* response, void* context) {
+    Telegram* instance = (Telegram*)context;
     submenu_clean(tg_instance->submenu);
-    
+
     if (response == NULL) {
         submenu_add_item(
             tg_instance->submenu,
@@ -60,26 +98,30 @@ void telegram_init_chats_callback(const PB_Telegram_TelegramStateResponse* respo
             tg_instance->submenu,
             response->dialogs[0].name,
             TelegramViewDialogue,
-            telegram_submenu_callback,
+            open_chat_callback,
             tg_instance);
         submenu_add_item(
             tg_instance->submenu,
             response->dialogs[1].name,
             TelegramViewDialogue,
-            telegram_submenu_callback,
+            open_chat_callback,
             tg_instance);
         submenu_add_item(
             tg_instance->submenu,
             response->dialogs[2].name,
             TelegramViewDialogue,
-            telegram_submenu_callback,
+            open_chat_callback,
             tg_instance);
+
     }
-    
+
+    return instance;
+
 }
 
 Telegram* telegram_alloc() {
     Telegram* instance = furi_alloc(sizeof(Telegram));
+    instance->text_input = text_input_alloc();
 
     View* view = NULL;
 
@@ -88,40 +130,12 @@ Telegram* telegram_alloc() {
     view_dispatcher_enable_queue(instance->view_dispatcher);
     view_dispatcher_attach_to_gui(
         instance->view_dispatcher, instance->gui, ViewDispatcherTypeFullscreen);
-    // Open chat
-    instance->variable_item_list = variable_item_list_alloc();
-    view = variable_item_list_get_view(instance->variable_item_list);
-    view_set_previous_callback(view, telegram_previous_callback);
-    view_dispatcher_add_view(instance->view_dispatcher, TelegramViewDialogue, view);
 
-    variable_item_list_add(
-        instance->variable_item_list,
-        "Message 1",
-        TelegramViewDialogue,
-        NULL,
-        instance);
-    variable_item_list_add(
-        instance->variable_item_list,
-        "Message 2",
-        TelegramViewDialogue,
-        NULL,
-        instance);
-    variable_item_list_add(
-        instance->variable_item_list,
-        "Message 3",
-        TelegramViewDialogue,
-        NULL,
-        instance);
-    variable_item_list_add(
-        instance->variable_item_list,
-        "Send...",
-        TelegramViewDialogue,
-        NULL,
-        instance);
-    // Menu
     instance->submenu = submenu_alloc();
     view = submenu_get_view(instance->submenu);
     view_set_previous_callback(view, telegram_exit_callback);
+    view_dispatcher_add_view(
+        instance->view_dispatcher, TelegramTextInput, text_input_get_view(instance->text_input));
     view_dispatcher_add_view(instance->view_dispatcher, TelegramViewChats, view);
 
     if (!furi_record_exists("tg"))  {
@@ -139,19 +153,19 @@ Telegram* telegram_alloc() {
         instance->submenu,
         "Chat 1",
         TelegramViewDialogue,
-        telegram_submenu_callback,
+        open_chat_callback,
         instance);
     submenu_add_item(
         instance->submenu,
         "Chat 2",
         TelegramViewDialogue,
-        telegram_submenu_callback,
+        open_chat_callback,
         instance);
     submenu_add_item(
         instance->submenu,
         "Chat 3",
         TelegramViewDialogue,
-        telegram_submenu_callback,
+        open_chat_callback,
         instance);
 
     telegram_init_chats_callback(NULL, instance);
@@ -162,8 +176,10 @@ Telegram* telegram_alloc() {
     return instance;
 }
 
-
 void telegram_free(Telegram* instance) {
+    view_dispatcher_remove_view(instance->view_dispatcher, TelegramTextInput);
+    text_input_free(instance->text_input);
+
     view_dispatcher_remove_view(instance->view_dispatcher, TelegramViewChats);
     submenu_free(instance->submenu);
 
