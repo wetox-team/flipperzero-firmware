@@ -2,6 +2,11 @@
 
 This repo contains the flipper zero firmware with additional features compared to the stock version. Pull requests are welcome.
 
+### How can I change my Flipper's name?
+
+
+Edit the `name.h` file in the root of this repo, you'll find the instructions there.
+
 ---
 # Original README
 
