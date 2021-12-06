@@ -38,6 +38,7 @@ APP_MUSIC_PLAYER = 1
 APP_EPIC_SAX_GUY = 1
 APP_SNAKE_GAME = 1
 APP_CHIP8 = 1
+APP_TANKS_GAME = 1
 
 # Debug
 APP_ACCESSOR = 1
@@ -159,7 +160,7 @@ APP_BAD_USB ?= 0
 ifeq ($(APP_BAD_USB), 1)
 CFLAGS		+= -DAPP_BAD_USB
 SRV_GUI = 1
-endif 
+endif
 
 APP_KEYPAD_TEST ?= 0
 ifeq ($(APP_KEYPAD_TEST), 1)
@@ -202,6 +203,12 @@ endif
 APP_CHIP8 ?= 0
 ifeq ($(APP_CHIP8), 1)
 CFLAGS		+= -DAPP_CHIP8
+SRV_GUI		= 1
+endif
+
+APP_TANKS_GAME ?= 0
+ifeq ($(APP_TANKS_GAME), 1)
+CFLAGS		+= -DAPP_TANKS_GAME
 SRV_GUI		= 1
 endif
 

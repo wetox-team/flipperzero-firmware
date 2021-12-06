@@ -13,10 +13,14 @@ typedef enum {
     // Octave 5
     C5 = 523,
     D5 = 587,
+    D_5 = 622,
     E5 = 659,
+    F5 = 698,
     F_5 = 740,
     G5 = 784,
+    G_5 = 830,
     A5 = 880,
+    A_5 = 932,
     B5 = 988,
     // Octave 6
     C6 = 1046,
@@ -45,32 +49,14 @@ typedef struct {
     int8_t loop_count;
 } SongPattern;
 
-const MelodyEventRecord melody_start[] = {
-    {E6, L8}, {N, L8},   {E5, L8}, {B5, L8},  {N, L4},  {E5, L8},  {A5, L8},  {G5, L8}, {A5, L8},
-    {E5, L8}, {B5, L8},  {N, L8},  {G5, L8},  {A5, L8}, {D6, L8},  {N, L4},   {D5, L8}, {B5, L8},
-    {N, L4},  {D5, L8},  {A5, L8}, {G5, L8},  {A5, L8}, {D5, L8},  {F_5, L8}, {N, L8},  {G5, L8},
-    {A5, L8}, {D6, L8},  {N, L4},  {F_5, L8}, {B5, L8}, {N, L4},   {F_5, L8}, {D6, L8}, {C6, L8},
-    {B5, L8}, {F_5, L8}, {A5, L8}, {N, L8},   {G5, L8}, {F_5, L8}, {E5, L8},  {N, L8},  {C5, L8},
-    {E5, L8}, {B5, L8},  {B4, L8}, {C5, L8},  {D5, L8}, {D6, L8},  {C6, L8},  {B5, L8}, {F_5, L8},
-    {A5, L8}, {N, L8},   {G5, L8}, {A5, L8},  {E6, L8}};
-
 const MelodyEventRecord melody_loop[] = {
-    {N, L4},   {E5, L8}, {B5, L8},  {N, L4},  {E5, L8},  {A5, L8},  {G5, L8}, {A5, L8},  {E5, L8},
-    {B5, L8},  {N, L8},  {G5, L8},  {A5, L8}, {D6, L8},  {N, L4},   {D5, L8}, {B5, L8},  {N, L4},
-    {D5, L8},  {A5, L8}, {G5, L8},  {A5, L8}, {D5, L8},  {F_5, L8}, {N, L8},  {G5, L8},  {A5, L8},
-    {D6, L8},  {N, L4},  {F_5, L8}, {B5, L8}, {N, L4},   {F_5, L8}, {D6, L8}, {C6, L8},  {B5, L8},
-    {F_5, L8}, {A5, L8}, {N, L8},   {G5, L8}, {F_5, L8}, {E5, L8},  {N, L8},  {C5, L8},  {E5, L8},
-    {B5, L8},  {B4, L8}, {C5, L8},  {D5, L8}, {D6, L8},  {C6, L8},  {B5, L8}, {F_5, L8}, {A5, L8},
-    {N, L8},   {G5, L8}, {A5, L8},  {E6, L8}};
-
-const MelodyEventRecord melody_chords_1bar[] = {
-    {E6, L8},   {N, L8},    {B4, L128}, {E5, L128}, {B4, L128}, {E5, L128}, {B4, L128}, {E5, L128},
-    {B4, L128}, {E5, L128}, {B4, L128}, {E5, L128}, {B4, L128}, {E5, L128}, {B4, L128}, {E5, L128},
-    {B4, L128}, {E5, L128}, {B5, L8},   {N, L4},    {B4, L128}, {E5, L128}, {B4, L128}, {E5, L128},
-    {B4, L128}, {E5, L128}, {B4, L128}, {E5, L128}, {B4, L128}, {E5, L128}, {B4, L128}, {E5, L128},
-    {B4, L128}, {E5, L128}, {B4, L128}, {E5, L128}, {A5, L8}};
-
-const SongPattern song[] = {{melody_start, 1}, {melody_loop, -1}};
+    {C5, L8}, {D5, L8}, {D_5, L8}, {C5, L8}, {D5, L8}, {D_5, L8},
+    {D_5, L8}, {F5, L8}, {G5, L8}, {D_5, L8}, {F5, L8}, {G5, L8},
+    {F5, L8}, {G5, L8}, {A5, L8}, {F5, L8}, {G5, L8}, {A5, L8},
+    {G_5, L8}, {A_5, L8}, {C6, L8}, {G_5, L8}, {A_5, L8}, {C6, L8},
+    {C6, L8}, {N, L4}, {C6, L8}, {C6, L8}, {C6, L8}, {C6, L8},
+    {N, L1}
+};
 
 typedef enum {
     EventTypeTick,
@@ -341,15 +327,11 @@ void process_note(
 void music_player_thread(void* p) {
     MusicDemoContext* context = (MusicDemoContext*)p;
 
-    const float bpm = 130.0f;
+    const float bpm = 230.0f;
     // 4/4
     const float bar_length_ms = (60.0f * 1000.0f / bpm) * 4;
-    const uint16_t melody_start_events_count = sizeof(melody_start) / sizeof(melody_start[0]);
     const uint16_t melody_loop_events_count = sizeof(melody_loop) / sizeof(melody_loop[0]);
 
-    for(size_t i = 0; i < melody_start_events_count; i++) {
-        process_note(&melody_start[i], bar_length_ms, context);
-    }
 
     while(1) {
         for(size_t i = 0; i < melody_loop_events_count; i++) {
