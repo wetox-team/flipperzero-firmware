@@ -141,9 +141,9 @@ bool furi_hal_ohs_save_key(uint8_t* key) {
 bool furi_hal_ohs_get_mac(uint8_t* mac_address) {
 //    furi_assert(mac_address != NULL);
 //    furi_assert(sizeof(mac_address) == CONFIG_DATA_PUBADDR_LEN);
-    printf("DO aci_hal_read_config_data\r\n");
+    printf("Before aci_hal_read_config_data\r\n");
     hci_read_bd_addr(mac_address);
-    printf("POSLE aci_hal_read_config_data\r\n");
+    printf("After aci_hal_read_config_data\r\n");
 //    furi_assert(mac_address != NULL);
     return true;
 }
