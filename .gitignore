@@ -20,6 +20,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Mac stuff
 .obj/
 bindings/
 .DS_Store
@@ -35,3 +36,6 @@ CMakeLists.txt
 
 # bundle output
 dist
+
+# Name changes
+name.h
