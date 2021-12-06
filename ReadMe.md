@@ -1,4 +1,9 @@
-# Flipper Zero Firmware
+# Flipper Zero Firmware (Wetox fork)
+
+This repo contains the flipper zero firmware with additional features compared to the stock version. Pull requests are welcome.
+
+---
+# Original README
 
 [![Discord](https://img.shields.io/discord/740930220399525928.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](http://flipperzero.one/discord)
 
