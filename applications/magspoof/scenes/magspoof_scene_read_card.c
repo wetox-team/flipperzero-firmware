@@ -440,7 +440,7 @@ bool magspoof_scene_read_card_on_event(void* context, SceneManagerEvent event) {
             string_init(v);
             string_set_str(v,"%B123456781234567^LASTNAME/FIRST^YYMMSSSDDDDDDDDDDDDDDDDDDDDDDDDD?;1234567812?");
             // string_set_str(v,"%B123456781234567^LASTNAME/FIRST^YYMMSSSDDDDDDDDDDDDDDDDDDDDDDDDD?");
-            magspoof_spoof(v, 0);
+            magspoof_spoof(v, 1);
             string_clear(v);
 
 
