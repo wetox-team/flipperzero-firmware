@@ -257,7 +257,7 @@ static void bt_change_profile(Bt* bt, BtMessage* message) {
 
     if(furi_hal_bt_change_app(furi_profile, bt_on_gap_event_callback, bt)) {
         FURI_LOG_I(TAG, "Bt App started");
-        if(bt->bt_settings.enabled) {
+        if(bt->bt_settings.mode == BT_MODE_ON) {
             furi_hal_bt_start_advertising();
         }
         furi_hal_bt_set_key_storage_change_callback(bt_on_key_storage_change_callback, bt);
@@ -287,7 +287,7 @@ int32_t bt_srv() {
             furi_hal_bt_start_advertising();
         } else if(bt->bt_settings.mode == BT_MODE_OHS) {
             furi_hal_ohs_start();
-        
+
         }
         furi_hal_bt_set_key_storage_change_callback(bt_on_key_storage_change_callback, bt);
     } else {
