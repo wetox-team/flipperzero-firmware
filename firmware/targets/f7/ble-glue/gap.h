@@ -3,6 +3,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <furi-hal-version.h>
+
+#define GAP_MAC_ADDR_SIZE (6)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,6 +18,7 @@ typedef enum {
     BleEventTypeStartOhs,
     BleEventTypeStopAdvertising,
     BleEventTypePinCodeShow,
+    BleEventTypePinCodeVerify,
     BleEventTypeUpdateMTU,
 } BleEventType;
 
@@ -27,16 +32,31 @@ typedef struct {
     BleEventData data;
 } BleEvent;
 
-typedef void (*BleEventCallback)(BleEvent event, void* context);
+typedef bool(*BleEventCallback) (BleEvent event, void* context);
 
 typedef enum {
     GapStateIdle,
+    GapStateStartingAdv,
     GapStateAdvFast,
     GapStateAdvLowPower,
     GapStateConnected,
 } GapState;
 
-bool gap_init(BleEventCallback on_event_cb, void* context);
+typedef enum {
+    GapPairingPinCodeShow,
+    GapPairingPinCodeVerifyYesNo,
+} GapPairing;
+
+typedef struct {
+    uint16_t adv_service_uuid;
+    uint16_t appearance_char;
+    bool bonding_mode;
+    GapPairing pairing_method;
+    uint8_t mac_address[GAP_MAC_ADDR_SIZE];
+    char adv_name[FURI_HAL_VERSION_DEVICE_NAME_LENGTH];
+} GapConfig;
+
+bool gap_init(GapConfig* config, BleEventCallback on_event_cb, void* context);
 
 void gap_start_advertising();
 
@@ -45,6 +65,8 @@ void gap_notify_ohs_start();
 void gap_stop_advertising();
 
 GapState gap_get_state();
+
+void gap_thread_stop();
 
 #ifdef __cplusplus
 }
