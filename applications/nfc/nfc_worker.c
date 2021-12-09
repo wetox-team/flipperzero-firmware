@@ -2,6 +2,7 @@
 #include <furi-hal.h>
 #include "nfc_protocols/emv_decoder.h"
 #include "nfc_protocols/mifare_ultralight.h"
+#include "nfc_protocols/mifare_classic.h"
 
 #define TAG "NfcWorker"
 
@@ -89,6 +90,8 @@ void nfc_worker_task(void* context) {
         nfc_worker_emulate_mifare_ul(nfc_worker);
     } else if(nfc_worker->state == NfcWorkerStateField) {
         nfc_worker_field(nfc_worker);
+    } else if(nfc_worker->state == NfcWorkerStateReadMifareClassic) {
+        nfc_worker_read_mifare_classic(nfc_worker);
     }
     furi_hal_nfc_deactivate();
     nfc_worker_change_state(nfc_worker, NfcWorkerStateReady);
@@ -118,6 +121,11 @@ void nfc_worker_detect(NfcWorker* nfc_worker) {
                        dev->dev.nfca.sensRes.platformInfo,
                        dev->dev.nfca.selRes.sak)) {
                     result->protocol = NfcDeviceProtocolMifareUl;
+                } else if(mf_classic_check_card_type(
+                              dev->dev.nfca.sensRes.anticollisionInfo,
+                              dev->dev.nfca.sensRes.platformInfo,
+                              dev->dev.nfca.selRes.sak)) {
+                    result->protocol = NfcDeviceProtocolMifareClassic;
                 } else if(dev->rfInterface == RFAL_NFC_INTERFACE_ISODEP) {
                     result->protocol = NfcDeviceProtocolEMV;
                 } else {
@@ -655,6 +663,50 @@ void nfc_worker_emulate_mifare_ul(NfcWorker* nfc_worker) {
         }
         FURI_LOG_W(TAG, "Can't find reader");
         osThreadYield();
+    }
+}
+
+void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
+    // ReturnCode err;
+    rfalNfcDevice* dev_list;
+    uint8_t dev_cnt = 0;
+    uint8_t tx_buff[255] = {};
+    uint16_t tx_len = 0;
+    uint8_t* rx_buff;
+    uint16_t* rx_len;
+    MifareClassicDevice mf_classic_read;
+    while(nfc_worker->state == NfcWorkerStateReadMifareClassic) {
+        furi_hal_nfc_deactivate();
+        memset(&mf_classic_read, 0, sizeof(mf_classic_read));
+        if(furi_hal_nfc_detect(&dev_list, &dev_cnt, 300, false)) {
+            if(dev_list[0].type == RFAL_NFC_LISTEN_TYPE_NFCA &&
+               mf_classic_check_card_type(
+                   dev_list[0].dev.nfca.sensRes.anticollisionInfo,
+                   dev_list[0].dev.nfca.sensRes.platformInfo,
+                   dev_list[0].dev.nfca.selRes.sak)) {
+                FURI_LOG_I(TAG, "Found Mifare Classic tag.");
+                mf_classic_set_default_version(&mf_classic_read);
+                furi_hal_nfc_deactivate();
+                if(!furi_hal_nfc_detect(&dev_list, &dev_cnt, 300, false)) {
+                    FURI_LOG_E(TAG, "Lost connection. Restarting search");
+                    continue;
+                }
+                for(uint8_t block = 0; block < mf_classic_read.blocks_to_read; block += 1) {
+
+                    FURI_LOG_I(TAG, "Reading block %d...", block);
+                    tx_len = mf_classic_prepare_read(tx_buff, block);
+                    if(furi_hal_nfc_data_exchange(tx_buff, tx_len, &rx_buff, &rx_len, false)) {
+                        FURI_LOG_E(TAG, "Read block %d failed", block);
+                        continue;
+                    } else {
+                        mf_classic_parse_read_response(rx_buff, block, &mf_classic_read);
+                    }
+                }
+            }
+        } else {
+            FURI_LOG_I(TAG, "Can't find any tags");
+        }
+        osDelay(100);
     }
 }
 

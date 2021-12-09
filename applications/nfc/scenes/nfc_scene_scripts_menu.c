@@ -3,6 +3,7 @@
 enum SubmenuIndex {
     SubmenuIndexBankCard,
     SubmenuIndexMifareUltralight,
+    SubmenuIndexMifareClassic,
 };
 
 void nfc_scene_scripts_menu_submenu_callback(void* context, uint32_t index) {
@@ -27,6 +28,12 @@ void nfc_scene_scripts_menu_on_enter(void* context) {
         SubmenuIndexMifareUltralight,
         nfc_scene_scripts_menu_submenu_callback,
         nfc);
+    submenu_add_item(
+        submenu,
+        "Read Mifare Classic",
+        SubmenuIndexMifareClassic,
+        nfc_scene_scripts_menu_submenu_callback,
+        nfc);
     submenu_set_selected_item(
         nfc->submenu, scene_manager_get_scene_state(nfc->scene_manager, NfcSceneScriptsMenu));
     view_dispatcher_switch_to_view(nfc->view_dispatcher, NfcViewMenu);
@@ -46,6 +53,11 @@ bool nfc_scene_scripts_menu_on_event(void* context, SceneManagerEvent event) {
                 nfc->scene_manager, NfcSceneScriptsMenu, SubmenuIndexMifareUltralight);
             scene_manager_next_scene(nfc->scene_manager, NfcSceneReadMifareUl);
             return true;
+        } else if(event.event == SubmenuIndexMifareClassic) {
+        scene_manager_set_scene_state(
+            nfc->scene_manager, NfcSceneScriptsMenu, SubmenuIndexMifareClassic);
+        scene_manager_next_scene(nfc->scene_manager, NfcSceneReadMifareClassic);
+        return true;
         }
     }
 

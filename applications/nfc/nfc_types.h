@@ -59,6 +59,8 @@ static inline const char* nfc_get_protocol(NfcProtocol protocol) {
         return "EMV bank card";
     } else if(protocol == NfcDeviceProtocolMifareUl) {
         return "Mifare Ultralight";
+    } else if(protocol == NfcDeviceProtocolMifareClassic) {
+        return "Mifare Classic";
     } else {
         return "Unrecognized";
     }

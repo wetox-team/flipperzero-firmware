@@ -18,6 +18,8 @@ typedef enum {
     NfcWorkerStateField,
     NfcWorkerStateReadMifareUl,
     NfcWorkerStateEmulateMifareUl,
+    NfcWorkerStateReadMifareClassic,
+    NfcWorkerStateEmulateMifareClassic,
     // Transition
     NfcWorkerStateStop,
 } NfcWorkerState;
@@ -38,3 +40,4 @@ void nfc_worker_start(
     void* context);
 
 void nfc_worker_stop(NfcWorker* nfc_worker);
+void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker);
