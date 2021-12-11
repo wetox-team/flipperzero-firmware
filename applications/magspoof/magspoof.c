@@ -39,24 +39,24 @@ static Magspoof* magspoof_alloc() {
     view_dispatcher_set_navigation_event_callback(app->view_dispatcher, magspoof_back_event_callback);
 
     // Views
-    app->view = view_alloc();
-    // view_set_draw_callback(app->view, magspoof_view_draw_callback);
-    // view_set_input_callback(app->view, magspoof_view_input_callback);
+    // app->view = view_alloc();
+     // view_set_draw_callback(app->view, magspoof_view_draw_callback);
+     // view_set_input_callback(app->view, magspoof_view_input_callback);
     
-    view_allocate_model(app->view, ViewModelTypeLocking, sizeof(UartDumpModel));
+    // view_allocate_model(app->view, ViewModelTypeLocking, sizeof(UartDumpModel));
 
-    view_set_context(app->view, app);
+    // view_set_context(app->view, app);
 
-    with_view_model(
-        app->view, (UartDumpModel * model) {
-            for(size_t i = 0; i < LINES_ON_SCREEN; i++) {
-                model->line = 0;
-                model->escape = false;
-                model->list[i] = furi_alloc(sizeof(ListElement));
-                string_init(model->list[i]->text);
-            }
-            return true;
-        });
+    // with_view_model(
+    //     app->view, (UartDumpModel * model) {
+    //         for(size_t i = 0; i < LINES_ON_SCREEN; i++) {
+    //             model->line = 0;
+    //             model->escape = false;
+    //             model->list[i] = furi_alloc(sizeof(ListElement));
+    //             string_init(model->list[i]->text);
+    //         }
+    //         return true;
+    //     });
 
 
     // Submenu
@@ -76,7 +76,7 @@ static Magspoof* magspoof_alloc() {
     
 
     // view_dispatcher_add_view(app->view_dispatcher, 0, app->view);
-    view_dispatcher_switch_to_view(app->view_dispatcher, 0);
+    view_dispatcher_switch_to_view(app->view_dispatcher, MagspoofViewMenu);
 
     // Enable uart listener
     furi_hal_console_disable();
@@ -108,17 +108,24 @@ static void magspoof_free(Magspoof* app) {
     furi_hal_console_enable();
 
     // Free views
-    view_dispatcher_remove_view(app->view_dispatcher, 0);
+    view_dispatcher_remove_view(app->view_dispatcher, MagspoofViewMenu);
+    submenu_free(app->submenu);
 
-    with_view_model(
-        app->view, (UartDumpModel * model) {
-            for(size_t i = 0; i < LINES_ON_SCREEN; i++) {
-                string_clear(model->list[i]->text);
-                free(model->list[i]);
-            }
-            return true;
-        });
-    view_free(app->view);
+    view_dispatcher_remove_view(app->view_dispatcher, MagspoofViewDialogEx);
+    dialog_ex_free(app->dialog_ex);
+
+    // view_dispatcher_remove_view(app->view_dispatcher, 0);
+
+    // with_view_model(
+    //     app->view, (UartDumpModel * model) {
+    //         for(size_t i = 0; i < LINES_ON_SCREEN; i++) {
+    //             string_clear(model->list[i]->text);
+    //             free(model->list[i]);
+    //         }
+    //         return true;
+    //     });
+    // view_free(app->view);
+
     view_dispatcher_free(app->view_dispatcher);
 
     scene_manager_free(app->scene_manager);
