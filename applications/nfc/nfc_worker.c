@@ -676,10 +676,11 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
     //uint32_t pos, nt, ntpp; // Supplied tag nonce
     //uint16_t tx_len = 0;
     //uint8_t* rx_buff;
+    uint64_t key = 0xFFFFFFFFFFFF;
     //uint16_t* rx_len;
     MifareClassicDevice mf_classic_read;
-    struct Crypto1State mpcs = {0, 0};
-    struct Crypto1State* pcs = &mpcs;
+    //struct Crypto1State mpcs = {0, 0};
+    //struct Crypto1State* pcs = &mpcs;
     while(nfc_worker->state == NfcWorkerStateReadMifareClassic) {
         furi_hal_nfc_deactivate();
         memset(&mf_classic_read, 0, sizeof(mf_classic_read));
@@ -697,15 +698,16 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
                     continue;
                 }
                 for(uint8_t block = 0; block < mf_classic_read.blocks_to_read; block += 1) {
-                    FURI_LOG_I(TAG, "Trying to auth");
-                    uint8_t uid =  (uint32_t) dev_list[0].dev.nfca.nfcId1;
-                    mifare_classic_auth(pcs, uid, block, 0, 0xFFFFFFFFFFFF, 0);
+                    //FURI_LOG_I(TAG, "Trying to auth");
+                    //uint8_t uid =  (uint32_t) dev_list[0].dev.nfca.nfcId1;
+                    //mifare_classic_auth(pcs, uid, block, 0, 0xFFFFFFFFFFFF, 0);
                     /*
                     FURI_LOG_I(TAG, "Reading block %d...", block);
                     tx_len = mf_classic_read_block(pcs, uid, rx_buff, block);
                     mf_classic_parse_read_response(rx_buff, block, &mf_classic_read);
                     FURI_LOG_I(TAG, "%02X", tx_len);*/
-                    
+
+                    MifareReadBlock(block, 0, key);
                 }
             }
         } else {
