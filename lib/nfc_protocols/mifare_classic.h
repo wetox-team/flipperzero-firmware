@@ -30,6 +30,19 @@
 #define MF_CLASSIC_RESTORE_CMD (0xC2)
 #define MF_CLASSIC_TRANSFER_CMD (0xB0)
 
+#define ISO14443A_CMD_REQA 0x26
+#define ISO14443A_CMD_READBLOCK 0x30
+#define ISO14443A_CMD_WUPA 0x52
+#define ISO14443A_CMD_OPTS 0x35
+#define ISO14443A_CMD_ANTICOLL_OR_SELECT 0x93
+#define ISO14443A_CMD_ANTICOLL_OR_SELECT_2 0x95
+#define ISO14443A_CMD_ANTICOLL_OR_SELECT_3 0x97
+#define ISO14443A_CMD_WRITEBLOCK 0xA0
+#define ISO14443A_CMD_HALT 0x50
+#define ISO14443A_CMD_RATS 0xE0
+#define ISO14443A_CMD_PPS 0xD0
+#define ISO14443A_CMD_NXP_DESELECT 0xC2
+
 // Mifare 4k/2k/1k/mini Max Block / Max Sector
 #define MIFARE_4K_MAXBLOCK 256
 #define MIFARE_2K_MAXBLOCK 128
@@ -87,19 +100,17 @@ bool mf_classic_check_card_type(uint8_t ATQA0, uint8_t ATQA1, uint8_t SAK);
 
 void mf_classic_set_default_version(MifareClassicDevice* mf_classic_read);
 
-uint16_t mf_classic_prepare_read(uint8_t* dest, uint8_t start_block);
+uint16_t mf_classic_read_block(struct Crypto1State* pcs, uint32_t uid, uint8_t* dest, uint8_t start_block);
 
 void mf_classic_parse_read_response(uint8_t* buff, uint16_t block_addr, MifareClassicDevice* mf_classic_read);
 
 int mifare_classic_auth(
-    struct Crypto1State*pcs,
+    struct Crypto1State* pcs,
     uint32_t uid,
     uint8_t blockNo,
     uint8_t keyType,
     uint64_t ui64Key,
-    uint8_t isNested, 
-    uint8_t *rx_buff,
-    uint16_t *rx_len);
+    uint8_t isNested);
 int mifare_classic_authex(
     struct Crypto1State* pcs,
     uint32_t uid,
@@ -107,7 +118,5 @@ int mifare_classic_authex(
     uint8_t keyType,
     uint64_t ui64Key,
     uint8_t isNested,
-    uint8_t* rx_buff,
-    uint16_t* rx_len,
     uint32_t* ntptr,
     uint32_t* timing);

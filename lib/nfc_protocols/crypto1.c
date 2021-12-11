@@ -11,6 +11,17 @@ uint8_t reflect8(uint8_t b) {
     return (b * 0x0202020202ULL & 0x010884422010ULL) % 1023;
 }
 
+int filter(uint32_t const x) {
+    uint32_t f;
+
+    f = 0xf22c0 >> (x & 0xf) & 16;
+    f |= 0x6c9c0 >> (x >> 4 & 0xf) & 8;
+    f |= 0x3c8b0 >> (x >> 8 & 0xf) & 4;
+    f |= 0x1e458 >> (x >> 12 & 0xf) & 2;
+    f |= 0x0d938 >> (x >> 16 & 0xf) & 1;
+    return BIT(0xEC57E80A, f);
+}
+
 uint8_t crypto1_bit(struct Crypto1State* s, uint8_t in, int is_encrypted) {
     uint32_t feedin, t;
     uint8_t ret = filter(s->odd);

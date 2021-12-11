@@ -8,16 +8,7 @@
 #define BEBIT(x, n) BIT(x, (n) ^ 24)
 #define CRC16_POLY_CCITT 0x1021
 
-static inline int filter(uint32_t const x) {
-    uint32_t f;
-
-    f = 0xf22c0 >> (x & 0xf) & 16;
-    f |= 0x6c9c0 >> (x >> 4 & 0xf) & 8;
-    f |= 0x3c8b0 >> (x >> 8 & 0xf) & 4;
-    f |= 0x1e458 >> (x >> 12 & 0xf) & 2;
-    f |= 0x0d938 >> (x >> 16 & 0xf) & 1;
-    return BIT(0xEC57E80A, f);
-}
+int filter(uint32_t const x);
 
 #define LF_POLY_ODD (0x29CE5C)
 #define LF_POLY_EVEN (0x870804)
