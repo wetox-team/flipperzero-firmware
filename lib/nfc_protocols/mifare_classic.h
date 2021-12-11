@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include "crypto1.h"
 
 #define MF_CLASSIC_MAX_DUMP_SIZE 1024
 
@@ -89,3 +90,24 @@ void mf_classic_set_default_version(MifareClassicDevice* mf_classic_read);
 uint16_t mf_classic_prepare_read(uint8_t* dest, uint8_t start_block);
 
 void mf_classic_parse_read_response(uint8_t* buff, uint16_t block_addr, MifareClassicDevice* mf_classic_read);
+
+int mifare_classic_auth(
+    struct Crypto1State*pcs,
+    uint32_t uid,
+    uint8_t blockNo,
+    uint8_t keyType,
+    uint64_t ui64Key,
+    uint8_t isNested, 
+    uint8_t *rx_buff,
+    uint16_t *rx_len);
+int mifare_classic_authex(
+    struct Crypto1State* pcs,
+    uint32_t uid,
+    uint8_t blockNo,
+    uint8_t keyType,
+    uint64_t ui64Key,
+    uint8_t isNested,
+    uint8_t* rx_buff,
+    uint16_t* rx_len,
+    uint32_t* ntptr,
+    uint32_t* timing);
