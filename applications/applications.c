@@ -131,10 +131,6 @@ const FlipperApplication FLIPPER_APPS[] = {
     {.app = subghz_app, .name = "Sub-GHz", .stack_size = 2048, .icon = &A_Sub1ghz_14},
 #endif
 
-#ifdef APP_MAGSPOOF
-    {.app = magspoof_app, .name = "MagSpoof", .stack_size = 2048, .icon = &A_Plugins_14},
-#endif
-
 #ifdef APP_LF_RFID
     {.app = lfrfid_app, .name = "125 kHz RFID", .stack_size = 2048, .icon = &A_125khz_14},
 #endif
@@ -210,6 +206,10 @@ const size_t FLIPPER_ON_SYSTEM_START_COUNT =
 
 // Plugin menu
 const FlipperApplication FLIPPER_PLUGINS[] = {
+
+#ifdef APP_MAGSPOOF
+    {.app = magspoof_app, .name = "MagSpoof", .stack_size = 2048, .icon = &A_Plugins_14},
+#endif
 
 #ifdef APP_MUSIC_PLAYER
     {.app = music_player_app, .name = "Music Player", .stack_size = 1024, .icon = &A_Plugins_14},
