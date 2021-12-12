@@ -5,7 +5,7 @@
 
 #pragma once
 
-#define OHS_KEY_PATH "/int/ohs.key"
+#define OHS_KEY_PATH "/any/ohs.key"
 
 bool furi_hal_ohs_start();
 bool furi_hal_ohs_stop();
