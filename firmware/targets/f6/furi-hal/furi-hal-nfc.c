@@ -170,6 +170,7 @@ ReturnCode furi_hal_nfc_data_exchange(uint8_t* tx_buff, uint16_t tx_len, uint8_t
     return ERR_NONE;
 }
 
+
 void furi_hal_nfc_deactivate() {
     rfalNfcDeactivate(false);
     rfalLowPowerModeStart();
