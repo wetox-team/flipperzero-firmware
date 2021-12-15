@@ -274,14 +274,15 @@ int mifare_classic_authex(
     uint8_t isNested,
     uint32_t* ntptr,
     uint32_t* timing) {
-    int len;
+    int len; 
     uint32_t pos, nt, ntpp; // Supplied tag nonce
     uint8_t par[1] = {0x00}; // parity
     uint8_t nr[4]; // reader nonce
     uint8_t* rx_buff;
     uint16_t* rx_len;
     uint8_t mf_nr_ar[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    uint8_t mf_nr_ar_par[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    uint8_t mf_nr_ar_par[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    uint8_t mf_test[] = {0x80, 0x60, 0x78, 0x1e, 0x1f, 0x87, 0xe7, 0xf9, 0xff};
     uint8_t receivedAnswer[MAX_MIFARE_FRAME_SIZE] = {0x00};
 
     // "random" reader nonce:
@@ -387,7 +388,7 @@ int mifare_classic_authex(
     // curr_len = 0;
     // FURI_LOG_I("ASTRA_DBG_POST", "mf_nr_ar_par[%d] = %02X", curr_byte, mf_nr_ar_par[curr_byte]);
     // curr_byte++;
-
+    par[0] = 0xAB;
     int bits[72];
     int curr_bit = 0;
     int cur_par_bit = 0;
@@ -492,28 +493,30 @@ int mifare_classic_authex(
 
     //     }
     // }
+    //memcpy(mf_nr_ar_par, mf_test, 9);
 
-        FURI_LOG_I("ASTRA", "mf_nr_ar_par[0] = %02X", mf_nr_ar_par[0]);
-        FURI_LOG_I("ASTRA", "mf_nr_ar_par[1] = %02X", mf_nr_ar_par[1]);
-        FURI_LOG_I("ASTRA", "mf_nr_ar_par[2] = %02X", mf_nr_ar_par[2]);
-        FURI_LOG_I("ASTRA", "mf_nr_ar_par[3] = %02X", mf_nr_ar_par[3]);
-        FURI_LOG_I("ASTRA", "mf_nr_ar_par[4] = %02X", mf_nr_ar_par[4]);
-        FURI_LOG_I("ASTRA", "mf_nr_ar_par[5] = %02X", mf_nr_ar_par[5]);
-        FURI_LOG_I("ASTRA", "mf_nr_ar_par[6] = %02X", mf_nr_ar_par[6]);
-        FURI_LOG_I("ASTRA", "mf_nr_ar_par[7] = %02X", mf_nr_ar_par[7]);
-        FURI_LOG_I("ASTRA", "mf_nr_ar_par[8] = %02X", mf_nr_ar_par[8]);
+    FURI_LOG_I("ASTRA", "you wont see this");
+    FURI_LOG_I("ASTRA", "mf_nr_ar_par[0] = %02X", mf_nr_ar_par[0]);
+    FURI_LOG_I("ASTRA", "mf_nr_ar_par[1] = %02X", mf_nr_ar_par[1]);
+    FURI_LOG_I("ASTRA", "mf_nr_ar_par[2] = %02X", mf_nr_ar_par[2]);
+    FURI_LOG_I("ASTRA", "mf_nr_ar_par[3] = %02X", mf_nr_ar_par[3]);
+    FURI_LOG_I("ASTRA", "mf_nr_ar_par[4] = %02X", mf_nr_ar_par[4]);
+    FURI_LOG_I("ASTRA", "mf_nr_ar_par[5] = %02X", mf_nr_ar_par[5]);
+    FURI_LOG_I("ASTRA", "mf_nr_ar_par[6] = %02X", mf_nr_ar_par[6]);
+    FURI_LOG_I("ASTRA", "mf_nr_ar_par[7] = %02X", mf_nr_ar_par[7]);
+    FURI_LOG_I("ASTRA", "mf_nr_ar_par[8] = %02X", mf_nr_ar_par[8]);
 
-        furi_hal_nfc_raw_exchange(mf_nr_ar_par, sizeof(mf_nr_ar_par), &rx_buff, &rx_len, false);
-        // save standard timeout
-        //uint32_t save_timeout = iso14a_get_timeout();
+    furi_hal_nfc_raw_exchange(mf_test, 9, &rx_buff, &rx_len, false);
+    // save standard timeout
+    //uint32_t save_timeout = iso14a_get_timeout();
 
-        // set timeout for authentication response
-        //if(save_timeout > 103) iso14a_set_timeout(103);
+    // set timeout for authentication response
+    //if(save_timeout > 103) iso14a_set_timeout(103);
 
-        // Receive 4 byte tag answer
-        //len = ReaderReceive(receivedAnswer, receivedAnswerPar);
+    // Receive 4 byte tag answer
+    //len = ReaderReceive(receivedAnswer, receivedAnswerPar);
 
-        //iso14a_set_timeout(save_timeout);
+    //iso14a_set_timeout(save_timeout);
 
     if(!len) {
         FURI_LOG_I("MIFARE", "Authentication failed. Card timeout");
