@@ -104,7 +104,7 @@ uint16_t mf_classic_read_block(struct Crypto1State* pcs, uint32_t uid, uint8_t* 
 
 void mf_classic_parse_read_response(uint8_t* buff, uint16_t block_addr, MifareClassicDevice* mf_classic_read);
 
-void MifareReadBlock(uint8_t blockNo, uint8_t keyType, uint64_t ui64Key);
+void MifareReadBlock(uint8_t blockNo, uint8_t keyType, uint64_t ui64Key, uint8_t uid);
 
 int mifare_classic_auth(
     struct Crypto1State* pcs,

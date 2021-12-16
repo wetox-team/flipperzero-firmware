@@ -707,7 +707,7 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
                     mf_classic_parse_read_response(rx_buff, block, &mf_classic_read);
                     FURI_LOG_I(TAG, "%02X", tx_len);*/
 
-                    //MifareReadBlock(block, 0, key);
+                    MifareReadBlock(block, 0, key, uid);
                 }
             }
         } else {

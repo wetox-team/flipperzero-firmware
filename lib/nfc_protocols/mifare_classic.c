@@ -280,9 +280,8 @@ int mifare_classic_authex(
     uint8_t nr[4]; // reader nonce
     uint8_t* rx_buff;
     uint16_t* rx_len;
+    uint8_t* rx_parbits;
     uint8_t mf_nr_ar[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    uint8_t mf_nr_ar_par[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    uint8_t mf_test[] = {0x80, 0x60, 0x78, 0x1e, 0x1f, 0x87, 0xe7, 0xf9, 0xff};
     uint8_t receivedAnswer[MAX_MIFARE_FRAME_SIZE] = {0x00};
 
     // "random" reader nonce:
@@ -353,160 +352,8 @@ int mifare_classic_authex(
     FURI_LOG_I("ASTRA", "mf_nr_ar[6] = %02X", mf_nr_ar[6]);
     FURI_LOG_I("ASTRA", "mf_nr_ar[7] = %02X", mf_nr_ar[7]);
     FURI_LOG_I("ASTRA", "par[0] = %02X", par[0]);
-
-
-    // for (int i = 0; i < 8; i++){
-    //     for (int j=0; j < 8; j++){
-    //         if (curr_len == 8){
-    //             mf_nr_ar_par[curr_byte] = buff;
-    //             buff = 0;
-    //             curr_len = 0;
-    //             FURI_LOG_I("ASTRA_DBG", "mf_nr_ar_par[%d] = %02X", curr_byte, mf_nr_ar_par[curr_byte]);
-    //             curr_byte++;
-    //         }
-    //         int curr_bit = mf_nr_ar[i] >> j;
-    //         buff <<= 1;
-    //         buff |= curr_bit & 1;
-    //         curr_len++;
-    //     }
-
-    //     if (curr_len == 8){
-    //         mf_nr_ar_par[curr_byte] = buff;
-    //         buff = 0;
-    //         curr_len = 0;
-    //         FURI_LOG_I("ASTRA_DBG", "mf_nr_ar_par[%d] = %02X", curr_byte, mf_nr_ar_par[curr_byte]);
-    //         curr_byte++;
-    //     }
-        
-    //     buff <<= 1;
-    //     par[0] >>= 1;
-    //     buff |= par[0] & 1;
-    //     curr_len++;
-    // }
-    // mf_nr_ar_par[curr_byte] = buff;
-    // buff = 0;
-    // curr_len = 0;
-    // FURI_LOG_I("ASTRA_DBG_POST", "mf_nr_ar_par[%d] = %02X", curr_byte, mf_nr_ar_par[curr_byte]);
-    // curr_byte++;
-    par[0] = 0xAB;
-    int bits[72];
-    int curr_bit = 0;
-    int cur_par_bit = 0;
-    int par_bit;
-    int bit;
-
-
-    for (int i = 0; i < 8; i++){
-        for (int j = 0; j < 8; j++){
-            bit = (mf_nr_ar[i] >> (7-j)) & 1;
-            bits[curr_bit++] = bit & 1;
-            // FURI_LOG_I("ASTRA", "mf_bit[%d][%d] = %d", i, 7-j, bit & 1);
-        }
-        par_bit = (par[0] >> (7-cur_par_bit++)) & 1;
-        // FURI_LOG_I("ASTRA", "par_bit[%d] = %d", i, par_bit & 1);
-        bits[curr_bit++] =  par_bit & 1;
-    }
-
-    printf("[ASTRA log array] = [");
-    for (int i = 0; i < 9; i++){
-        printf("[");
-        for (int j = 0; j < 8; j++){
-            printf("%d", bits[i*8 + j] & 1);
-            if (j != 7) printf(", ");
-        }
-        printf("]");
-        if (i != 8) printf(", ");
-    }
-    printf("]\n");
     
-
-    FURI_LOG_I("ASTRA", "HUI");
-    for (int i = 0; i < 9; i++){
-        for (int j = 0; j < 8; j++){
-            mf_nr_ar_par[i] <<= 1;
-            if (bits[i*8 + j] == 1)
-                mf_nr_ar_par[i] |= 1;
-
-            // FURI_LOG_I("ASTRA", "%d", bits[i*8 + j]);
-        }
-        FURI_LOG_I("ASTRA", "%02X ", mf_nr_ar_par[i]);
-    }
-
-    FURI_LOG_I("ASTRA", "mf_nr_ar_par FULL");
-
-    for (int i = 0; i < 9; i++)
-        FURI_LOG_I("ASTRA", "mf_nr_ar_par[%d] = %02X", i, mf_nr_ar_par[i]);
-    
-
-    char ch_bits[72];
-    for (int i = 0; i < 72; i++){
-        if (bits[i] == 1)
-            ch_bits[i] = '1';
-        else ch_bits[i] = '0';
-    }
-    FURI_LOG_I("CHAR ARRAY", "%s", ch_bits);
-    FURI_LOG_I("CHAR ARRAY", "%s", ch_bits);
-
-    // num_to_bytes(strtoll(ch_bits, NULL, 2), 9, mf_nr_ar_par);
-
-
-
-    // LOG PART
-
-    int new_bits[72];
-    for (int i = 0; i < 9; i++){
-        for (int j = 0; j < 8; j++){
-            bit = (mf_nr_ar_par[i] >> (7-j)) & 1;
-            new_bits[curr_bit++] = bit & 1;
-            // FURI_LOG_I("ASTRA", "mf_bit[%d][%d] = %d", i, 7-j, bit & 1);
-        }
-    }
-    FURI_LOG_I("DONE", "done!");
-    printf("[ASTRA log array1] = [");
-    for (int i = 0; i < 9; i++){
-        printf("[");
-        for (int j = 0; j < 8; j++){
-            printf("%d", new_bits[i*8 + j] & 1);
-            if (j != 7) printf(", ");
-        }
-        printf("]");
-        if (i != 8) printf(", ");
-    }
-    printf("]\n");
-
-    // END LOG PART
-
-
-    // int bits[72];
-
-    // for (int i = 0; i < 8; i++) {
-    //     for (int j = 0; j < 8; j++) {
-    //         bits[j + 9 * i] = (mf_nr_ar[i] >> j) & 1;
-    //     }
-    //     bits[8 + i * 9] = (par[0] >> i) & 1;
-    // }
-
-    // for(int i = 0; i < 9; i++) {
-    //     for(int j = 7; j >= 0; j--) {
-    //         mf_nr_ar_par[i] <<= 1;
-    //         mf_nr_ar_par[i] |= bits[i * 8 + j] & 1;
-
-    //     }
-    // }
-    //memcpy(mf_nr_ar_par, mf_test, 9);
-
-    FURI_LOG_I("ASTRA", "you wont see this");
-    FURI_LOG_I("ASTRA", "mf_nr_ar_par[0] = %02X", mf_nr_ar_par[0]);
-    FURI_LOG_I("ASTRA", "mf_nr_ar_par[1] = %02X", mf_nr_ar_par[1]);
-    FURI_LOG_I("ASTRA", "mf_nr_ar_par[2] = %02X", mf_nr_ar_par[2]);
-    FURI_LOG_I("ASTRA", "mf_nr_ar_par[3] = %02X", mf_nr_ar_par[3]);
-    FURI_LOG_I("ASTRA", "mf_nr_ar_par[4] = %02X", mf_nr_ar_par[4]);
-    FURI_LOG_I("ASTRA", "mf_nr_ar_par[5] = %02X", mf_nr_ar_par[5]);
-    FURI_LOG_I("ASTRA", "mf_nr_ar_par[6] = %02X", mf_nr_ar_par[6]);
-    FURI_LOG_I("ASTRA", "mf_nr_ar_par[7] = %02X", mf_nr_ar_par[7]);
-    FURI_LOG_I("ASTRA", "mf_nr_ar_par[8] = %02X", mf_nr_ar_par[8]);
-
-    furi_hal_nfc_raw_exchange(mf_test, 9, &rx_buff, &rx_len, false);
+    furi_hal_nfc_raw_parbits_exchange(mf_nr_ar, sizeof(mf_nr_ar), par, &rx_buff, &rx_len, &rx_parbits, false);
     // save standard timeout
     //uint32_t save_timeout = iso14a_get_timeout();
 
@@ -560,19 +407,19 @@ uint16_t mf_classic_read_block(struct Crypto1State* pcs, uint32_t uid, uint8_t* 
     return sizeof(dest);
 }
 
-void MifareReadBlock(uint8_t blockNo, uint8_t keyType, uint64_t ui64Key) {
+void MifareReadBlock(uint8_t blockNo, uint8_t keyType, uint64_t ui64Key, uint8_t uid) {
 
     // variables
     //uint8_t dataoutbuf[16] = {0x00};
     //uint8_t uid[10] = {0x00};
-    uint32_t cuid = 0;
+    //uint32_t cuid = 0;
 
     struct Crypto1State mpcs = {0, 0};
     struct Crypto1State* pcs;
     pcs = &mpcs;
 
 
-    if(mifare_classic_auth(pcs, cuid, blockNo, keyType, ui64Key, AUTH_FIRST)) {
+    if(mifare_classic_auth(pcs, uid, blockNo, keyType, ui64Key, AUTH_FIRST)) {
         FURI_LOG_I("MFC", "Auth error");
     };
 
