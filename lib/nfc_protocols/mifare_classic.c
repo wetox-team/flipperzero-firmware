@@ -97,6 +97,56 @@ int mifare_sendcmd_short(
     }
     return *len;
 }
+
+// send 2 byte commands without crc
+int mifare_sendcmd_short_no_crc(
+    struct Crypto1State* pcs,
+    uint8_t crypted,
+    uint8_t cmd,
+    uint8_t data,
+    uint8_t* answer,
+    uint32_t* timing) {
+    uint16_t pos;
+    uint16_t* len;
+    uint8_t dcmd[4] = {cmd, data, 0x00, 0x00};
+    uint8_t ecmd[4] = {0x00, 0x00, 0x00, 0x00};
+    AddCrc14A(dcmd, 2);
+    memcpy(ecmd, dcmd, sizeof(dcmd));
+    uint8_t* answer2 = answer;
+    
+    if(pcs && crypted) {
+        for(pos = 0; pos < 4; pos++) {
+            ecmd[pos] = crypto1_byte(pcs, 0x00, 0) ^ dcmd[pos];
+        }
+        //ReaderTransmitPar(ecmd, sizeof(ecmd), par, timing);
+        FURI_LOG_I("ASTRA", "ecmd = %02X", ecmd[1]);
+        furi_hal_nfc_data_no_crc_exchange(ecmd, sizeof(ecmd), &answer2, &len, false);
+    } else {
+        //ReaderTransmit(dcmd, sizeof(dcmd), timing);
+        FURI_LOG_I("ASTRA", "dcmd = %02X", dcmd[1]);
+        furi_hal_nfc_data_no_crc_exchange(dcmd, sizeof(dcmd), &answer2, &len, false);
+    }
+
+    memcpy(answer, answer2, *len);
+
+    //int len = ReaderReceive(answer, par);
+
+    if(crypted == CRYPT_ALL) {
+        if(*len == 1) {
+            FURI_LOG_I("ASTRA", "len = 1");
+            uint16_t res = 0;
+            res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 0)) << 0;
+            res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 1)) << 1;
+            res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 2)) << 2;
+            res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 3)) << 3;
+            answer[0] = res;
+        } else {
+            FURI_LOG_I("ASTRA", "len = %d", *len);
+            for(pos = 0; pos < *len; pos++) answer[pos] = crypto1_byte(pcs, 0x00, 0) ^ answer[pos];
+        }
+    }
+    return *len;
+}
 /*
 int mifare_classic_auth(
     struct Crypto1State* pcs,
@@ -379,14 +429,14 @@ int mifare_classic_authex(
     return 0;
     }
 
-uint16_t mf_classic_read_block(struct Crypto1State* pcs, uint32_t uid, uint8_t* dest, uint8_t start_block) {
+uint16_t mf_classic_read_block(struct Crypto1State* pcs, uint32_t uid, uint8_t blockNo, uint8_t *blockData) {
     int len;
     uint8_t bt[2] = {0x00, 0x00};
     uint8_t receivedAnswer[MAX_MIFARE_FRAME_SIZE] = {0x00};
 
 
-    len = (int) mifare_sendcmd_short(
-        pcs, 1, ISO14443A_CMD_READBLOCK, start_block, receivedAnswer, NULL);
+    len = (int) mifare_sendcmd_short_no_crc(
+        pcs, 1, ISO14443A_CMD_READBLOCK, blockNo, receivedAnswer, NULL);
     if(len == 1) {
         printf("Cmd Error %02x", receivedAnswer[0]);
         return 0;
@@ -403,8 +453,8 @@ uint16_t mf_classic_read_block(struct Crypto1State* pcs, uint32_t uid, uint8_t* 
         return 0;
     }
 
-    memcpy(dest, receivedAnswer, 16);
-    return sizeof(dest);
+    memcpy(blockData, receivedAnswer, 16);
+    return sizeof(blockData);
 }
 
 void MifareReadBlock(uint8_t blockNo, uint8_t keyType, uint64_t ui64Key, uint8_t uid) {

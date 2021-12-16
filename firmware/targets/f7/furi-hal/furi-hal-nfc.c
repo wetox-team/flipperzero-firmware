@@ -170,6 +170,47 @@ ReturnCode furi_hal_nfc_data_exchange(uint8_t* tx_buff, uint16_t tx_len, uint8_t
     return ERR_NONE;
 }
 
+ReturnCode furi_hal_nfc_data_no_crc_exchange(
+    uint8_t* tx_buff,
+    uint16_t tx_len,
+    uint8_t** rx_buff,
+    uint16_t** rx_len,
+    bool deactivate) {
+    furi_assert(rx_buff);
+    furi_assert(rx_len);
+    
+
+    ReturnCode ret;
+    rfalNfcState state = RFAL_NFC_STATE_ACTIVATED;
+    ret = rfalNfcDataNoCRCExchangeStart(tx_buff, tx_len, rx_buff, rx_len, 0);
+    if(ret != ERR_NONE) {
+        return ret;
+    }
+    uint32_t start = DWT->CYCCNT;
+    while(state != RFAL_NFC_STATE_DATAEXCHANGE_DONE) {
+        rfalNfcWorker();
+        state = rfalNfcGetState();
+        ret = rfalNfcDataExchangeGetStatus();
+        if(ret > ERR_SLEEP_REQ) {
+            return ret;
+        }
+        if(ret == ERR_BUSY) {
+            if(DWT->CYCCNT - start > 1000 * clocks_in_ms) {
+                return ERR_TIMEOUT;
+            }
+            continue;
+        } else {
+            start = DWT->CYCCNT;
+        }
+        taskYIELD();
+    }
+    if(deactivate) {
+        rfalNfcDeactivate(false);
+        rfalLowPowerModeStart();
+    }
+    return ERR_NONE;
+}
+
 ReturnCode furi_hal_nfc_raw_bitstream_exchange(uint8_t* tx_buff_bitstream, uint16_t tx_bit_count, uint8_t** rx_buff_bitstream, uint16_t** rx_bit_count, bool deactivate) {
     furi_assert(rx_buff_bitstream);
     furi_assert(rx_bit_count);
@@ -306,36 +347,47 @@ static uint16_t furi_hal_nfc_parbits2bitstream(uint8_t* buff, uint16_t len, uint
     return bit_count;
 }
 
-static uint16_t furi_hal_nfc_bitstream2parbits(uint8_t* buff_bitstream, uint16_t bit_count, uint8_t* output_buff, uint8_t* output_parity_bits) {
-    furi_assert(bit_count % 9 == 0);
-    
-    uint16_t in_i = 0, out_len = 0, accum = 0, accum_len = 0;
-    while (bit_count > 0) {
-        if (accum_len < 8) {
-            accum |= buff_bitstream[in_i++] << accum_len;  // load a byte to fulfill a data byte
-            accum_len += 8;
+static uint16_t furi_hal_nfc_bitstream2parbits(
+    uint8_t* buff_bitstream,
+    uint16_t bit_count,
+    uint8_t* output_buff,
+    uint8_t* output_parity_bits) {
+    uint16_t in_i = 0, out_len = 0, accum = 0, accum_len = 0, take_bits;
+    while(bit_count > 0) {
+        while(accum_len < 9 && bit_count > 0) {
+            take_bits = 8;
+            if(bit_count < take_bits) {
+                take_bits = bit_count; // if only partial byte left, take what's left
+            }
+            accum |= (buff_bitstream[in_i++] & ((1 << take_bits) - 1)) << accum_len;
+            accum_len += take_bits;
+            bit_count -= take_bits;
         }
-        if (accum_len < 9) {
-            accum |= buff_bitstream[in_i++] << accum_len;  // load another byte to fulfill parity bit
-            accum_len += 8;
+
+        take_bits = 8;
+        if(accum_len < take_bits) {
+            take_bits = accum_len;
         }
-        
-        output_buff[out_len] = accum & 0xFF;  // shift off a data byte
-        accum >>= 8;
-        accum_len -= 8;
-        bit_count -= 8;
-        
-        if (out_len % 8 == 0) {
+        output_buff[out_len] =
+            accum & 0xFF; // shift off a data byte (automatically partial if had not enough bits)
+        accum >>= take_bits;
+        accum_len -= take_bits;
+
+        if(out_len % 8 == 0) {
             output_parity_bits[out_len / 8] = 0;
         }
-        output_parity_bits[out_len / 8] |= ((accum & 1) ? 0x80u : 0x00) >> (out_len % 8);  // shift off a parity bit
-        accum >>= 1;
-        accum_len -= 1;
-        bit_count -= 1;
-        
+        output_parity_bits[out_len / 8] |=
+            ((accum & 1) ? 0x80u : 0x00) >>
+            (out_len %
+             8); // shift off a parity bit (if no bits available, 0 will be automatically taken)
+        if(accum_len >= 1) {
+            accum >>= 1;
+            accum_len -= 1;
+        }
+
         out_len++;
     }
-    
+
     return out_len;
 }
 

@@ -677,6 +677,7 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
     //uint16_t tx_len = 0;
     //uint8_t* rx_buff;
     uint64_t key = 0xFFFFFFFFFFFF;
+    uint8_t block_data[16] = {0x00};
     //uint16_t* rx_len;
     MifareClassicDevice mf_classic_read;
     struct Crypto1State mpcs = {0, 0};
@@ -697,7 +698,8 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
                     FURI_LOG_E(TAG, "Lost connection. Restarting search");
                     continue;
                 }
-                for(uint8_t block = 0; block < mf_classic_read.blocks_to_read; block += 1) {
+                //for(uint8_t block = 0; block < mf_classic_read.blocks_to_read; block += 1) {
+                    uint8_t block = 0;
                     FURI_LOG_I(TAG, "Trying to auth");
                     uint8_t uid =  (uint32_t) dev_list[0].dev.nfca.nfcId1;
                     mifare_classic_auth(pcs, uid, block, 0, key, 0);
@@ -707,8 +709,8 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
                     mf_classic_parse_read_response(rx_buff, block, &mf_classic_read);
                     FURI_LOG_I(TAG, "%02X", tx_len);*/
 
-                    MifareReadBlock(block, 0, key, uid);
-                }
+                    mf_classic_read_block(pcs, uid, block, block_data);
+                //}
             }
         } else {
             FURI_LOG_I(TAG, "Can't find any tags");

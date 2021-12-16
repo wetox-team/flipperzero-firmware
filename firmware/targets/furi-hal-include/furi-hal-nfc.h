@@ -87,6 +87,18 @@ bool furi_hal_nfc_get_first_frame(uint8_t** rx_buff, uint16_t** rx_len);
  */
 ReturnCode furi_hal_nfc_data_exchange(uint8_t* tx_buff, uint16_t tx_len, uint8_t** rx_buff, uint16_t** rx_len, bool deactivate);
 
+/** NFC data exchange without the CRC checksum on TX
+ *
+ * @param      tx_buff     transmit buffer
+ * @param      tx_len      transmit buffer length
+ * @param      rx_buff     receive buffer
+ * @param      rx_len      receive buffer length
+ * @param      deactivate  deactivate flag
+ *
+ * @return     ST ReturnCode
+ */
+ReturnCode furi_hal_nfc_data_no_crc_exchange(uint8_t* tx_buff, uint16_t tx_len, uint8_t** rx_buff, uint16_t** rx_len, bool deactivate);
+
 /** NFC raw bit stream exchange. If last byte is only used partially (e.g. bit length is 5), least significant bits are used
  *
  * @param      tx_buff_bitstream  transmit buffer, with raw bits to send
@@ -97,6 +109,8 @@ ReturnCode furi_hal_nfc_data_exchange(uint8_t* tx_buff, uint16_t tx_len, uint8_t
  *
  * @return     ST ReturnCode
  */
+
+
 ReturnCode furi_hal_nfc_raw_bitstream_exchange(uint8_t* tx_buff_bitstream, uint16_t tx_bit_count, uint8_t** rx_buff_bitstream, uint16_t** rx_bit_count, bool deactivate);
 
 /** NFC raw exchange in parity bytes format: {data_byte, 0x80 or 0x00, data_byte, 0x80 or 0x00, ...}. E.g. 93 20 (ANTICOLL) would be {0x93, 0x80, 0x20, 0x00}

@@ -100,7 +100,7 @@ bool mf_classic_check_card_type(uint8_t ATQA0, uint8_t ATQA1, uint8_t SAK);
 
 void mf_classic_set_default_version(MifareClassicDevice* mf_classic_read);
 
-uint16_t mf_classic_read_block(struct Crypto1State* pcs, uint32_t uid, uint8_t* dest, uint8_t start_block);
+uint16_t mf_classic_read_block(struct Crypto1State* pcs, uint32_t uid, uint8_t blockNo, uint8_t *blockData);
 
 void mf_classic_parse_read_response(uint8_t* buff, uint16_t block_addr, MifareClassicDevice* mf_classic_read);
 
