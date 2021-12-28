@@ -104,27 +104,34 @@ int mifare_sendcmd_short_no_crc(
     uint8_t crypted,
     uint8_t cmd,
     uint8_t data,
-    uint8_t* answer,
-    uint32_t* timing) {
+    uint8_t* answer) {
     uint16_t pos;
+    uint8_t* rx_parbits;
     uint16_t* len;
     uint8_t dcmd[4] = {cmd, data, 0x00, 0x00};
     uint8_t ecmd[4] = {0x00, 0x00, 0x00, 0x00};
+    uint8_t par[1] = {0x00}; // 1 Byte parity is enough here
     AddCrc14A(dcmd, 2);
     memcpy(ecmd, dcmd, sizeof(dcmd));
     uint8_t* answer2 = answer;
-    
+
     if(pcs && crypted) {
+        par[0] = 0;
         for(pos = 0; pos < 4; pos++) {
             ecmd[pos] = crypto1_byte(pcs, 0x00, 0) ^ dcmd[pos];
+            par[0] |= (((filter(pcs->odd) ^ oddparity8(dcmd[pos])) & 0x01) << (7 - pos));
         }
         //ReaderTransmitPar(ecmd, sizeof(ecmd), par, timing);
-        FURI_LOG_I("ASTRA", "ecmd = %02X", ecmd[1]);
-        furi_hal_nfc_data_no_crc_exchange(ecmd, sizeof(ecmd), &answer2, &len, false);
+        FURI_LOG_I("MIFARE", "ecmd = %02X", ecmd[1]);
+        FURI_LOG_I("MIFARE", "par = %02X", par[0]);
+        furi_hal_nfc_raw_parbits_exchange(
+            ecmd, sizeof(ecmd), par, &answer2, &len, &rx_parbits, false);
     } else {
         //ReaderTransmit(dcmd, sizeof(dcmd), timing);
-        FURI_LOG_I("ASTRA", "dcmd = %02X", dcmd[1]);
-        furi_hal_nfc_data_no_crc_exchange(dcmd, sizeof(dcmd), &answer2, &len, false);
+        FURI_LOG_I("MIFARE", "dcmd = %02X", dcmd[1]);
+        FURI_LOG_I("MIFARE", "par = %02X", par[0]);
+        furi_hal_nfc_raw_parbits_exchange(
+            dcmd, sizeof(dcmd), par, &answer2, &len, &rx_parbits, false);
     }
 
     memcpy(answer, answer2, *len);
@@ -147,162 +154,6 @@ int mifare_sendcmd_short_no_crc(
     }
     return *len;
 }
-/*
-int mifare_classic_auth(
-    struct Crypto1State* pcs,
-    uint32_t uid,
-    uint8_t blockNo,
-    uint8_t keyType,
-    uint64_t ui64Key,
-    uint8_t isNested) {
-    return mifare_classic_authex(pcs, uid, blockNo, keyType, ui64Key, isNested, NULL, NULL);
-}
-
-int mifare_classic_authex(
-    struct Crypto1State* pcs,
-    uint32_t uid,
-    uint8_t blockNo,
-    uint8_t keyType,
-    uint64_t ui64Key,
-    uint8_t isNested,
-    uint32_t* ntptr,
-    uint32_t* timing) {
-    int len;
-    uint32_t pos, nt, ntpp; // Supplied tag nonce
-    //uint8_t par[1] = {0x00};
-    uint8_t nr[4];
-    uint8_t* rx_buff;
-    uint16_t* rx_len;
-    uint8_t mf_nr_ar[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    uint8_t receivedAnswer[MAX_MIFARE_FRAME_SIZE] = {0x00};
-
-    // "random" reader nonce:
-    //num_to_bytes(prng_successor(DWT->CYCCNT, 32), 4, nr);
-    FURI_LOG_I("ASTRA", "nr[0] = %02X", nr[0]);
-    FURI_LOG_I("ASTRA", "nr[1] = %02X", nr[1]);
-    FURI_LOG_I("ASTRA", "nr[2] = %02X", nr[2]);
-    FURI_LOG_I("ASTRA", "nr[3] = %02X", nr[3]); 
-
-    nr[0] = 0xB5;
-    nr[1] = 0x84;
-    nr[2] = 0x2B;
-    nr[3] = 0x49;
-
-    FURI_LOG_I("ASTRA", "---------");
-
-    FURI_LOG_I("ASTRA", "nr[0] = %02X", nr[0]);
-    FURI_LOG_I("ASTRA", "nr[1] = %02X", nr[1]);
-    FURI_LOG_I("ASTRA", "nr[2] = %02X", nr[2]);
-    FURI_LOG_I("ASTRA", "nr[3] = %02X", nr[3]);
-    FURI_LOG_I("ASTRA", "nr[4] = %02X", nr[4]);
-
-
-    // Transmit MIFARE_CLASSIC_AUTH
-    len = mifare_sendcmd_short(
-        pcs, isNested, 0x60 + (keyType & 0x01), blockNo, receivedAnswer, timing);
-    //if(len != 4) return 1;
-
-    // Save the tag nonce (nt)
-    FURI_LOG_I("ASTRA", "received answer[0] = %02X", receivedAnswer[0]);
-    FURI_LOG_I("ASTRA", "received answer[1] = %02X", receivedAnswer[1]);
-    FURI_LOG_I("ASTRA", "received answer[2] = %02X", receivedAnswer[2]);
-    FURI_LOG_I("ASTRA", "received answer[3] = %02X", receivedAnswer[3]); 
-    FURI_LOG_I("ASTRA", "received answer[4] = %02X", receivedAnswer[4]);
-    FURI_LOG_I("ASTRA", "received answer[5] = %02X", receivedAnswer[5]);
-    FURI_LOG_I("ASTRA", "length = %d", len);
-
-    nt = bytes_to_num(receivedAnswer, 4);
-
-    FURI_LOG_I("ASTRA", "nt = %08lx", nt);
-
-    nt = 0x01200145;
-
-    FURI_LOG_I("ASTRA", "nt = %08lx", nt);
-
-    //  ----------------------------- crypto1 create
-    if(isNested) crypto1_deinit(pcs);
-
-    // Init cipher with key
-    crypto1_init(pcs, ui64Key);
-
-    if(isNested == AUTH_NESTED) {
-        // decrypt nt with help of new key
-        FURI_LOG_I("ASTRA", "encrypted nt = %d", nt);
-        nt = crypto1_word(pcs, nt ^ uid, 1) ^ nt;
-        FURI_LOG_I("ASTRA", "decrypted nt");
-    } else {
-        // Load (plain) uid^nt into the cipher
-        FURI_LOG_I("ASTRA", "plain nt = %d", nt);
-        crypto1_word(pcs, nt ^ uid, 0);
-    }
-
-    // some statistic
-    FURI_LOG_I("ASTRA", "auth uid: %08lx | nr: %08lx | nt: %08lx", uid, nr, nt);
-
-    // save Nt
-    if(ntptr) *ntptr = nt;
-
-    // Generate (encrypted) nr+parity by loading it into the cipher (Nr)
-    //par[0] = 0;
-    for(pos = 0; pos < 4; pos++) {
-        mf_nr_ar[pos] = crypto1_byte(pcs, nr[pos], 0) ^ nr[pos];
-        //par[0] |= (((filter(pcs->odd) ^ oddparity8(nr[pos])) & 0x01) << (7 - pos));
-    }
-
-
-    // Skip 32 bits in pseudo random generator
-    nt = prng_successor(nt, 32);
-
-    //  ar+parity
-    for(pos = 4; pos < 8; pos++) {
-        nt = prng_successor(nt, 8);
-        mf_nr_ar[pos] = crypto1_byte(pcs, 0x00, 0) ^ (nt & 0xff);
-        //par[0] |= (((filter(pcs->odd) ^ oddparity8(nt & 0xff)) & 0x01) << (7 - pos));
-    }
-    // Transmit reader nonce and reader answer
-    //ReaderTransmitPar(mf_nr_ar, sizeof(mf_nr_ar), par, NULL);
-    FURI_LOG_I("ASTRA", "mf_nr_ar[0] = %02X", mf_nr_ar[0]);
-    FURI_LOG_I("ASTRA", "mf_nr_ar[1] = %02X", mf_nr_ar[1]);
-    FURI_LOG_I("ASTRA", "mf_nr_ar[2] = %02X", mf_nr_ar[2]);
-    FURI_LOG_I("ASTRA", "mf_nr_ar[3] = %02X", mf_nr_ar[3]);
-    FURI_LOG_I("ASTRA", "mf_nr_ar[4] = %02X", mf_nr_ar[4]);
-    FURI_LOG_I("ASTRA", "mf_nr_ar[5] = %02X", mf_nr_ar[5]);
-
-    //mf_nr_ar[2] = mf_nr_ar[4];
-    //mf_nr_ar[3] = mf_nr_ar[5];
-    //mf_nr_ar[0] = 0x00;
-    //mf_nr_ar[1] = 0x00;
-    //mf_nr_ar[2] = 0x00;
-    //mf_nr_ar[3] = 0x00;
-    //mf_nr_ar[4] = 0x00;
-    //mf_nr_ar[5] = 0x00;
-    //mf_nr_ar[6] = 0x00;
-    //mf_nr_ar[7] = 0x00;
-
-    furi_hal_nfc_raw_exchange(mf_nr_ar, 8, &rx_buff, &rx_len, false);
-
-    // save standard timeout
-    //uint32_t save_timeout = iso14a_get_timeout();
-
-    // set timeout for authentication response
-    //if(save_timeout > 103) iso14a_set_timeout(103);
-
-    // Receive 4 byte tag answer
-    //len = ReaderReceive(receivedAnswer, receivedAnswerPar);
-
-    //iso14a_set_timeout(save_timeout);
-
-
-    ntpp = prng_successor(nt, 32) ^ crypto1_word(pcs, 0, 0);
-
-    if(ntpp != bytes_to_num(rx_buff, 4)) {
-        printf("Authentication failed. Error card response");
-        return 3;
-    }
-    return 0;
-}
-
-*/
 
 // mifare classic commands
 int mifare_classic_auth(
@@ -433,7 +284,7 @@ int mifare_classic_authex(
     ntpp = prng_successor(nt, 32) ^ crypto1_word(pcs, 0, 0);
 
     if(ntpp != bytes_to_num(receivedAnswer, 4)) {
-        FURI_LOG_I("MIFARE", "Authentication failed. Error card response");
+        FURI_LOG_I("MIFARE", "Authentication failed. Error card response. Expected %08x but received %08x", ntpp, bytes_to_num(receivedAnswer, 4));
         return 3;
     }
     return 0;
@@ -446,7 +297,7 @@ uint16_t mf_classic_read_block(struct Crypto1State* pcs, uint32_t uid, uint8_t b
 
 
     len = (int) mifare_sendcmd_short_no_crc(
-        pcs, 1, ISO14443A_CMD_READBLOCK, blockNo, receivedAnswer, NULL);
+        pcs, 1, ISO14443A_CMD_READBLOCK, blockNo, receivedAnswer);
     if(len == 1) {
         printf("Cmd Error %02x", receivedAnswer[0]);
         return 0;
