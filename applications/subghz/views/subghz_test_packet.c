@@ -1,5 +1,6 @@
 #include "subghz_test_packet.h"
 #include "../subghz_i.h"
+#include "../helpers/subghz_testing.h"
 
 #include <math.h>
 #include <furi.h>
@@ -8,11 +9,11 @@
 #include <toolbox/level_duration.h>
 #include <lib/subghz/protocols/subghz_protocol_princeton.h>
 
-#define SUBGHZ_TEST_PACKET_COUNT 1000
+#define SUBGHZ_TEST_PACKET_COUNT 500
 
 struct SubghzTestPacket {
     View* view;
-    osTimerId timer;
+    osTimerId_t timer;
 
     SubGhzDecoderPrinceton* decoder;
     SubGhzEncoderPrinceton* encoder;
@@ -137,13 +138,14 @@ static bool subghz_test_packet_input(InputEvent* event, void* context) {
             if(model->status == SubghzTestPacketModelStatusRx) {
                 furi_hal_subghz_stop_async_rx();
             } else if(model->status == SubghzTestPacketModelStatusTx) {
+                subghz_encoder_princeton_stop(instance->encoder, millis());
                 furi_hal_subghz_stop_async_tx();
             }
 
             if(event->key == InputKeyLeft) {
                 if(model->frequency > 0) model->frequency--;
             } else if(event->key == InputKeyRight) {
-                if(model->frequency < subghz_frequencies_count - 1) model->frequency++;
+                if(model->frequency < subghz_frequencies_count_testing - 1) model->frequency++;
             } else if(event->key == InputKeyDown) {
                 if(model->path > 0) model->path--;
             } else if(event->key == InputKeyUp) {
@@ -157,14 +159,17 @@ static bool subghz_test_packet_input(InputEvent* event, void* context) {
             }
 
             model->real_frequency =
-                furi_hal_subghz_set_frequency(subghz_frequencies[model->frequency]);
+                furi_hal_subghz_set_frequency(subghz_frequencies_testing[model->frequency]);
             furi_hal_subghz_set_path(model->path);
 
             if(model->status == SubghzTestPacketModelStatusRx) {
                 furi_hal_subghz_start_async_rx(subghz_test_packet_rx_callback, instance);
             } else {
                 subghz_encoder_princeton_set(
-                    instance->encoder, 0x00AABBCC, SUBGHZ_TEST_PACKET_COUNT);
+                    instance->encoder,
+                    0x00AABBCC,
+                    SUBGHZ_TEST_PACKET_COUNT,
+                    subghz_frequencies_testing[model->frequency]);
                 if(!furi_hal_subghz_start_async_tx(
                        subghz_encoder_princeton_yield, instance->encoder)) {
                     model->status = SubghzTestPacketModelStatusOnlyRx;
@@ -187,9 +192,9 @@ void subghz_test_packet_enter(void* context) {
 
     with_view_model(
         instance->view, (SubghzTestPacketModel * model) {
-            model->frequency = subghz_frequencies_433_92;
+            model->frequency = subghz_frequencies_433_92_testing;
             model->real_frequency =
-                furi_hal_subghz_set_frequency(subghz_frequencies[model->frequency]);
+                furi_hal_subghz_set_frequency(subghz_frequencies_testing[model->frequency]);
             model->path = FuriHalSubGhzPathIsolate; // isolate
             model->rssi = 0.0f;
             model->status = SubghzTestPacketModelStatusRx;
@@ -213,6 +218,7 @@ void subghz_test_packet_exit(void* context) {
             if(model->status == SubghzTestPacketModelStatusRx) {
                 furi_hal_subghz_stop_async_rx();
             } else if(model->status == SubghzTestPacketModelStatusTx) {
+                subghz_encoder_princeton_stop(instance->encoder, millis());
                 furi_hal_subghz_stop_async_tx();
             }
             return true;

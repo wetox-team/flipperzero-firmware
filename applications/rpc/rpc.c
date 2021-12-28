@@ -1,13 +1,14 @@
 #include "rpc_i.h"
+
 #include <pb.h>
 #include <pb_decode.h>
 #include <pb_encode.h>
+
 #include <status.pb.h>
 #include <storage.pb.h>
 #include <flipper.pb.h>
-#include <cmsis_os.h>
-#include <cmsis_os2.h>
 #include <portmacro.h>
+
 #include <furi.h>
 
 #include <cli/cli.h>
@@ -392,7 +393,7 @@ RpcSession* rpc_session_open(Rpc* rpc) {
         };
         rpc_add_handler(rpc, PB_Main_stop_session_tag, &rpc_handler);
 
-        FURI_LOG_D(TAG, "Session started\r\n");
+        FURI_LOG_D(TAG, "Session started");
     }
 
     return result ? &rpc->session : NULL; /* support 1 open session for now */

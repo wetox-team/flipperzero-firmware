@@ -69,7 +69,7 @@ static int storage_int_device_read(
     LFSData* lfs_data = c->context;
     size_t address = lfs_data->start_address + block * c->block_size + off;
 
-    FURI_LOG_D(
+    FURI_LOG_T(
         TAG,
         "Device read: block %d, off %d, buffer: %p, size %d, translated address: %p",
         block,
@@ -92,7 +92,7 @@ static int storage_int_device_prog(
     LFSData* lfs_data = c->context;
     size_t address = lfs_data->start_address + block * c->block_size + off;
 
-    FURI_LOG_D(
+    FURI_LOG_T(
         TAG,
         "Device prog: block %d, off %d, buffer: %p, size %d, translated address: %p",
         block,
@@ -161,17 +161,40 @@ static LFSData* storage_int_lfs_data_alloc() {
     return lfs_data;
 };
 
+static bool storage_int_is_fingerprint_valid(LFSData* lfs_data) {
+    bool value = true;
+
+    uint32_t os_fingerprint = 0;
+    os_fingerprint |= ((lfs_data->start_page & 0xFF) << 0);
+    os_fingerprint |= ((lfs_data->config.block_count & 0xFF) << 8);
+    os_fingerprint |= ((LFS_DISK_VERSION_MAJOR & 0xFFFF) << 16);
+
+    uint32_t rtc_fingerprint = furi_hal_rtc_get_register(FuriHalRtcRegisterLfsFingerprint);
+    if(rtc_fingerprint == 0) {
+        FURI_LOG_I(TAG, "Storing LFS fingerprint in RTC");
+        furi_hal_rtc_set_register(FuriHalRtcRegisterLfsFingerprint, os_fingerprint);
+    } else if(rtc_fingerprint != os_fingerprint) {
+        FURI_LOG_E(TAG, "LFS fingerprint mismatch");
+        furi_hal_rtc_set_register(FuriHalRtcRegisterLfsFingerprint, os_fingerprint);
+        value = false;
+    }
+
+    return value;
+}
+
 static void storage_int_lfs_mount(LFSData* lfs_data, StorageData* storage) {
     int err;
-    FuriHalBootloaderFlag bootloader_flags = furi_hal_bootloader_get_flags();
     lfs_t* lfs = &lfs_data->lfs;
 
-    if(bootloader_flags & FuriHalBootloaderFlagFactoryReset) {
-        // Factory reset
+    bool need_format = furi_hal_rtc_is_flag_set(FuriHalRtcFlagFactoryReset) ||
+                       !storage_int_is_fingerprint_valid(lfs_data);
+
+    if(need_format) {
+        // Format storage
         err = lfs_format(lfs, &lfs_data->config);
         if(err == 0) {
             FURI_LOG_I(TAG, "Factory reset: Format successful, trying to mount");
-            furi_hal_bootloader_set_flags(bootloader_flags & ~FuriHalBootloaderFlagFactoryReset);
+            furi_hal_rtc_reset_flag(FuriHalRtcFlagFactoryReset);
             err = lfs_mount(lfs, &lfs_data->config);
             if(err == 0) {
                 FURI_LOG_I(TAG, "Factory reset: Mounted");

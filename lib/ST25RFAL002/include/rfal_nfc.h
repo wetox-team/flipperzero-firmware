@@ -10,8 +10,8 @@
   *
   *        www.st.com/myliberty
   *
-  * Unless required by applicable law or agreed to in writing, software 
-  * distributed under the License is distributed on an "AS IS" BASIS, 
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied,
   * AND SPECIFICALLY DISCLAIMING THE IMPLIED WARRANTIES OF MERCHANTABILITY,
   * FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
@@ -30,28 +30,28 @@
 /*! \file rfal_nfc.h
  *
  *  \brief RFAL NFC device
- *  
- *  This module provides the required features to behave as an NFC Poller 
+ *
+ *  This module provides the required features to behave as an NFC Poller
  *  or Listener device. It grants an easy to use interface for the following
  *  activities: Technology Detection, Collision Resolution, Activation,
  *  Data Exchange, and Deactivation
- *  
- *  This layer is influenced by (but not fully aligned with) the NFC Forum 
+ *
+ *  This layer is influenced by (but not fully aligned with) the NFC Forum
  *  specifications, in particular: Activity 2.0 and NCI 2.0
  *
- *  
- *    
+ *
+ *
  * \addtogroup RFAL
  * @{
- * 
+ *
  * \addtogroup RFAL-HL
  * \brief RFAL Higher Layer
  * @{
- * 
+ *
  * \addtogroup NFC
  * \brief RFAL NFC Device
  * @{
- *  
+ *
  */
 
 #ifndef RFAL_NFC_H
@@ -178,12 +178,12 @@ typedef struct{
         rfalNfcvListenDevice   nfcv;                /*!< NFC-V Listen Device instance */
         rfalSt25tbListenDevice st25tb;              /*!< ST25TB Listen Device instance*/
     }dev;                                           /*!< Device's instance            */
-                                                    
+
     uint8_t                    *nfcid;              /*!< Device's NFCID               */
     uint8_t                    nfcidLen;            /*!< Device's NFCID length        */
     rfalNfcRfInterface         rfInterface;         /*!< Device's interface           */
-    
-    union{                              /*  PRQA S 0750 # MISRA 19.2 - Members of the union will not be used concurrently, only one protocol at a time */            
+
+    union{                              /*  PRQA S 0750 # MISRA 19.2 - Members of the union will not be used concurrently, only one protocol at a time */
         rfalIsoDepDevice       isoDep;              /*!< ISO-DEP instance             */
         rfalNfcDepDevice       nfcDep;              /*!< NFC-DEP instance             */
     }proto;                                         /*!< Device's protocol            */
@@ -197,19 +197,19 @@ typedef struct{
     uint16_t           totalDuration;                   /*!< Duration of a whole Poll + Listen cycle               */
     uint8_t            devLimit;                        /*!< Max number of devices                                 */
     rfalBitRate        maxBR;                           /*!< Max Bit rate to be used for communications            */
-    
+
     rfalBitRate        nfcfBR;                          /*!< Bit rate to poll for NFC-F                            */
     uint8_t            nfcid3[RFAL_NFCDEP_NFCID3_LEN];  /*!< NFCID3 to be used on the ATR_REQ/ATR_RES              */
     uint8_t            GB[RFAL_NFCDEP_GB_MAX_LEN];      /*!< General bytes to be used on the ATR-REQ               */
     uint8_t            GBLen;                           /*!< Length of the General Bytes                           */
     rfalBitRate        ap2pBR;                          /*!< Bit rate to poll for AP2P                             */
 
-    
+
     rfalLmConfPA       lmConfigPA;                      /*!< Configuration for Passive Listen mode NFC-A           */
     rfalLmConfPF       lmConfigPF;                      /*!< Configuration for Passive Listen mode NFC-A           */
-    
+
     void               (*notifyCb)( rfalNfcState st );  /*!< Callback to Notify upper layer                        */
-                                                        
+
     bool               wakeupEnabled;                   /*!< Enable Wake-Up mode before polling                    */
     bool               wakeupConfigDefault;             /*!< Wake-Up mode default configuration                    */
     rfalWakeUpConfig   wakeupConfig;                    /*!< Wake-Up mode configuration                            */
@@ -233,19 +233,19 @@ typedef union{  /*  PRQA S 0750 # MISRA 19.2 - Members of the union will not be 
 ******************************************************************************
 */
 
-/*! 
+/*!
  *****************************************************************************
  * \brief  RFAL NFC Worker
- *  
+ *
  * It runs the internal state machine and runs the RFAL RF worker.
  *****************************************************************************
  */
 void rfalNfcWorker( void );
 
-/*! 
+/*!
  *****************************************************************************
  * \brief  RFAL NFC Initialize
- *  
+ *
  * It initializes this module and its dependencies
  *
  * \return ERR_WRONG_STATE  : Incorrect state for this operation
@@ -258,9 +258,9 @@ ReturnCode rfalNfcInitialize( void );
 /*!
  *****************************************************************************
  * \brief  RFAL NFC Discovery
- *  
+ *
  * It set the device in Discovery state.
- * In discovery it will Poll and/or Listen for the technologies configured, 
+ * In discovery it will Poll and/or Listen for the technologies configured,
  * and perform Wake-up mode if configured to do so.
  *
  * The device list passed on disParams must not be empty.
@@ -279,7 +279,7 @@ ReturnCode rfalNfcDiscover( const rfalNfcDiscoverParam *disParams );
 /*!
  *****************************************************************************
  * \brief  RFAL NFC Get State
- *  
+ *
  * It returns the current state
  *
  * \return rfalNfcState : the current state
@@ -290,8 +290,8 @@ rfalNfcState rfalNfcGetState( void );
 /*!
  *****************************************************************************
  * \brief  RFAL NFC Get Devices Found
- *  
- * It returns the location of the device list and the number of 
+ *
+ * It returns the location of the device list and the number of
  * devices found.
  *
  * \param[out]  devList     : device list location
@@ -308,7 +308,7 @@ ReturnCode rfalNfcGetDevicesFound( rfalNfcDevice **devList, uint8_t *devCnt );
 /*!
  *****************************************************************************
  * \brief  RFAL NFC Get Active Device
- *  
+ *
  * It returns the location of the device current Active device
  *
  * \param[out]  dev           : device info location
@@ -325,11 +325,11 @@ ReturnCode rfalNfcGetActiveDevice( rfalNfcDevice **dev );
 /*!
  *****************************************************************************
  * \brief  RFAL NFC Select Device
- *  
+ *
  * It selects the device to be activated.
- * It shall be called when more than one device has been identified to 
+ * It shall be called when more than one device has been identified to
  * indiacte which device shall be actived
- * 
+ *
  * \param[in]  devIdx       : device index to be activated
  *
  * \return ERR_WRONG_STATE  : Incorrect state for this operation
@@ -343,12 +343,12 @@ ReturnCode rfalNfcSelect( uint8_t devIdx );
 /*!
  *****************************************************************************
  * \brief  RFAL NFC Start Data Exchange
- *  
+ *
  * After a device has been activated, it starts a data exchange.
  * It handles automatically which interface/protocol to be used and acts accordingly.
  *
  * In Listen mode the first frame/data shall be sent by the Reader/Initiator
- * therefore this method must be called first with txDataLen set to zero 
+ * therefore this method must be called first with txDataLen set to zero
  * to retrieve the rxData and rcvLen locations.
  *
  *
@@ -369,16 +369,16 @@ ReturnCode rfalNfcDataNoCRCExchangeStart(uint8_t* txData, uint16_t txDataLen, ui
 ReturnCode rfalNfcRawBitstreamExchangeStart( uint8_t *txData, uint16_t txDataLen, uint8_t **rxData, uint16_t **rvdLen, uint32_t fwt );
 ReturnCode rfalNfcRawBitstreamParityExchangeStart( uint8_t *txData, uint16_t txDataLen, uint8_t *par, uint16_t parLen, uint8_t **rxData, uint16_t **rvdLen, uint32_t fwt );
 
-/*! 
+/*!
  *****************************************************************************
  * \brief  RFAL NFC Get Data Exchange Status
- *  
+ *
  * Gets current Data Exchange status
  *
  * \return  ERR_NONE         : Transceive done with no error
  * \return  ERR_BUSY         : Transceive ongoing
- *  \return ERR_AGAIN        : received one chaining block, copy received data 
- *                             and continue to call this method to retrieve the 
+ *  \return ERR_AGAIN        : received one chaining block, copy received data
+ *                             and continue to call this method to retrieve the
  *                             remaining blocks
  * \return  ERR_XXXX         : Error occurred
  * \return  ERR_TIMEOUT      : No response
@@ -392,11 +392,11 @@ ReturnCode rfalNfcRawBitstreamParityExchangeStart( uint8_t *txData, uint16_t txD
  */
 ReturnCode rfalNfcDataExchangeGetStatus( void );
 
-/*! 
+/*!
  *****************************************************************************
  * \brief  RFAL NFC Deactivate
- *  
- * It triggers the deactivation procedure to terminate communications with 
+ *
+ * It triggers the deactivation procedure to terminate communications with
  * remote device. At the end the field will be turned off.
  *
  * \param[in]  discovery    : TRUE if after deactivation go back into discovery
