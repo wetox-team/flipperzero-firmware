@@ -335,11 +335,7 @@ int mifare_classic_authex(
     uint8_t receivedAnswer[MAX_MIFARE_FRAME_SIZE] = {0x00};
 
     // "random" reader nonce:
-    //num_to_bytes(prng_successor(GetTickCount(), 32), 4, nr);
-    nr[0] = 0xB5;
-    nr[1] = 0x84;
-    nr[2] = 0x2B;
-    nr[3] = 0x49;
+    num_to_bytes(prng_successor(DWT->CYCCNT, 32), 4, nr);
 
     uid = 0x67B48AB3;
 
@@ -348,10 +344,22 @@ int mifare_classic_authex(
         pcs, isNested, 0x60 + (keyType & 0x01), blockNo, receivedAnswer, timing);
     //if(len != 4) return 1;
 
+    nr[0] = 0x11;
+    nr[1] = 0x11;
+    nr[2] = 0x11;
+    nr[3] = 0x11;
+
     // Save the tag nonce (nt)
     nt = bytes_to_num(receivedAnswer, 4);
 
     nt = 0x01200145;
+
+    FURI_LOG_I("MIFARE", "nt is %04x \n", nt);
+
+    FURI_LOG_I("MIFARE", "nr[0] is %02x \n", nr[0]);
+    FURI_LOG_I("MIFARE", "nr[1] is %02x \n", nr[1]);
+    FURI_LOG_I("MIFARE", "nr[2] is %02x \n", nr[2]);
+    FURI_LOG_I("MIFARE", "nr[3] is %02x \n", nr[3]); 
 
     //  ----------------------------- crypto1 create
     if(isNested) crypto1_deinit(pcs);
@@ -369,18 +377,19 @@ int mifare_classic_authex(
 
     // some statistic
     if(!ntptr)
-    FURI_LOG_I("MIFARE", "auth uid: %08x | nr: %08x | nt: %08x", uid, nr, nt);
-
+    FURI_LOG_I("MIFARE", "auth uid: %08x | nr: %08x | nt: %08x", uid, *nr, nt);
     // save Nt
     if(ntptr) *ntptr = nt;
 
     // Generate (encrypted) nr+parity by loading it into the cipher (Nr)
-    //par[0] = 0;
+    par[0] = 0;
     for(pos = 0; pos < 4; pos++) {
         mf_nr_ar[pos] = crypto1_byte(pcs, nr[pos], 0) ^ nr[pos];
         par[0] |= (((filter(pcs->odd) ^ oddparity8(nr[pos])) & 0x01) << (7 - pos));
+        FURI_LOG_I("PARITY", "curr par1 is %02x", par[0]);
     }
 
+    FURI_LOG_I("MIFARE", "par_pre is  = %02x", par[0]);
     // Skip 32 bits in pseudo random generator
     nt = prng_successor(nt, 32);
 
@@ -389,6 +398,7 @@ int mifare_classic_authex(
         nt = prng_successor(nt, 8);
         mf_nr_ar[pos] = crypto1_byte(pcs, 0x00, 0) ^ (nt & 0xff);
         par[0] |= (((filter(pcs->odd) ^ oddparity8(nt & 0xff)) & 0x01) << (7 - pos));
+        FURI_LOG_I("PARITY", "curr par2 is %02x", par[0]);
     }
 
     // Transmit reader nonce and reader answer
