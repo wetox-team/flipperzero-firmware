@@ -364,7 +364,7 @@ ReturnCode rfalNfcSelect( uint8_t devIdx );
  * \return ERR_NONE         : No error
  *****************************************************************************
  */
-ReturnCode rfalNfcDataExchangeStart( uint8_t *txData, uint16_t txDataLen, uint8_t **rxData, uint16_t **rvdLen, uint32_t fwt );
+ReturnCode rfalNfcDataExchangeStart( uint8_t *txData, uint16_t txDataLen, uint8_t **rxData, uint16_t **rvdLen, uint32_t fwt, uint32_t flags);
 ReturnCode rfalNfcDataNoCRCExchangeStart(uint8_t* txData, uint16_t txDataLen, uint8_t** rxData, uint16_t** rvdLen, uint32_t fwt);
 ReturnCode rfalNfcRawBitstreamExchangeStart( uint8_t *txData, uint16_t txDataLen, uint8_t **rxData, uint16_t **rvdLen, uint32_t fwt );
 ReturnCode rfalNfcRawBitstreamParityExchangeStart( uint8_t *txData, uint16_t txDataLen, uint8_t *par, uint16_t parLen, uint8_t **rxData, uint16_t **rvdLen, uint32_t fwt );

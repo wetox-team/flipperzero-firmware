@@ -246,41 +246,6 @@ ReturnCode furi_hal_nfc_data_no_crc_exchange(
     return ERR_NONE;
 }
 
-ReturnCode furi_hal_nfc_raw_bitstream_exchange(uint8_t* tx_buff_bitstream, uint16_t tx_bit_count, uint8_t** rx_buff_bitstream, uint16_t** rx_bit_count, bool deactivate) {
-    furi_assert(rx_buff_bitstream);
-    furi_assert(rx_bit_count);
-
-    ReturnCode ret;
-    rfalNfcState state = RFAL_NFC_STATE_ACTIVATED;
-    ret = rfalNfcRawBitstreamExchangeStart(tx_buff_bitstream, tx_bit_count, rx_buff_bitstream, rx_bit_count, 0);
-    if(ret != ERR_NONE) {
-        return ret;
-    }
-    uint32_t start = DWT->CYCCNT;
-    while(state != RFAL_NFC_STATE_DATAEXCHANGE_DONE) {
-        rfalNfcWorker();
-        state = rfalNfcGetState();
-        ret = rfalNfcDataExchangeGetStatus();
-        if(ret > ERR_SLEEP_REQ) {
-            return ret;
-        }
-        if(ret == ERR_BUSY) {
-            if(DWT->CYCCNT - start > 1000 * clocks_in_ms) {
-                return ERR_TIMEOUT;
-            }
-            continue;
-        } else {
-            start = DWT->CYCCNT;
-        }
-        taskYIELD();
-    }
-    if(deactivate) {
-        rfalNfcDeactivate(false);
-        rfalLowPowerModeStart();
-    }
-    return ERR_NONE;
-}
-
 static uint16_t furi_hal_nfc_parbytes2bitstream(uint8_t* buff_parbytes, uint16_t buff_len, uint8_t* output_bitstream) {
     furi_assert(buff_len % 2 == 0);
     
