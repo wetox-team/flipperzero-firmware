@@ -196,8 +196,7 @@ int mifare_classic_authex(
     uid = 0x67B48AB3;
 
     // Transmit MIFARE_CLASSIC_AUTH
-    len = mifare_sendcmd_short(
-        pcs, isNested, 0x60 + (keyType & 0x01), blockNo, receivedAnswer, timing);
+    len = mifare_sendcmd_short(pcs, isNested, 0x60 + (keyType & 0x01), blockNo, receivedAnswer, timing);
     //if(len != 4) return 1;
 
     // Save the tag nonce (nt)
@@ -224,8 +223,6 @@ int mifare_classic_authex(
         crypto1_word(pcs, nt ^ uid, 0);
     }
 
-    // some statistic
-    if(!ntptr)
     FURI_LOG_I("MIFARE", "auth uid: %08x | nr: %08x | nt: %08x", uid, *nr, nt);
     // save Nt
     if(ntptr) *ntptr = nt;
@@ -263,6 +260,12 @@ int mifare_classic_authex(
     FURI_LOG_I("ASTRA", "par[0] = %02X", par[0]);
     
     furi_hal_nfc_raw_parbits_exchange(mf_nr_ar, sizeof(mf_nr_ar), par, &rx_buff, &rx_len, &rx_parbits, false);
+    printf("\n");
+    printf("\n");
+    for(int i = 0; i < *rx_len; i++) {
+        printf("%02x", rx_buff[i]);
+    }
+    printf("\n");
     // save standard timeout
     //uint32_t save_timeout = iso14a_get_timeout();
 
@@ -273,6 +276,8 @@ int mifare_classic_authex(
     //len = ReaderReceive(receivedAnswer, receivedAnswerPar);
 
     //iso14a_set_timeout(save_timeout);
+
+    memcpy(receivedAnswer, rx_buff, *rx_len);
 
     if(!len) {
         FURI_LOG_I("MIFARE", "Authentication failed. Card timeout");
@@ -285,6 +290,7 @@ int mifare_classic_authex(
         FURI_LOG_I("MIFARE", "Authentication failed. Error card response. Expected %08x but received %08x", ntpp, bytes_to_num(receivedAnswer, 4));
         return 3;
     }
+    FURI_LOG_I("MIFARE", "Authentication success! at is %08x", bytes_to_num(receivedAnswer, 4));
     return 0;
     }
 
@@ -313,6 +319,16 @@ uint16_t mf_classic_read_block(struct Crypto1State* pcs, uint32_t uid, uint8_t b
     }
 
     memcpy(blockData, receivedAnswer, 16);
+    FURI_LOG_I("MIFARE", "Read Block %02x successfully, received data starts with %02x", blockNo, *blockData);
+
+    printf("\n");
+    printf("\n");
+    for(int i = 0; i < 16; i++) {
+        printf("%02x", blockData[i]);
+        printf(":");
+    }
+    printf("\n");
+
     return sizeof(blockData);
 }
 
