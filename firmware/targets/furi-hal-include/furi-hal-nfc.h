@@ -113,6 +113,19 @@ ReturnCode furi_hal_nfc_data_no_crc_exchange(uint8_t* tx_buff, uint16_t tx_len, 
 
 ReturnCode furi_hal_nfc_raw_bitstream_exchange(uint8_t* tx_buff_bitstream, uint16_t tx_bit_count, uint8_t** rx_buff_bitstream, uint16_t** rx_bit_count, bool deactivate);
 
+/** NFC raw bit stream exchange. If last byte is only used partially (e.g. bit length is 5), least significant bits are used
+ *
+ * @param      tx_buff_bitstream  transmit buffer, with raw bits to send
+ * @param      tx_bit_count       transmit buffer length in bits (may contain partial bytes)
+ * @param      rx_buff_bitstream  receive buffer to get raw received bits
+ * @param      rx_bit_count       received bit count
+ * @param      deactivate         deactivate flag
+ * @param      flags              transmit and receive flags
+ *
+ * @return     ST ReturnCode
+ */
+ReturnCode furi_hal_nfc_custom_flags_exchange(uint8_t* tx_buff, uint16_t tx_len, uint8_t** rx_buff, uint16_t** rx_len, bool deactivate, uint32_t flags);
+
 /** NFC raw exchange in parity bytes format: {data_byte, 0x80 or 0x00, data_byte, 0x80 or 0x00, ...}. E.g. 93 20 (ANTICOLL) would be {0x93, 0x80, 0x20, 0x00}
  *
  * @param      tx_buff_parbytes  transmit buffer, in parity bytes format

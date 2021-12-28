@@ -3,6 +3,9 @@
 #include <furi-hal.h>
 #include <stdlib.h>
 
+#define RFAL_TXRX_FLAGS_FIRST_AUTH ((uint32_t)RFAL_TXRX_FLAGS_CRC_TX_AUTO | (uint32_t)RFAL_TXRX_FLAGS_CRC_RX_KEEP | (uint32_t)RFAL_TXRX_FLAGS_NFCIP1_OFF | (uint32_t)RFAL_TXRX_FLAGS_AGC_ON | (uint32_t)RFAL_TXRX_FLAGS_PAR_RX_REMV | (uint32_t)RFAL_TXRX_FLAGS_PAR_TX_AUTO | (uint32_t)RFAL_TXRX_FLAGS_NFCV_FLAG_AUTO)
+
+
 #define AddCrc14A(data, len) compute_crc(CRC_14443_A, (data), (len), (data) + (len), (data) + (len) + 1)
 
 bool mf_classic_check_card_type(uint8_t ATQA0, uint8_t ATQA1, uint8_t SAK) {
@@ -70,11 +73,13 @@ int mifare_sendcmd_short(
         }
         //ReaderTransmitPar(ecmd, sizeof(ecmd), par, timing);
         FURI_LOG_I("ASTRA", "ecmd = %02X", ecmd[1]);
-        furi_hal_nfc_data_exchange(ecmd, sizeof(ecmd), &answer2, &len, false);
+        //furi_hal_nfc_data_exchange(ecmd, sizeof(ecmd), &answer2, &len, false);
+        furi_hal_nfc_custom_flags_exchange(ecmd, sizeof(ecmd), &answer2, &len, false, RFAL_TXRX_FLAGS_FIRST_AUTH);
     } else {
         //ReaderTransmit(dcmd, sizeof(dcmd), timing);
         FURI_LOG_I("ASTRA", "dcmd = %02X", dcmd[1]);
-        furi_hal_nfc_data_exchange(dcmd, sizeof(dcmd), &answer2, &len, false);
+        //furi_hal_nfc_data_exchange(dcmd, sizeof(dcmd), &answer2, &len, false);
+        furi_hal_nfc_custom_flags_exchange(ecmd, sizeof(ecmd), &answer2, &len, false, RFAL_TXRX_FLAGS_FIRST_AUTH);
     }
 
     memcpy(answer, answer2, *len);
@@ -195,15 +200,8 @@ int mifare_classic_authex(
         pcs, isNested, 0x60 + (keyType & 0x01), blockNo, receivedAnswer, timing);
     //if(len != 4) return 1;
 
-    nr[0] = 0x11;
-    nr[1] = 0x11;
-    nr[2] = 0x11;
-    nr[3] = 0x11;
-
     // Save the tag nonce (nt)
     nt = bytes_to_num(receivedAnswer, 4);
-
-    nt = 0x01200145;
 
     FURI_LOG_I("MIFARE", "nt is %04x \n", nt);
 
