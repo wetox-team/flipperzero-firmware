@@ -701,23 +701,19 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
                 FURI_LOG_I(TAG, "Found Mifare Classic tag.");
                 mf_classic_set_default_version(&mf_classic_read);
                 furi_hal_nfc_deactivate();
-                if(!furi_hal_nfc_detect(&dev_list, &dev_cnt, 300, false)) {
-                    FURI_LOG_E(TAG, "Lost connection. Restarting search");
-                    continue;
-                }
-                //for(uint8_t block = 0; block < mf_classic_read.blocks_to_read; block += 1) {
-                    uint8_t block = 0;
-                    FURI_LOG_I(TAG, "Trying to auth");
-                    uint8_t uid =  (uint32_t) dev_list[0].dev.nfca.nfcId1;
-                    mifare_classic_auth(pcs, uid, block, 0, key, 0);
-                    /*
-                    FURI_LOG_I(TAG, "Reading block %d...", block);
-                    tx_len = mf_classic_read_block(pcs, uid, rx_buff, block);
-                    mf_classic_parse_read_response(rx_buff, block, &mf_classic_read);
-                    FURI_LOG_I(TAG, "%02X", tx_len);*/
-
+                for(uint8_t block = 0; block < mf_classic_read.blocks_to_read; block += 1) {
+                    furi_hal_nfc_detect(&dev_list, &dev_cnt, 300, false);
+                    FURI_LOG_I(TAG, "Trying to auth, block %d", block);
+                    uint8_t uid = (uint32_t)dev_list[0].dev.nfca.nfcId1;
+                    if(!mifare_classic_auth(pcs, uid, block, 0, key, 0)) {
+                        FURI_LOG_I("MIFARE", "Successfully authenticated on block %d", block);
+                    }
                     mf_classic_read_block(pcs, uid, block, block_data);
-                //}
+                    mifare_classic_halt(pcs);
+                    osDelay(10);
+                    furi_hal_nfc_deactivate();
+                    osDelay(10);
+                }
             }
         } else {
             FURI_LOG_I(TAG, "Can't find any tags");

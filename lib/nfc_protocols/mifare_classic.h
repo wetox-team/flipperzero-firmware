@@ -122,3 +122,5 @@ int mifare_classic_authex(
     uint8_t isNested,
     uint32_t* ntptr,
     uint32_t* timing);
+
+int mifare_classic_halt(struct Crypto1State* pcs);
