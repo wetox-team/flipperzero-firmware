@@ -76,13 +76,13 @@ int mifare_sendcmd_short(
             ecmd[pos] = crypto1_byte(pcs, 0x00, 0) ^ dcmd[pos];
         }
         //ReaderTransmitPar(ecmd, sizeof(ecmd), par, timing);
-        FURI_LOG_I("ASTRA", "ecmd = %02X", ecmd[1]);
+        FURI_LOG_I("ASTRA", "ecmd_reg = %02X", ecmd[1]);
         //furi_hal_nfc_data_exchange(ecmd, sizeof(ecmd), &answer2, &len, false);
         furi_hal_nfc_custom_flags_exchange(
             ecmd, sizeof(ecmd), &answer2, &len, false, RFAL_TXRX_FLAGS_FIRST_AUTH);
     } else {
         //ReaderTransmit(dcmd, sizeof(dcmd), timing);
-        FURI_LOG_I("ASTRA", "dcmd = %02X", dcmd[1]);
+        FURI_LOG_I("ASTRA", "dcmd_reg = %02X", dcmd[1]);
         //furi_hal_nfc_data_exchange(dcmd, sizeof(dcmd), &answer2, &len, false);
         furi_hal_nfc_custom_flags_exchange(
             ecmd, sizeof(ecmd), &answer2, &len, false, RFAL_TXRX_FLAGS_FIRST_AUTH);
@@ -92,14 +92,16 @@ int mifare_sendcmd_short(
         FURI_LOG_E("MIFARE", "No response from card received");
         return 1;
     }
-
-    memcpy(answer, answer2, *len);
-
+    if(len != 0) {
+        FURI_LOG_I("MIFARE", "prelen = %d", *len);
+        memcpy(answer, answer2, *len);
+        FURI_LOG_I("MIFARE", "postlen = %d", *len);
+    }
     //int len = ReaderReceive(answer, par);
 
     if(crypted == CRYPT_ALL) {
         if(*len == 1) {
-            FURI_LOG_I("ASTRA", "len = 1");
+            FURI_LOG_I("ASTRA2", "len = 1");
             uint16_t res = 0;
             res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 0)) << 0;
             res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 1)) << 1;
@@ -107,7 +109,7 @@ int mifare_sendcmd_short(
             res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 3)) << 3;
             answer[0] = res;
         } else {
-            FURI_LOG_I("ASTRA", "len = %d", *len);
+            FURI_LOG_I("ASTRA2", "len = %d", *len);
             for(pos = 0; pos < *len; pos++) answer[pos] = crypto1_byte(pcs, 0x00, 0) ^ answer[pos];
         }
     }
@@ -138,14 +140,14 @@ int mifare_sendcmd_short_no_crc(
             par[0] |= (((filter(pcs->odd) ^ oddparity8(dcmd[pos])) & 0x01) << (7 - pos));
         }
         //ReaderTransmitPar(ecmd, sizeof(ecmd), par, timing);
-        FURI_LOG_I("MIFARE", "ecmd = %02X", ecmd[1]);
-        FURI_LOG_I("MIFARE", "par = %02X", par[0]);
+        FURI_LOG_I("MIFARE", "ecmd_no_crc = %02X", ecmd[1]);
+        FURI_LOG_I("MIFARE", "par_no_crc = %02X", par[0]);
         furi_hal_nfc_raw_parbits_exchange(
             ecmd, sizeof(ecmd), par, &answer2, &len, &rx_parbits, false);
     } else {
         //ReaderTransmit(dcmd, sizeof(dcmd), timing);
-        FURI_LOG_I("MIFARE", "dcmd = %02X", dcmd[1]);
-        FURI_LOG_I("MIFARE", "par = %02X", par[0]);
+        FURI_LOG_I("MIFARE", "dcmd_no_crc = %02X", dcmd[1]);
+        FURI_LOG_I("MIFARE", "par_no_crc = %02X", par[0]);
         furi_hal_nfc_raw_parbits_exchange(
             dcmd, sizeof(dcmd), par, &answer2, &len, &rx_parbits, false);
     }
@@ -156,7 +158,7 @@ int mifare_sendcmd_short_no_crc(
 
     if(crypted == CRYPT_ALL) {
         if(*len == 1) {
-            FURI_LOG_I("ASTRA", "len = 1");
+            FURI_LOG_I("ASTRA1", "len = 1");
             uint16_t res = 0;
             res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 0)) << 0;
             res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 1)) << 1;
@@ -164,7 +166,7 @@ int mifare_sendcmd_short_no_crc(
             res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 3)) << 3;
             answer[0] = res;
         } else {
-            FURI_LOG_I("ASTRA", "len = %d", *len);
+            FURI_LOG_I("ASTRA1", "len = %d", *len);
             for(pos = 0; pos < *len; pos++) answer[pos] = crypto1_byte(pcs, 0x00, 0) ^ answer[pos];
         }
     }
@@ -179,8 +181,8 @@ int mifare_sendcmd_halt(
     uint8_t data,
     uint8_t* answer) {
     uint16_t pos;
-    uint8_t* rx_parbits;
-    uint16_t* len;
+    //uint8_t* rx_parbits;
+    //uint16_t* len;
     uint8_t dcmd[4] = {cmd, data, 0x00, 0x00};
     uint8_t ecmd[4] = {0x00, 0x00, 0x00, 0x00};
     uint8_t par[1] = {0x00}; // 1 Byte parity is enough here
@@ -194,35 +196,33 @@ int mifare_sendcmd_halt(
             par[0] |= (((filter(pcs->odd) ^ oddparity8(dcmd[pos])) & 0x01) << (7 - pos));
         }
         //ReaderTransmitPar(ecmd, sizeof(ecmd), par, timing);
-        FURI_LOG_I("MIFARE", "ecmd = %02X", ecmd[1]);
-        FURI_LOG_I("MIFARE", "par = %02X", par[0]);
-        furi_hal_nfc_raw_parbits_exchange(
-            ecmd, sizeof(ecmd), par, &answer, &len, &rx_parbits, false);
+        FURI_LOG_I("MIFARE", "ecmd_halt = %02X", ecmd[1]);
+        FURI_LOG_I("MIFARE", "par_halt = %02X", par[0]);
+        //furi_hal_nfc_raw_parbits_exchange(ecmd, sizeof(ecmd), par, &answer, &len, &rx_parbits, false);
     } else {
         //ReaderTransmit(dcmd, sizeof(dcmd), timing);
-        FURI_LOG_I("MIFARE", "dcmd = %02X", dcmd[1]);
-        FURI_LOG_I("MIFARE", "par = %02X", par[0]);
-        furi_hal_nfc_raw_parbits_exchange(
-            dcmd, sizeof(dcmd), par, &answer, &len, &rx_parbits, false);
+        FURI_LOG_I("MIFARE", "dcmd_halt = %02X", dcmd[1]);
+        FURI_LOG_I("MIFARE", "par_halt = %02X", par[0]);
+        //furi_hal_nfc_raw_parbits_exchange(dcmd, sizeof(dcmd), par, &answer, &len, &rx_parbits, false);
     }
 
     //int len = ReaderReceive(answer, par);
 
-    if(crypted == CRYPT_ALL) {
-        if(*len == 1) {
-            FURI_LOG_I("ASTRA", "len = 1");
-            uint16_t res = 0;
-            res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 0)) << 0;
-            res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 1)) << 1;
-            res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 2)) << 2;
-            res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 3)) << 3;
-            answer[0] = res;
-        } else {
-            FURI_LOG_I("ASTRA", "len = %d", *len);
-            for(pos = 0; pos < *len; pos++) answer[pos] = crypto1_byte(pcs, 0x00, 0) ^ answer[pos];
-        }
-    }
-    return *len;
+    // if(crypted == CRYPT_ALL) {
+    //     if(*len == 1) {
+    //         FURI_LOG_I("ASTRA", "len = 1");
+    //         uint16_t res = 0;
+    //         res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 0)) << 0;
+    //         res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 1)) << 1;
+    //         res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 2)) << 2;
+    //         res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 3)) << 3;
+    //         answer[0] = res;
+    //     } else {
+    //         FURI_LOG_I("ASTRA", "len = %d", *len);
+    //         for(pos = 0; pos < *len; pos++) answer[pos] = crypto1_byte(pcs, 0x00, 0) ^ answer[pos];
+    //     }
+    // }
+    return 0;
 }
 
 // mifare classic commands

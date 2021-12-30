@@ -692,7 +692,7 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
     while(nfc_worker->state == NfcWorkerStateReadMifareClassic) {
         furi_hal_nfc_deactivate();
         memset(&mf_classic_read, 0, sizeof(mf_classic_read));
-        if(furi_hal_nfc_detect(&dev_list, &dev_cnt, 300, false)) {
+        if(furi_hal_nfc_detect(&dev_list, &dev_cnt, 150, false)) {
             if(dev_list[0].type == RFAL_NFC_LISTEN_TYPE_NFCA &&
                mf_classic_check_card_type(
                    dev_list[0].dev.nfca.sensRes.anticollisionInfo,
@@ -702,23 +702,26 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
                 mf_classic_set_default_version(&mf_classic_read);
                 furi_hal_nfc_deactivate();
                 for(uint8_t block = 0; block < mf_classic_read.blocks_to_read; block += 1) {
-                    furi_hal_nfc_detect(&dev_list, &dev_cnt, 300, false);
-                    FURI_LOG_I(TAG, "Trying to auth, block %d", block);
-                    uint8_t uid = (uint32_t)dev_list[0].dev.nfca.nfcId1;
-                    if(!mifare_classic_auth(pcs, uid, block, 0, key, 0)) {
-                        FURI_LOG_I("MIFARE", "Successfully authenticated on block %d", block);
+                    if(furi_hal_nfc_detect(&dev_list, &dev_cnt, 150, false)) {
+                        FURI_LOG_I(TAG, "Trying to auth, block %d", block);
+                        uint8_t uid = (uint32_t)dev_list[0].dev.nfca.nfcId1;
+                        if(!mifare_classic_auth(pcs, uid, block, 0, key, 0)) {
+                            FURI_LOG_I("MIFARE", "Successfully authenticated on block %d", block);
+                        }
+                        mf_classic_read_block(pcs, uid, block, block_data);
+                        mifare_classic_halt(pcs);
+                        //osDelay(10);
+                    } else {
+                        break;
                     }
-                    mf_classic_read_block(pcs, uid, block, block_data);
-                    mifare_classic_halt(pcs);
-                    osDelay(10);
                     furi_hal_nfc_deactivate();
-                    osDelay(10);
+                    //osDelay(10);
                 }
             }
         } else {
             FURI_LOG_I(TAG, "Can't find any tags");
         }
-        osDelay(100);
+        //osDelay(10);
     }
 }
 
