@@ -24,14 +24,11 @@ bool mf_classic_check_card_type(uint8_t ATQA0, uint8_t ATQA1, uint8_t SAK) {
 }
 
 uint64_t bytes_to_num(uint8_t* src, size_t len) {
-    FURI_LOG_I("BTN", "src: %p len: %d", &src, len);
     uint64_t num = 0;
     while(len--) {
         num = (num << 8) | (*src);
         src++;
-        FURI_LOG_I("BTN", "src: %p, len: %d, num: %d", src, len, num);
     }
-    FURI_LOG_I("BTN", "returning number: %d", num);
     return num;
 }
 

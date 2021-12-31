@@ -81,3 +81,7 @@ static inline const char* nfc_mf_ul_type(MfUltralightType type, bool full_name) 
         return "Mifare Ultralight";
     }
 }
+
+static inline const char* nfc_mf_classic_type(MfClassicType type, bool full_name) {
+    return "Mifare Classic";
+}

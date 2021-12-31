@@ -79,10 +79,8 @@ typedef struct {
 } MfClassicVersion;
 
 typedef struct {
+    MfClassicType type;
     MfClassicVersion version;
-    uint8_t signature[32];
-    uint16_t counter[3];
-    uint8_t tearing[3];
     uint16_t data_size;
     uint8_t data[MF_CLASSIC_MAX_DUMP_SIZE];
 } MifareClassicData;
@@ -100,9 +98,16 @@ bool mf_classic_check_card_type(uint8_t ATQA0, uint8_t ATQA1, uint8_t SAK);
 
 void mf_classic_set_default_version(MifareClassicDevice* mf_classic_read);
 
-uint16_t mf_classic_read_block(struct Crypto1State* pcs, uint32_t uid, uint8_t blockNo, uint8_t *blockData);
+uint16_t mf_classic_read_block(
+    struct Crypto1State* pcs,
+    uint32_t uid,
+    uint8_t blockNo,
+    uint8_t* blockData);
 
-void mf_classic_parse_read_response(uint8_t* buff, uint16_t block_addr, MifareClassicDevice* mf_classic_read);
+void mf_classic_parse_read_response(
+    uint8_t* buff,
+    uint16_t block_addr,
+    MifareClassicDevice* mf_classic_read);
 
 void MifareReadBlock(uint8_t blockNo, uint8_t keyType, uint64_t ui64Key, uint8_t uid);
 

@@ -674,19 +674,12 @@ void nfc_worker_emulate_mifare_ul(NfcWorker* nfc_worker) {
 }
 
 void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
-    // ReturnCode err;
     rfalNfcDevice* dev_list;
     uint8_t dev_cnt = 0;
-    //uint8_t tx_buff[255] = {};
-    //uint8_t nr[4];
-    //int len;
-    //uint32_t pos, nt, ntpp; // Supplied tag nonce
-    //uint16_t tx_len = 0;
-    //uint8_t* rx_buff;
     uint64_t key = 0xFFFFFFFFFFFF;
     uint8_t block_data[16] = {0x00};
-    //uint16_t* rx_len;
     MifareClassicDevice mf_classic_read;
+    NfcDeviceData* result = nfc_worker->dev_data;
     struct Crypto1State mpcs = {0, 0};
     struct Crypto1State* pcs = &mpcs;
     while(nfc_worker->state == NfcWorkerStateReadMifareClassic) {
@@ -707,8 +700,15 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
                         uint8_t uid = (uint32_t)dev_list[0].dev.nfca.nfcId1;
                         if(!mifare_classic_auth(pcs, uid, block, 0, key, 0)) {
                             FURI_LOG_I("MIFARE", "Successfully authenticated on block %d", block);
+                        } else {
+                            FURI_LOG_E("MIFARE", "Failed to authenticate");
                         }
                         mf_classic_read_block(pcs, uid, block, block_data);
+                        //mf_classic_read.data.data[block] = *block_data;
+                        mf_classic_read->data.data_size = block * 16;
+                        mf_
+                        memcpy(&mf_classic_read.data.data[block * 16], block_data, 16);
+                        //FURI_LOG_I("Mifare", "block data = %16x", *block_data);
                         mifare_classic_halt(pcs);
                         //osDelay(10);
                     } else {
@@ -718,6 +718,19 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
                     //osDelay(10);
                 }
             }
+            // fill the results
+            result->nfc_data.uid_len = dev_list[0].dev.nfca.nfcId1Len;
+            result->nfc_data.atqa[0] = dev_list[0].dev.nfca.sensRes.anticollisionInfo;
+            result->nfc_data.atqa[1] = dev_list[0].dev.nfca.sensRes.platformInfo;
+            result->nfc_data.sak = dev_list[0].dev.nfca.selRes.sak;
+            memcpy(result->nfc_data.uid, dev_list[0].dev.nfca.nfcId1, result->nfc_data.uid_len);
+            result->nfc_data.protocol = NfcDeviceProtocolMifareClassic;
+            result->mf_classic_data = mf_classic_read.data;
+            // Notify caller and exit
+            if(nfc_worker->callback) {
+                nfc_worker->callback(nfc_worker->context);
+            }
+            break;
         } else {
             FURI_LOG_I(TAG, "Can't find any tags");
         }

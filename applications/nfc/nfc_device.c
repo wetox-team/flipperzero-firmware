@@ -156,6 +156,86 @@ bool nfc_device_load_mifare_ul_data(FlipperFile* file, NfcDevice* dev) {
     return parsed;
 }
 
+// static bool nfc_device_save_mifare_classic_data(FlipperFile* file, NfcDevice* dev) {
+//     bool saved = false;
+//     MifareClassicData* data = &dev->dev_data.mf_classic_data;
+//     string_t temp_str;
+//     string_init(temp_str);
+
+//     // Save Mifare Ultralight specific data
+//     do {
+//         if(!flipper_file_write_comment_cstr(file, "Mifare Ultralight specific data")) break;
+//         if(!flipper_file_write_hex(
+//                file, "Mifare version", (uint8_t*)&data->version, sizeof(data->version)))
+//             break;
+//         // Write blocks data
+//         uint32_t blocks_total = data->data_size / 16;
+//         if(!flipper_file_write_uint32(file, "Blocks total", &blocks_total, 1)) break;
+//         bool blocks_saved = true;
+//         for(uint16_t i = 0; i < data->data_size; i += 16) {
+//             string_printf(temp_str, "Block %d", i / 16);
+//             if(!flipper_file_write_hex(file, string_get_cstr(temp_str), &data->data[i], 16)) {
+//                 blocks_saved = false;
+//                 break;
+//             }
+//         }
+//         if(!blocks_saved) break;
+//         saved = true;
+//     } while(false);
+
+//     string_clear(temp_str);
+//     return saved;
+// }
+
+// bool nfc_device_load_mifare_classic_data(FlipperFile* file, NfcDevice* dev) {
+//     bool parsed = false;
+//     MifareUlData* data = &dev->dev_data.mf_ul_data;
+//     string_t temp_str;
+//     string_init(temp_str);
+
+//     do {
+//         // Read signature
+//         if(!flipper_file_read_hex(file, "Signature", data->signature, sizeof(data->signature)))
+//             break;
+//         // Read Mifare version
+//         if(!flipper_file_read_hex(
+//                file, "Mifare version", (uint8_t*)&data->version, sizeof(data->version)))
+//             break;
+//         // Read counters and tearing flags
+//         bool counters_parsed = true;
+//         for(uint8_t i = 0; i < 3; i++) {
+//             string_printf(temp_str, "Counter %d", i);
+//             if(!flipper_file_read_uint32(file, string_get_cstr(temp_str), &data->counter[i], 1)) {
+//                 counters_parsed = false;
+//                 break;
+//             }
+//             string_printf(temp_str, "Tearing %d", i);
+//             if(!flipper_file_read_hex(file, string_get_cstr(temp_str), &data->tearing[i], 1)) {
+//                 counters_parsed = false;
+//                 break;
+//             }
+//         }
+//         if(!counters_parsed) break;
+//         // Read pages
+//         uint32_t pages = 0;
+//         if(!flipper_file_read_uint32(file, "Pages total", &pages, 1)) break;
+//         data->data_size = pages * 4;
+//         bool pages_parsed = true;
+//         for(uint16_t i = 0; i < pages; i++) {
+//             string_printf(temp_str, "Page %d", i);
+//             if(!flipper_file_read_hex(file, string_get_cstr(temp_str), &data->data[i * 4], 4)) {
+//                 pages_parsed = false;
+//                 break;
+//             }
+//         }
+//         if(!pages_parsed) break;
+//         parsed = true;
+//     } while(false);
+
+//     string_clear(temp_str);
+//     return parsed;
+// }
+
 static bool nfc_device_save_bank_card_data(FlipperFile* file, NfcDevice* dev) {
     bool saved = false;
     NfcEmvData* data = &dev->dev_data.emv_data;
