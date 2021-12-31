@@ -705,8 +705,7 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
                         }
                         mf_classic_read_block(pcs, uid, block, block_data);
                         //mf_classic_read.data.data[block] = *block_data;
-                        mf_classic_read->data.data_size = block * 16;
-                        mf_
+                        mf_classic_read.data.data_size = block * 16;
                         memcpy(&mf_classic_read.data.data[block * 16], block_data, 16);
                         //FURI_LOG_I("Mifare", "block data = %16x", *block_data);
                         mifare_classic_halt(pcs);
