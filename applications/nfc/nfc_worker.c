@@ -694,10 +694,13 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
                 FURI_LOG_I(TAG, "Found Mifare Classic tag.");
                 mf_classic_set_default_version(&mf_classic_read);
                 furi_hal_nfc_deactivate();
-                for(uint8_t block = 0; block < mf_classic_read.blocks_to_read; block += 1) {
+                uint32_t uid = (dev_list[0].dev.nfca.nfcId1[0] << 24) +
+                               (dev_list[0].dev.nfca.nfcId1[1] << 16) +
+                               (dev_list[0].dev.nfca.nfcId1[2] << 8) +
+                               dev_list[0].dev.nfca.nfcId1[3];
+                for(uint8_t block = 0; block < mf_classic_read.blocks_to_read; block++) {
                     if(furi_hal_nfc_detect(&dev_list, &dev_cnt, 150, false)) {
                         FURI_LOG_I(TAG, "Trying to auth, block %d", block);
-                        uint8_t uid = (uint32_t)dev_list[0].dev.nfca.nfcId1;
                         if(!mifare_classic_auth(pcs, uid, block, 0, key, 0)) {
                             FURI_LOG_I("MIFARE", "Successfully authenticated on block %d", block);
                         } else {
@@ -705,10 +708,10 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
                         }
                         mf_classic_read_block(pcs, uid, block, block_data);
                         //mf_classic_read.data.data[block] = *block_data;
-                        mf_classic_read.data.data_size = block * 16;
+                        mf_classic_read.data.data_size = (block + 1) * 16;
                         memcpy(&mf_classic_read.data.data[block * 16], block_data, 16);
                         //FURI_LOG_I("Mifare", "block data = %16x", *block_data);
-                        mifare_classic_halt(pcs);
+                        //mifare_classic_halt(pcs);
                         //osDelay(10);
                     } else {
                         break;

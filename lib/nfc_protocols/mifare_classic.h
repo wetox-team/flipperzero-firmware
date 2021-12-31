@@ -65,6 +65,9 @@ typedef enum {
     MfClassicTypeUnknown,
     MfClassicTypeS50, // 1k
     MfClassicTypeS70, // 4k
+
+    // Keep last for number of types calculation
+    MfClassicTypeNum,
 } MfClassicType;
 
 typedef struct {
@@ -80,7 +83,6 @@ typedef struct {
 
 typedef struct {
     MfClassicType type;
-    MfClassicVersion version;
     uint16_t data_size;
     uint8_t data[MF_CLASSIC_MAX_DUMP_SIZE];
 } MifareClassicData;

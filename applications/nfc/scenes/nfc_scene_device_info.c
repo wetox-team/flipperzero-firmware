@@ -108,6 +108,23 @@ void nfc_scene_device_info_on_enter(void* context) {
                 nfc->text_box_store, "%02X%02X ", mf_ul_data->data[i], mf_ul_data->data[i + 1]);
         }
         text_box_set_text(text_box, string_get_cstr(nfc->text_box_store));
+    } else if(nfc->dev->format == NfcDeviceSaveFormatMifareClassic) {
+        MifareClassicData* mf_classic_data = &nfc->dev->dev_data.mf_classic_data;
+        TextBox* text_box = nfc->text_box;
+        text_box_set_context(text_box, nfc);
+        text_box_set_exit_callback(text_box, nfc_scene_device_info_text_box_callback);
+        text_box_set_font(text_box, TextBoxFontHex);
+        for(uint16_t i = 0; i < mf_classic_data->data_size; i += 2) {
+            if(!(i % 8) && i) {
+                string_push_back(nfc->text_box_store, '\n');
+            }
+            string_cat_printf(
+                nfc->text_box_store,
+                "%02X%02X ",
+                mf_classic_data->data[i],
+                mf_classic_data->data[i + 1]);
+        }
+        text_box_set_text(text_box, string_get_cstr(nfc->text_box_store));
     } else if(nfc->dev->format == NfcDeviceSaveFormatBankCard) {
         NfcEmvData* emv_data = &nfc->dev->dev_data.emv_data;
         BankCard* bank_card = nfc->bank_card;
@@ -164,6 +181,11 @@ bool nfc_scene_device_info_on_event(void* context, SceneManagerEvent event) {
                     nfc->scene_manager, NfcSceneDeviceInfo, NfcSceneDeviceInfoData);
                 view_dispatcher_switch_to_view(nfc->view_dispatcher, NfcViewTextBox);
                 consumed = true;
+            } else if(nfc->dev->format == NfcDeviceSaveFormatMifareClassic) {
+                scene_manager_set_scene_state(
+                    nfc->scene_manager, NfcSceneDeviceInfo, NfcSceneDeviceInfoData);
+                view_dispatcher_switch_to_view(nfc->view_dispatcher, NfcViewTextBox);
+                consumed = true;
             } else if(nfc->dev->format == NfcDeviceSaveFormatBankCard) {
                 scene_manager_set_scene_state(
                     nfc->scene_manager, NfcSceneDeviceInfo, NfcSceneDeviceInfoData);
@@ -198,6 +220,10 @@ void nfc_scene_device_info_on_exit(void* context) {
         dialog_ex_set_result_callback(dialog_ex, NULL);
         dialog_ex_set_context(dialog_ex, NULL);
     } else if(nfc->dev->format == NfcDeviceSaveFormatMifareUl) {
+        // Clear TextBox
+        text_box_clean(nfc->text_box);
+        string_reset(nfc->text_box_store);
+    } else if(nfc->dev->format == NfcDeviceSaveFormatMifareClassic) {
         // Clear TextBox
         text_box_clean(nfc->text_box);
         string_reset(nfc->text_box_store);

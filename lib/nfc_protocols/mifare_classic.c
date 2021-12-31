@@ -256,8 +256,6 @@ int mifare_classic_authex(
     // "random" reader nonce:
     num_to_bytes(prng_successor(DWT->CYCCNT, 32), 4, nr);
 
-    uid = 0x67B48AB3;
-
     // Transmit MIFARE_CLASSIC_AUTH
     len = mifare_sendcmd_short(
         pcs, isNested, 0x60 + (keyType & 0x01), blockNo, receivedAnswer, timing);
