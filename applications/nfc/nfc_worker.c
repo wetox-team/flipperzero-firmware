@@ -3,6 +3,7 @@
 #include "nfc_protocols/emv_decoder.h"
 #include "nfc_protocols/mifare_ultralight.h"
 #include "nfc_protocols/mifare_classic.h"
+#include "nfc_protocols/mifare_plus.h"
 
 #define TAG "NfcWorker"
 
@@ -126,6 +127,11 @@ void nfc_worker_detect(NfcWorker* nfc_worker) {
                               dev->dev.nfca.sensRes.platformInfo,
                               dev->dev.nfca.selRes.sak)) {
                     result->protocol = NfcDeviceProtocolMifareClassic;
+                } else if(mf_plus_check_card_type(
+                              dev->dev.nfca.sensRes.anticollisionInfo,
+                              dev->dev.nfca.sensRes.platformInfo,
+                              dev->dev.nfca.selRes.sak)) {
+                    result->protocol = NfcDeviceProtocolMifarePlus;
                 } else if(dev->rfInterface == RFAL_NFC_INTERFACE_ISODEP) {
                     result->protocol = NfcDeviceProtocolEMV;
                 } else {

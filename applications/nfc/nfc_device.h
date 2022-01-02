@@ -23,6 +23,7 @@ typedef enum {
     NfcDeviceProtocolEMV,
     NfcDeviceProtocolMifareUl,
     NfcDeviceProtocolMifareClassic,
+    NfcDeviceProtocolMifarePlus,
 } NfcProtocol;
 
 typedef enum {
