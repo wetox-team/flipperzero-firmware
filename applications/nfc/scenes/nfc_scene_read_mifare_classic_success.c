@@ -1,7 +1,7 @@
 #include "../nfc_i.h"
 
 #define NFC_SCENE_READ_SUCCESS_SHIFT "              "
-#define NFC_SCENE_READ_mf_classic_CUSTOM_EVENT (0UL)
+#define NFC_SCENE_READ_MF_CLASSIC_CUSTOM_EVENT (0UL)
 
 enum {
     ReadMifareClassicStateShowUID,
@@ -18,7 +18,7 @@ void nfc_scene_read_mifare_classic_success_text_box_callback(void* context) {
     Nfc* nfc = (Nfc*)context;
 
     view_dispatcher_send_custom_event(
-        nfc->view_dispatcher, NFC_SCENE_READ_mf_classic_CUSTOM_EVENT);
+        nfc->view_dispatcher, NFC_SCENE_READ_MF_CLASSIC_CUSTOM_EVENT);
 }
 
 void nfc_scene_read_mifare_classic_success_on_enter(void* context) {
@@ -41,7 +41,7 @@ void nfc_scene_read_mifare_classic_success_on_enter(void* context) {
         8,
         AlignCenter,
         AlignCenter);
-    dialog_ex_set_icon(dialog_ex, 8, 13, &I_Medium_chip_22x21);
+    dialog_ex_set_icon(dialog_ex, 8, 13, &I_Medium_chip_22x21); // TODO custom icon?
     // Display UID
     if(data->uid_len == 4) {
         nfc_text_store_set(
@@ -126,7 +126,7 @@ bool nfc_scene_read_mifare_classic_success_on_event(void* context, SceneManagerE
         } else if(
             (scene_manager_get_scene_state(nfc->scene_manager, NfcSceneReadMifareClassicSuccess) ==
              ReadMifareClassicStateShowData) &&
-            (event.event == NFC_SCENE_READ_mf_classic_CUSTOM_EVENT)) {
+            (event.event == NFC_SCENE_READ_MF_CLASSIC_CUSTOM_EVENT)) {
             view_dispatcher_switch_to_view(nfc->view_dispatcher, NfcViewDialogEx);
             scene_manager_set_scene_state(
                 nfc->scene_manager,

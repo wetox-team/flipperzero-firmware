@@ -697,7 +697,7 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
                    dev_list[0].dev.nfca.sensRes.anticollisionInfo,
                    dev_list[0].dev.nfca.sensRes.platformInfo,
                    dev_list[0].dev.nfca.selRes.sak)) {
-                FURI_LOG_I(TAG, "Found Mifare Classic tag.");
+                //FURI_LOG_I(TAG, "Found Mifare Classic tag.");
                 mf_classic_set_default_version(&mf_classic_read);
                 furi_hal_nfc_deactivate();
                 uint32_t uid = (dev_list[0].dev.nfca.nfcId1[0] << 24) +
@@ -706,24 +706,19 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
                                dev_list[0].dev.nfca.nfcId1[3];
                 for(uint8_t block = 0; block < mf_classic_read.blocks_to_read; block++) {
                     if(furi_hal_nfc_detect(&dev_list, &dev_cnt, 150, false)) {
-                        FURI_LOG_I(TAG, "Trying to auth, block %d", block);
+                        //FURI_LOG_I(TAG, "Trying to auth, block %d", block);
                         if(!mifare_classic_auth(pcs, uid, block, 0, key, 0)) {
-                            FURI_LOG_I("MIFARE", "Successfully authenticated on block %d", block);
+                            //FURI_LOG_I("MIFARE", "Successfully authenticated on block %d", block);
                         } else {
-                            FURI_LOG_E("MIFARE", "Failed to authenticate");
+                            //FURI_LOG_E("MIFARE", "Failed to authenticate");
                         }
                         mf_classic_read_block(pcs, uid, block, block_data);
-                        //mf_classic_read.data.data[block] = *block_data;
                         mf_classic_read.data.data_size = (block + 1) * 16;
                         memcpy(&mf_classic_read.data.data[block * 16], block_data, 16);
-                        //FURI_LOG_I("Mifare", "block data = %16x", *block_data);
-                        //mifare_classic_halt(pcs);
-                        //osDelay(10);
                     } else {
                         break;
                     }
                     furi_hal_nfc_deactivate();
-                    //osDelay(10);
                 }
             }
             // fill the results
@@ -743,6 +738,69 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
             FURI_LOG_I(TAG, "Can't find any tags");
         }
         //osDelay(10);
+    }
+}
+
+void nfc_worker_emulate_mifare_classic(NfcWorker* nfc_worker) {
+    ReturnCode err;
+    uint8_t tx_buff[255] = {};
+    uint16_t tx_len = 0;
+    uint8_t* rx_buff;
+    uint16_t* rx_len;
+    NfcDeviceData* data = nfc_worker->dev_data;
+    MifareClassicDevice mf_classic_emulate;
+    // Setup emulation parameters from mifare ultralight data structure
+    mf_classic_prepare_emulation(&mf_classic_emulate, &data->mf_classic_data);
+    while(nfc_worker->state == NfcWorkerStateEmulateMifareClassic) {
+        // WARNING
+        // DO NOT call any blocking functions (e.g. FURI_LOG_*) in this loop,
+        // as any delay will negatively affect the stability of the emulation.
+        if(furi_hal_nfc_listen(
+               data->nfc_data.uid,
+               data->nfc_data.uid_len,
+               data->nfc_data.atqa,
+               data->nfc_data.sak,
+               true,
+               200)) {
+            if(furi_hal_nfc_get_first_frame(&rx_buff, &rx_len)) {
+                // Data exchange loop
+                while(nfc_worker->state == NfcWorkerStateEmulateMifareClassic) {
+                    tx_len = mf_classic_prepare_emulation_response(
+                        rx_buff, *rx_len, tx_buff, &mf_classic_emulate);
+                    if(tx_len > 0) {
+                        if(tx_len < 8) {
+                            err = furi_hal_nfc_raw_bitstream_exchange(
+                                tx_buff, tx_len, &rx_buff, &rx_len, false);
+                            *rx_len /= 8;
+                        } else {
+                            err = furi_hal_nfc_data_exchange(
+                                tx_buff, tx_len / 8, &rx_buff, &rx_len, false);
+                        }
+                        if(err == ERR_NONE) {
+                            continue;
+                        } else {
+                            FURI_LOG_D(TAG, "Communication error: %d", err);
+                            break;
+                        }
+                    } else {
+                        furi_hal_nfc_deactivate();
+                        break;
+                    }
+                }
+            } else {
+                FURI_LOG_D(TAG, "Error in 1st data exchange");
+                furi_hal_nfc_deactivate();
+            }
+        }
+        // Check if data was modified
+        if(mf_classic_emulate.data_changed) {
+            nfc_worker->dev_data->mf_classic_data = mf_classic_emulate.data;
+            if(nfc_worker->callback) {
+                nfc_worker->callback(nfc_worker->context);
+            }
+        }
+        FURI_LOG_D(TAG, "Can't find reader");
+        osThreadYield();
     }
 }
 
