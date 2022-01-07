@@ -20,7 +20,6 @@
   *
 ******************************************************************************/
 
-
 /*
  *      PROJECT:   ST25R391x firmware
  *      Revision:
@@ -91,22 +90,23 @@
 * GLOBAL DEFINES
 ******************************************************************************
 */
-#define RFAL_VERSION                               0x020200U                                    /*!< RFAL Current Version: v2.2.0                      */
+#define RFAL_VERSION 0x020200U /*!< RFAL Current Version: v2.2.0                      */
 
-#define RFAL_FWT_NONE                              0xFFFFFFFFU                                  /*!< Disabled FWT: Wait forever for a response         */
-#define RFAL_GT_NONE                               RFAL_TIMING_NONE                             /*!< Disabled GT: No GT will be applied after Field On */
+#define RFAL_FWT_NONE 0xFFFFFFFFU /*!< Disabled FWT: Wait forever for a response         */
+#define RFAL_GT_NONE RFAL_TIMING_NONE /*!< Disabled GT: No GT will be applied after Field On */
 
-#define RFAL_TIMING_NONE                           0x00U                                        /*!< Timing disabled | Don't apply                     */
+#define RFAL_TIMING_NONE 0x00U /*!< Timing disabled | Don't apply                     */
 
-#define RFAL_1FC_IN_4096FC                         (uint32_t)4096U                              /*!< Number of 1/fc cycles in one 4096/fc              */
-#define RFAL_1FC_IN_512FC                          (uint32_t)512U                               /*!< Number of 1/fc cycles in one 512/fc               */
-#define RFAL_1FC_IN_64FC                           (uint32_t)64U                                /*!< Number of 1/fc cycles in one 64/fc                */
-#define RFAL_1FC_IN_8FC                            (uint32_t)8U                                 /*!< Number of 1/fc cycles in one 8/fc                 */
-#define RFAL_US_IN_MS                              (uint32_t)1000U                              /*!< Number of us in one ms                            */
-#define RFAL_1MS_IN_1FC                            (uint32_t)13560U                             /*!< Number of 1/fc cycles in 1ms                      */
-#define RFAL_BITS_IN_BYTE                          (uint16_t)8U                                 /*!< Number of bits in one byte                        */
+#define RFAL_1FC_IN_4096FC \
+    (uint32_t)4096U /*!< Number of 1/fc cycles in one 4096/fc              */
+#define RFAL_1FC_IN_512FC (uint32_t)512U /*!< Number of 1/fc cycles in one 512/fc               */
+#define RFAL_1FC_IN_64FC (uint32_t)64U /*!< Number of 1/fc cycles in one 64/fc                */
+#define RFAL_1FC_IN_8FC (uint32_t)8U /*!< Number of 1/fc cycles in one 8/fc                 */
+#define RFAL_US_IN_MS (uint32_t)1000U /*!< Number of us in one ms                            */
+#define RFAL_1MS_IN_1FC (uint32_t)13560U /*!< Number of 1/fc cycles in 1ms                      */
+#define RFAL_BITS_IN_BYTE (uint16_t)8U /*!< Number of bits in one byte                        */
 
-#define RFAL_CRC_LEN                               2U                                           /*!< RF CRC LEN                                        */
+#define RFAL_CRC_LEN 2U /*!< RF CRC LEN                                        */
 
 /*! Default TxRx flags: Tx CRC automatic, Rx CRC removed, NFCIP1 mode off, AGC On, Tx Parity automatic, Rx Parity removed */
 #define RFAL_TXRX_FLAGS_DEFAULT                    ( (uint32_t)RFAL_TXRX_FLAGS_CRC_TX_AUTO | (uint32_t)RFAL_TXRX_FLAGS_CRC_RX_REMV | (uint32_t)RFAL_TXRX_FLAGS_NFCIP1_OFF | (uint32_t)RFAL_TXRX_FLAGS_AGC_ON | (uint32_t)RFAL_TXRX_FLAGS_PAR_RX_REMV | (uint32_t)RFAL_TXRX_FLAGS_PAR_TX_AUTO | (uint32_t)RFAL_TXRX_FLAGS_NFCV_FLAG_AUTO)
@@ -141,52 +141,110 @@
 */
 
 /*! Returns the maximum supported bit rate for RW mode. Caller must check if mode is supported before, as even if mode is not supported will return the min  */
-#define rfalGetMaxBrRW()                     ( ((RFAL_SUPPORT_BR_RW_6780)  ? RFAL_BR_6780 : ((RFAL_SUPPORT_BR_RW_3390)  ? RFAL_BR_3390 : ((RFAL_SUPPORT_BR_RW_1695)  ? RFAL_BR_1695 : ((RFAL_SUPPORT_BR_RW_848)  ? RFAL_BR_848 : ((RFAL_SUPPORT_BR_RW_424)  ? RFAL_BR_424 : ((RFAL_SUPPORT_BR_RW_212)  ? RFAL_BR_212 : RFAL_BR_106 ) ) ) ) ) ) )
+#define rfalGetMaxBrRW()                             \
+    (((RFAL_SUPPORT_BR_RW_6780) ?                    \
+          RFAL_BR_6780 :                             \
+          ((RFAL_SUPPORT_BR_RW_3390) ?               \
+               RFAL_BR_3390 :                        \
+               ((RFAL_SUPPORT_BR_RW_1695) ?          \
+                    RFAL_BR_1695 :                   \
+                    ((RFAL_SUPPORT_BR_RW_848) ?      \
+                         RFAL_BR_848 :               \
+                         ((RFAL_SUPPORT_BR_RW_424) ? \
+                              RFAL_BR_424 :          \
+                              ((RFAL_SUPPORT_BR_RW_212) ? RFAL_BR_212 : RFAL_BR_106)))))))
 
 /*! Returns the maximum supported bit rate for AP2P mode. Caller must check if mode is supported before, as even if mode is not supported will return the min  */
-#define rfalGetMaxBrAP2P()                   ( ((RFAL_SUPPORT_BR_AP2P_848) ? RFAL_BR_848  : ((RFAL_SUPPORT_BR_AP2P_424) ? RFAL_BR_424  : ((RFAL_SUPPORT_BR_AP2P_212) ? RFAL_BR_212  : RFAL_BR_106 ) ) ) )
+#define rfalGetMaxBrAP2P()              \
+    (((RFAL_SUPPORT_BR_AP2P_848) ?      \
+          RFAL_BR_848 :                 \
+          ((RFAL_SUPPORT_BR_AP2P_424) ? \
+               RFAL_BR_424 :            \
+               ((RFAL_SUPPORT_BR_AP2P_212) ? RFAL_BR_212 : RFAL_BR_106))))
 
 /*! Returns the maximum supported bit rate for CE-A mode. Caller must check if mode is supported before, as even if mode is not supported will return the min  */
-#define rfalGetMaxBrCEA()                    ( ((RFAL_SUPPORT_BR_CE_A_848) ? RFAL_BR_848  : ((RFAL_SUPPORT_BR_CE_A_424) ? RFAL_BR_424  : ((RFAL_SUPPORT_BR_CE_A_212) ? RFAL_BR_212  : RFAL_BR_106 ) ) ) )
+#define rfalGetMaxBrCEA()               \
+    (((RFAL_SUPPORT_BR_CE_A_848) ?      \
+          RFAL_BR_848 :                 \
+          ((RFAL_SUPPORT_BR_CE_A_424) ? \
+               RFAL_BR_424 :            \
+               ((RFAL_SUPPORT_BR_CE_A_212) ? RFAL_BR_212 : RFAL_BR_106))))
 
 /*! Returns the maximum supported bit rate for CE-B mode. Caller must check if mode is supported before, as even if mode is not supported will return the min  */
-#define rfalGetMaxBrCEB()                    ( ((RFAL_SUPPORT_BR_CE_B_848) ? RFAL_BR_848  : ((RFAL_SUPPORT_BR_CE_B_424) ? RFAL_BR_424  : ((RFAL_SUPPORT_BR_CE_B_212) ? RFAL_BR_212  : RFAL_BR_106 ) ) ) )
+#define rfalGetMaxBrCEB()               \
+    (((RFAL_SUPPORT_BR_CE_B_848) ?      \
+          RFAL_BR_848 :                 \
+          ((RFAL_SUPPORT_BR_CE_B_424) ? \
+               RFAL_BR_424 :            \
+               ((RFAL_SUPPORT_BR_CE_B_212) ? RFAL_BR_212 : RFAL_BR_106))))
 
 /*! Returns the maximum supported bit rate for CE-F mode. Caller must check if mode is supported before, as even if mode is not supported will return the min  */
-#define rfalGetMaxBrCEF()                    ( ((RFAL_SUPPORT_BR_CE_F_424) ? RFAL_BR_424  : RFAL_BR_212 ) )
+#define rfalGetMaxBrCEF() (((RFAL_SUPPORT_BR_CE_F_424) ? RFAL_BR_424 : RFAL_BR_212))
 
+#define rfalIsModeActiveComm(md)            \
+    (((md) == RFAL_MODE_POLL_ACTIVE_P2P) || \
+     ((md) == RFAL_MODE_LISTEN_ACTIVE_P2P)) /*!< Checks if mode md is Active Communication  */
+#define rfalIsModePassiveComm(md) \
+    (!rfalIsModeActiveComm(md)) /*!< Checks if mode md is Passive Communication */
+#define rfalIsModePassiveListen(md)                                        \
+    (((md) == RFAL_MODE_LISTEN_NFCA) || ((md) == RFAL_MODE_LISTEN_NFCB) || \
+     ((md) == RFAL_MODE_LISTEN_NFCF)) /*!< Checks if mode md is Passive Listen        */
+#define rfalIsModePassivePoll(md) \
+    (rfalIsModePassiveComm(md) && \
+     !rfalIsModePassiveListen(md)) /*!< Checks if mode md is Passive Poll          */
 
-#define rfalIsModeActiveComm( md )           ( ((md) == RFAL_MODE_POLL_ACTIVE_P2P) || ((md) == RFAL_MODE_LISTEN_ACTIVE_P2P) )                          /*!< Checks if mode md is Active Communication  */
-#define rfalIsModePassiveComm( md )          ( !rfalIsModeActiveComm(md) )                                                                             /*!< Checks if mode md is Passive Communication */
-#define rfalIsModePassiveListen( md )        ( ((md) == RFAL_MODE_LISTEN_NFCA) || ((md) == RFAL_MODE_LISTEN_NFCB) || ((md) == RFAL_MODE_LISTEN_NFCF) ) /*!< Checks if mode md is Passive Listen        */
-#define rfalIsModePassivePoll( md )          ( rfalIsModePassiveComm(md) && !rfalIsModePassiveListen(md) )                                             /*!< Checks if mode md is Passive Poll          */
+#define rfalConv1fcTo8fc(t) \
+    (uint32_t)((uint32_t)(t) / RFAL_1FC_IN_8FC) /*!< Converts the given t from 1/fc to 8/fc     */
+#define rfalConv8fcTo1fc(t) \
+    (uint32_t)((uint32_t)(t)*RFAL_1FC_IN_8FC) /*!< Converts the given t from 8/fc to 1/fc     */
 
+#define rfalConv1fcTo64fc(t) \
+    (uint32_t)((uint32_t)(t) / RFAL_1FC_IN_64FC) /*!< Converts the given t from 1/fc  to 64/fc   */
+#define rfalConv64fcTo1fc(t) \
+    (uint32_t)((uint32_t)(t)*RFAL_1FC_IN_64FC) /*!< Converts the given t from 64/fc to 1/fc    */
 
-#define rfalConv1fcTo8fc( t )                (uint32_t)( (uint32_t)(t) / RFAL_1FC_IN_8FC )                               /*!< Converts the given t from 1/fc to 8/fc     */
-#define rfalConv8fcTo1fc( t )                (uint32_t)( (uint32_t)(t) * RFAL_1FC_IN_8FC )                               /*!< Converts the given t from 8/fc to 1/fc     */
+#define rfalConv1fcTo512fc(t) \
+    (uint32_t)(               \
+        (uint32_t)(t) / RFAL_1FC_IN_512FC) /*!< Converts the given t from 1/fc  to 512/fc  */
+#define rfalConv512fcTo1fc(t) \
+    (uint32_t)((uint32_t)(t)*RFAL_1FC_IN_512FC) /*!< Converts the given t from 512/fc to 1/fc   */
 
-#define rfalConv1fcTo64fc( t )               (uint32_t)( (uint32_t)(t) / RFAL_1FC_IN_64FC )                              /*!< Converts the given t from 1/fc  to 64/fc   */
-#define rfalConv64fcTo1fc( t )               (uint32_t)( (uint32_t)(t) * RFAL_1FC_IN_64FC )                              /*!< Converts the given t from 64/fc to 1/fc    */
+#define rfalConv1fcTo4096fc(t) \
+    (uint32_t)(                \
+        (uint32_t)(t) / RFAL_1FC_IN_4096FC) /*!< Converts the given t from 1/fc to 4096/fc  */
+#define rfalConv4096fcTo1fc(t) \
+    (uint32_t)((uint32_t)(t)*RFAL_1FC_IN_4096FC) /*!< Converts the given t from 4096/fc to 1/fc  */
 
-#define rfalConv1fcTo512fc( t )              (uint32_t)( (uint32_t)(t) / RFAL_1FC_IN_512FC )                             /*!< Converts the given t from 1/fc  to 512/fc  */
-#define rfalConv512fcTo1fc( t )              (uint32_t)( (uint32_t)(t) * RFAL_1FC_IN_512FC )                             /*!< Converts the given t from 512/fc to 1/fc   */
+#define rfalConv1fcToMs(t) \
+    (uint32_t)((uint32_t)(t) / RFAL_1MS_IN_1FC) /*!< Converts the given t from 1/fc to ms       */
+#define rfalConvMsTo1fc(t) \
+    (uint32_t)((uint32_t)(t)*RFAL_1MS_IN_1FC) /*!< Converts the given t from ms to 1/fc       */
 
-#define rfalConv1fcTo4096fc( t )             (uint32_t)( (uint32_t)(t) / RFAL_1FC_IN_4096FC )                            /*!< Converts the given t from 1/fc to 4096/fc  */
-#define rfalConv4096fcTo1fc( t )             (uint32_t)( (uint32_t)(t) * RFAL_1FC_IN_4096FC )                            /*!< Converts the given t from 4096/fc to 1/fc  */
+#define rfalConv1fcToUs(t)              \
+    (uint32_t)(                         \
+        ((uint32_t)(t)*RFAL_US_IN_MS) / \
+        RFAL_1MS_IN_1FC) /*!< Converts the given t from 1/fc to us       */
+#define rfalConvUsTo1fc(t)                \
+    (uint32_t)(                           \
+        ((uint32_t)(t)*RFAL_1MS_IN_1FC) / \
+        RFAL_US_IN_MS) /*!< Converts the given t from us to 1/fc       */
 
-#define rfalConv1fcToMs( t )                 (uint32_t)( (uint32_t)(t) / RFAL_1MS_IN_1FC )                               /*!< Converts the given t from 1/fc to ms       */
-#define rfalConvMsTo1fc( t )                 (uint32_t)( (uint32_t)(t) * RFAL_1MS_IN_1FC )                               /*!< Converts the given t from ms to 1/fc       */
+#define rfalConv64fcToMs(t) \
+    (uint32_t)(             \
+        (uint32_t)(t) /     \
+        (RFAL_1MS_IN_1FC / RFAL_1FC_IN_64FC)) /*!< Converts the given t from 64/fc to ms      */
+#define rfalConvMsTo64fc(t) \
+    (uint32_t)(             \
+        (uint32_t)(t) *     \
+        (RFAL_1MS_IN_1FC / RFAL_1FC_IN_64FC)) /*!< Converts the given t from ms to 64/fc      */
 
-#define rfalConv1fcToUs( t )                 (uint32_t)( ((uint32_t)(t) * RFAL_US_IN_MS) / RFAL_1MS_IN_1FC)              /*!< Converts the given t from 1/fc to us       */
-#define rfalConvUsTo1fc( t )                 (uint32_t)( ((uint32_t)(t) * RFAL_1MS_IN_1FC) / RFAL_US_IN_MS)              /*!< Converts the given t from us to 1/fc       */
-
-#define rfalConv64fcToMs( t )                (uint32_t)( (uint32_t)(t) / (RFAL_1MS_IN_1FC / RFAL_1FC_IN_64FC) )          /*!< Converts the given t from 64/fc to ms      */
-#define rfalConvMsTo64fc( t )                (uint32_t)( (uint32_t)(t) * (RFAL_1MS_IN_1FC / RFAL_1FC_IN_64FC) )          /*!< Converts the given t from ms to 64/fc      */
-
-#define rfalConvBitsToBytes( n )             (uint16_t)( ((uint16_t)(n)+(RFAL_BITS_IN_BYTE-1U)) / (RFAL_BITS_IN_BYTE) )  /*!< Converts the given n from bits to bytes    */
-#define rfalConvBytesToBits( n )             (uint32_t)( (uint32_t)(n) * (RFAL_BITS_IN_BYTE) )                           /*!< Converts the given n from bytes to bits    */
-
-
+#define rfalConvBitsToBytes(n)                       \
+    (uint16_t)(                                      \
+        ((uint16_t)(n) + (RFAL_BITS_IN_BYTE - 1U)) / \
+        (RFAL_BITS_IN_BYTE)) /*!< Converts the given n from bits to bytes    */
+#define rfalConvBytesToBits(n) \
+    (uint32_t)(                \
+        (uint32_t)(n) * (RFAL_BITS_IN_BYTE)) /*!< Converts the given n from bytes to bits    */
 
 /*! Computes a Transceive context \a ctx with default flags and the lengths
  * in bytes with the given arguments
@@ -198,15 +256,14 @@
  *    \a rBL   : rxBuf length in bytes
  *    \a t     : FWT to be used on this transceive in 1/fc
  */
-#define rfalCreateByteTxRxContext( ctx, tB, tBL, rB, rBL, rdL, t ) \
-    (ctx).txBuf     = (uint8_t*)(tB);                                      \
-    (ctx).txBufLen  = (uint16_t)rfalConvBytesToBits(tBL);                  \
-    (ctx).rxBuf     = (uint8_t*)(rB);                                      \
-    (ctx).rxBufLen  = (uint16_t)rfalConvBytesToBits(rBL);                  \
-    (ctx).rxRcvdLen = (uint16_t*)(rdL);                                    \
-    (ctx).flags     = (uint32_t)RFAL_TXRX_FLAGS_DEFAULT;                   \
-    (ctx).fwt       = (uint32_t)(t);
-
+#define rfalCreateByteTxRxContext(ctx, tB, tBL, rB, rBL, rdL, t) \
+    (ctx).txBuf = (uint8_t*)(tB);                                \
+    (ctx).txBufLen = (uint16_t)rfalConvBytesToBits(tBL);         \
+    (ctx).rxBuf = (uint8_t*)(rB);                                \
+    (ctx).rxBufLen = (uint16_t)rfalConvBytesToBits(rBL);         \
+    (ctx).rxRcvdLen = (uint16_t*)(rdL);                          \
+    (ctx).flags = (uint32_t)RFAL_TXRX_FLAGS_DEFAULT;             \
+    (ctx).fwt = (uint32_t)(t);
 
 /*! Computes a Transceive context \a ctx using lengths in bytes
  * with the given flags and arguments
@@ -218,21 +275,23 @@
  *    \a rBL   : rxBuf length in bytes
  *    \a t     : FWT to be used on this transceive in 1/fc
  */
-#define rfalCreateByteFlagsTxRxContext( ctx, tB, tBL, rB, rBL, rdL, fl, t ) \
-    (ctx).txBuf     = (uint8_t*)(tB);                                       \
-    (ctx).txBufLen  = (uint16_t)rfalConvBytesToBits(tBL);                   \
-    (ctx).rxBuf     = (uint8_t*)(rB);                                       \
-    (ctx).rxBufLen  = (uint16_t)rfalConvBytesToBits(rBL);                   \
-    (ctx).rxRcvdLen = (uint16_t*)(rdL);                                     \
-    (ctx).flags     = (uint32_t)(fl);                                       \
-    (ctx).fwt       = (uint32_t)(t);
+#define rfalCreateByteFlagsTxRxContext(ctx, tB, tBL, rB, rBL, rdL, fl, t) \
+    (ctx).txBuf = (uint8_t*)(tB);                                         \
+    (ctx).txBufLen = (uint16_t)rfalConvBytesToBits(tBL);                  \
+    (ctx).rxBuf = (uint8_t*)(rB);                                         \
+    (ctx).rxBufLen = (uint16_t)rfalConvBytesToBits(rBL);                  \
+    (ctx).rxRcvdLen = (uint16_t*)(rdL);                                   \
+    (ctx).flags = (uint32_t)(fl);                                         \
+    (ctx).fwt = (uint32_t)(t);
 
-
-#define rfalLogE(...)             platformLog(__VA_ARGS__)        /*!< Macro for the error log method                  */
-#define rfalLogW(...)             platformLog(__VA_ARGS__)        /*!< Macro for the warning log method                */
-#define rfalLogI(...)             platformLog(__VA_ARGS__)        /*!< Macro for the info log method                   */
-#define rfalLogD(...)             platformLog(__VA_ARGS__)        /*!< Macro for the debug log method                  */
-
+#define rfalLogE(...) \
+    platformLog(__VA_ARGS__) /*!< Macro for the error log method                  */
+#define rfalLogW(...) \
+    platformLog(__VA_ARGS__) /*!< Macro for the warning log method                */
+#define rfalLogI(...) \
+    platformLog(__VA_ARGS__) /*!< Macro for the info log method                   */
+#define rfalLogD(...) \
+    platformLog(__VA_ARGS__) /*!< Macro for the debug log method                  */
 
 /*
 ******************************************************************************
@@ -241,35 +300,66 @@
 */
 
 /* RFAL Guard Time (GT) default values                 */
-#define    RFAL_GT_NFCA                      rfalConvMsTo1fc(5U)     /*!< GTA  Digital 2.0  6.10.4.1 & B.2                                                                 */
-#define    RFAL_GT_NFCB                      rfalConvMsTo1fc(5U)     /*!< GTB  Digital 2.0  7.9.4.1  & B.3                                                                 */
-#define    RFAL_GT_NFCF                      rfalConvMsTo1fc(20U)    /*!< GTF  Digital 2.0  8.7.4.1  & B.4                                                                 */
-#define    RFAL_GT_NFCV                      rfalConvMsTo1fc(5U)     /*!< GTV  Digital 2.0  9.7.5.1  & B.5                                                                 */
-#define    RFAL_GT_PICOPASS                  rfalConvMsTo1fc(1U)     /*!< GT Picopass                                                                                      */
-#define    RFAL_GT_AP2P                      rfalConvMsTo1fc(5U)     /*!< TIRFG  Ecma 340  11.1.1                                                                          */
-#define    RFAL_GT_AP2P_ADJUSTED             rfalConvMsTo1fc(5U+25U) /*!< Adjusted GT for greater interoperability (Sony XPERIA P, Nokia N9, Huawei P2)                    */
+#define RFAL_GT_NFCA \
+    rfalConvMsTo1fc( \
+        5U) /*!< GTA  Digital 2.0  6.10.4.1 & B.2                                                                 */
+#define RFAL_GT_NFCB \
+    rfalConvMsTo1fc( \
+        5U) /*!< GTB  Digital 2.0  7.9.4.1  & B.3                                                                 */
+#define RFAL_GT_NFCF \
+    rfalConvMsTo1fc( \
+        20U) /*!< GTF  Digital 2.0  8.7.4.1  & B.4                                                                 */
+#define RFAL_GT_NFCV \
+    rfalConvMsTo1fc( \
+        5U) /*!< GTV  Digital 2.0  9.7.5.1  & B.5                                                                 */
+#define RFAL_GT_PICOPASS \
+    rfalConvMsTo1fc(     \
+        1U) /*!< GT Picopass                                                                                      */
+#define RFAL_GT_AP2P \
+    rfalConvMsTo1fc( \
+        5U) /*!< TIRFG  Ecma 340  11.1.1                                                                          */
+#define RFAL_GT_AP2P_ADJUSTED \
+    rfalConvMsTo1fc(          \
+        5U +                  \
+        25U) /*!< Adjusted GT for greater interoperability (Sony XPERIA P, Nokia N9, Huawei P2)                    */
 
 /* RFAL Frame Delay Time (FDT) Listen default values   */
-#define    RFAL_FDT_LISTEN_NFCA_POLLER       1172U    /*!< FDTA,LISTEN,MIN (n=9) Last bit: Logic "1" - tnn,min/2 Digital 1.1  6.10 ;  EMV CCP Spec Book D v2.01  4.8.1.3   */
-#define    RFAL_FDT_LISTEN_NFCB_POLLER       1008U    /*!< TR0B,MIN         Digital 1.1  7.1.3 & A.3  ; EMV CCP Spec Book D v2.01  4.8.1.3 & Table A.5                     */
-#define    RFAL_FDT_LISTEN_NFCF_POLLER       2672U    /*!< TR0F,LISTEN,MIN  Digital 1.1  8.7.1.1 & A.4                                                                     */
-#define    RFAL_FDT_LISTEN_NFCV_POLLER       4310U    /*!< FDTV,LISTEN,MIN  t1 min       Digital 2.1  B.5  ;  ISO15693-3 2009  9.1                                          */
-#define    RFAL_FDT_LISTEN_PICOPASS_POLLER   3400U    /*!< ISO15693 t1 min - observed adjustment                                                                           */
-#define    RFAL_FDT_LISTEN_AP2P_POLLER       64U      /*!< FDT AP2P No actual FDTListen is required as fields switch and collision avoidance                               */
-#define    RFAL_FDT_LISTEN_NFCA_LISTENER     1172U    /*!< FDTA,LISTEN,MIN  Digital 1.1  6.10                                                                              */
-#define    RFAL_FDT_LISTEN_NFCB_LISTENER     1024U    /*!< TR0B,MIN         Digital 1.1  7.1.3 & A.3  ;  EMV CCP Spec Book D v2.01  4.8.1.3 & Table A.5                    */
-#define    RFAL_FDT_LISTEN_NFCF_LISTENER     2688U    /*!< TR0F,LISTEN,MIN  Digital 2.1  8.7.1.1 & B.4                                                                     */
-#define    RFAL_FDT_LISTEN_AP2P_LISTENER     64U      /*!< FDT AP2P No actual FDTListen exists as fields switch and collision avoidance                                    */
+#define RFAL_FDT_LISTEN_NFCA_POLLER \
+    1172U /*!< FDTA,LISTEN,MIN (n=9) Last bit: Logic "1" - tnn,min/2 Digital 1.1  6.10 ;  EMV CCP Spec Book D v2.01  4.8.1.3   */
+#define RFAL_FDT_LISTEN_NFCB_POLLER \
+    1008U /*!< TR0B,MIN         Digital 1.1  7.1.3 & A.3  ; EMV CCP Spec Book D v2.01  4.8.1.3 & Table A.5                     */
+#define RFAL_FDT_LISTEN_NFCF_POLLER \
+    2672U /*!< TR0F,LISTEN,MIN  Digital 1.1  8.7.1.1 & A.4                                                                     */
+#define RFAL_FDT_LISTEN_NFCV_POLLER \
+    4310U /*!< FDTV,LISTEN,MIN  t1 min       Digital 2.1  B.5  ;  ISO15693-3 2009  9.1                                          */
+#define RFAL_FDT_LISTEN_PICOPASS_POLLER \
+    3400U /*!< ISO15693 t1 min - observed adjustment                                                                           */
+#define RFAL_FDT_LISTEN_AP2P_POLLER \
+    64U /*!< FDT AP2P No actual FDTListen is required as fields switch and collision avoidance                               */
+#define RFAL_FDT_LISTEN_NFCA_LISTENER \
+    1172U /*!< FDTA,LISTEN,MIN  Digital 1.1  6.10                                                                              */
+#define RFAL_FDT_LISTEN_NFCB_LISTENER \
+    1024U /*!< TR0B,MIN         Digital 1.1  7.1.3 & A.3  ;  EMV CCP Spec Book D v2.01  4.8.1.3 & Table A.5                    */
+#define RFAL_FDT_LISTEN_NFCF_LISTENER \
+    2688U /*!< TR0F,LISTEN,MIN  Digital 2.1  8.7.1.1 & B.4                                                                     */
+#define RFAL_FDT_LISTEN_AP2P_LISTENER \
+    64U /*!< FDT AP2P No actual FDTListen exists as fields switch and collision avoidance                                    */
 
 /*  RFAL Frame Delay Time (FDT) Poll default values    */
-#define    RFAL_FDT_POLL_NFCA_POLLER         6780U    /*!< FDTA,POLL,MIN   Digital 1.1  6.10.3.1 & A.2                                                                     */
-#define    RFAL_FDT_POLL_NFCA_T1T_POLLER     384U     /*!< RRDDT1T,MIN,B1  Digital 1.1  10.7.1 & A.5                                                                       */
-#define    RFAL_FDT_POLL_NFCB_POLLER         6780U    /*!< FDTB,POLL,MIN = TR2B,MIN,DEFAULT Digital 1.1 7.9.3 & A.3  ;  EMVCo 3.0 FDTB,PCD,MIN  Table A.5                  */
-#define    RFAL_FDT_POLL_NFCF_POLLER         6800U    /*!< FDTF,POLL,MIN   Digital 2.1  8.7.3 & B.4                                                                        */
-#define    RFAL_FDT_POLL_NFCV_POLLER         4192U    /*!< FDTV,POLL  Digital 2.1  9.7.3.1  & B.5                                                                          */
-#define    RFAL_FDT_POLL_PICOPASS_POLLER     1790U    /*!< FDT Max                                                                                                         */
-#define    RFAL_FDT_POLL_AP2P_POLLER         0U       /*!< FDT AP2P No actual FDTPoll exists as fields switch and collision avoidance                                      */
-
+#define RFAL_FDT_POLL_NFCA_POLLER \
+    6780U /*!< FDTA,POLL,MIN   Digital 1.1  6.10.3.1 & A.2                                                                     */
+#define RFAL_FDT_POLL_NFCA_T1T_POLLER \
+    384U /*!< RRDDT1T,MIN,B1  Digital 1.1  10.7.1 & A.5                                                                       */
+#define RFAL_FDT_POLL_NFCB_POLLER \
+    6780U /*!< FDTB,POLL,MIN = TR2B,MIN,DEFAULT Digital 1.1 7.9.3 & A.3  ;  EMVCo 3.0 FDTB,PCD,MIN  Table A.5                  */
+#define RFAL_FDT_POLL_NFCF_POLLER \
+    6800U /*!< FDTF,POLL,MIN   Digital 2.1  8.7.3 & B.4                                                                        */
+#define RFAL_FDT_POLL_NFCV_POLLER \
+    4192U /*!< FDTV,POLL  Digital 2.1  9.7.3.1  & B.5                                                                          */
+#define RFAL_FDT_POLL_PICOPASS_POLLER \
+    1790U /*!< FDT Max                                                                                                         */
+#define RFAL_FDT_POLL_AP2P_POLLER \
+    0U /*!< FDT AP2P No actual FDTPoll exists as fields switch and collision avoidance                                      */
 
 /*
 ******************************************************************************
@@ -279,47 +369,57 @@
 
 /*! RFAL modes    */
 typedef enum {
-    RFAL_MODE_NONE                   = 0,    /*!< No mode selected/defined                                         */
-    RFAL_MODE_POLL_NFCA              = 1,    /*!< Mode to perform as NFCA (ISO14443A) Poller (PCD)                 */
-    RFAL_MODE_POLL_NFCA_T1T          = 2,    /*!< Mode to perform as NFCA T1T (Topaz) Poller (PCD)                 */
-    RFAL_MODE_POLL_NFCB              = 3,    /*!< Mode to perform as NFCB (ISO14443B) Poller (PCD)                 */
-    RFAL_MODE_POLL_B_PRIME           = 4,    /*!< Mode to perform as B' Calypso (Innovatron) (PCD)                 */
-    RFAL_MODE_POLL_B_CTS             = 5,    /*!< Mode to perform as CTS Poller (PCD)                              */
-    RFAL_MODE_POLL_NFCF              = 6,    /*!< Mode to perform as NFCF (FeliCa) Poller (PCD)                    */
-    RFAL_MODE_POLL_NFCV              = 7,    /*!< Mode to perform as NFCV (ISO15963) Poller (PCD)                  */
-    RFAL_MODE_POLL_PICOPASS          = 8,    /*!< Mode to perform as PicoPass / iClass Poller (PCD)                */
-    RFAL_MODE_POLL_ACTIVE_P2P        = 9,    /*!< Mode to perform as Active P2P (ISO18092) Initiator               */
-    RFAL_MODE_LISTEN_NFCA            = 10,   /*!< Mode to perform as NFCA (ISO14443A) Listener (PICC)              */
-    RFAL_MODE_LISTEN_NFCB            = 11,   /*!< Mode to perform as NFCA (ISO14443B) Listener (PICC)              */
-    RFAL_MODE_LISTEN_NFCF            = 12,   /*!< Mode to perform as NFCA (ISO15963) Listener (PICC)               */
-    RFAL_MODE_LISTEN_ACTIVE_P2P      = 13    /*!< Mode to perform as Active P2P (ISO18092) Target                  */
+    RFAL_MODE_NONE = 0, /*!< No mode selected/defined                                         */
+    RFAL_MODE_POLL_NFCA =
+        1, /*!< Mode to perform as NFCA (ISO14443A) Poller (PCD)                 */
+    RFAL_MODE_POLL_NFCA_T1T =
+        2, /*!< Mode to perform as NFCA T1T (Topaz) Poller (PCD)                 */
+    RFAL_MODE_POLL_NFCB =
+        3, /*!< Mode to perform as NFCB (ISO14443B) Poller (PCD)                 */
+    RFAL_MODE_POLL_B_PRIME =
+        4, /*!< Mode to perform as B' Calypso (Innovatron) (PCD)                 */
+    RFAL_MODE_POLL_B_CTS =
+        5, /*!< Mode to perform as CTS Poller (PCD)                              */
+    RFAL_MODE_POLL_NFCF =
+        6, /*!< Mode to perform as NFCF (FeliCa) Poller (PCD)                    */
+    RFAL_MODE_POLL_NFCV =
+        7, /*!< Mode to perform as NFCV (ISO15963) Poller (PCD)                  */
+    RFAL_MODE_POLL_PICOPASS =
+        8, /*!< Mode to perform as PicoPass / iClass Poller (PCD)                */
+    RFAL_MODE_POLL_ACTIVE_P2P =
+        9, /*!< Mode to perform as Active P2P (ISO18092) Initiator               */
+    RFAL_MODE_LISTEN_NFCA =
+        10, /*!< Mode to perform as NFCA (ISO14443A) Listener (PICC)              */
+    RFAL_MODE_LISTEN_NFCB =
+        11, /*!< Mode to perform as NFCA (ISO14443B) Listener (PICC)              */
+    RFAL_MODE_LISTEN_NFCF =
+        12, /*!< Mode to perform as NFCA (ISO15963) Listener (PICC)               */
+    RFAL_MODE_LISTEN_ACTIVE_P2P =
+        13 /*!< Mode to perform as Active P2P (ISO18092) Target                  */
 } rfalMode;
-
 
 /*! RFAL Bit rates    */
 typedef enum {
-    RFAL_BR_106                      = 0,    /*!< Bit Rate 106 kbit/s (fc/128)                                     */
-    RFAL_BR_212                      = 1,    /*!< Bit Rate 212 kbit/s (fc/64)                                      */
-    RFAL_BR_424                      = 2,    /*!< Bit Rate 424 kbit/s (fc/32)                                      */
-    RFAL_BR_848                      = 3,    /*!< Bit Rate 848 kbit/s (fc/16)                                      */
-    RFAL_BR_1695                     = 4,    /*!< Bit Rate 1695 kbit/s (fc/8)                                      */
-    RFAL_BR_3390                     = 5,    /*!< Bit Rate 3390 kbit/s (fc/4)                                      */
-    RFAL_BR_6780                     = 6,    /*!< Bit Rate 6780 kbit/s (fc/2)                                      */
-    RFAL_BR_13560                    = 7,    /*!< Bit Rate 13560 kbit/s (fc)                                       */
-    RFAL_BR_52p97                    = 0xEB, /*!< Bit Rate 52.97 kbit/s (fc/256) Fast Mode VICC->VCD               */
-    RFAL_BR_26p48                    = 0xEC, /*!< Bit Rate 26,48 kbit/s (fc/512) NFCV VICC->VCD & VCD->VICC 1of4   */
-    RFAL_BR_1p66                     = 0xED, /*!< Bit Rate 1,66 kbit/s (fc/8192) NFCV VCD->VICC 1of256             */
-    RFAL_BR_KEEP                     = 0xFF  /*!< Value indicating to keep the same previous bit rate              */
+    RFAL_BR_106 = 0, /*!< Bit Rate 106 kbit/s (fc/128)                                     */
+    RFAL_BR_212 = 1, /*!< Bit Rate 212 kbit/s (fc/64)                                      */
+    RFAL_BR_424 = 2, /*!< Bit Rate 424 kbit/s (fc/32)                                      */
+    RFAL_BR_848 = 3, /*!< Bit Rate 848 kbit/s (fc/16)                                      */
+    RFAL_BR_1695 = 4, /*!< Bit Rate 1695 kbit/s (fc/8)                                      */
+    RFAL_BR_3390 = 5, /*!< Bit Rate 3390 kbit/s (fc/4)                                      */
+    RFAL_BR_6780 = 6, /*!< Bit Rate 6780 kbit/s (fc/2)                                      */
+    RFAL_BR_13560 = 7, /*!< Bit Rate 13560 kbit/s (fc)                                       */
+    RFAL_BR_52p97 = 0xEB, /*!< Bit Rate 52.97 kbit/s (fc/256) Fast Mode VICC->VCD               */
+    RFAL_BR_26p48 = 0xEC, /*!< Bit Rate 26,48 kbit/s (fc/512) NFCV VICC->VCD & VCD->VICC 1of4   */
+    RFAL_BR_1p66 = 0xED, /*!< Bit Rate 1,66 kbit/s (fc/8192) NFCV VCD->VICC 1of256             */
+    RFAL_BR_KEEP = 0xFF /*!< Value indicating to keep the same previous bit rate              */
 } rfalBitRate;
-
 
 /*! RFAL Compliance modes for upper modules  */
 typedef enum {
-    RFAL_COMPLIANCE_MODE_NFC,                /*!< Perform with NFC Forum 1.1 compliance                            */
-    RFAL_COMPLIANCE_MODE_EMV,                /*!< Perform with EMVCo compliance                                    */
-    RFAL_COMPLIANCE_MODE_ISO                 /*!< Perform with ISO10373 compliance                                 */
-}rfalComplianceMode;
-
+    RFAL_COMPLIANCE_MODE_NFC, /*!< Perform with NFC Forum 1.1 compliance                            */
+    RFAL_COMPLIANCE_MODE_EMV, /*!< Perform with EMVCo compliance                                    */
+    RFAL_COMPLIANCE_MODE_ISO /*!< Perform with ISO10373 compliance                                 */
+} rfalComplianceMode;
 
 /*! RFAL main states flags    */
 typedef enum {
@@ -362,33 +462,63 @@ typedef enum {
 
 } rfalTransceiveState;
 
+} rfalTransceiveState;
 
 /*! RFAL transceive flags                                                                                                                    */
 enum {
-    RFAL_TXRX_FLAGS_CRC_TX_AUTO      = (0U<<0),   /*!< CRC will be generated automatic upon transmission                                     */
-    RFAL_TXRX_FLAGS_CRC_TX_MANUAL    = (1U<<0),   /*!< CRC was calculated manually, included in txBuffer                                     */
-    RFAL_TXRX_FLAGS_CRC_RX_KEEP      = (1U<<1),   /*!< Upon Reception keep the CRC in rxBuffer (reflected on rcvd length)                    */
-    RFAL_TXRX_FLAGS_CRC_RX_REMV      = (0U<<1),   /*!< Enable CRC check and remove the CRC from rxBuffer                                     */
-    RFAL_TXRX_FLAGS_NFCIP1_ON        = (1U<<2),   /*!< Enable NFCIP1 mode: Add SB(F0) and LEN bytes during Tx and skip SB(F0) byte during Rx */
-    RFAL_TXRX_FLAGS_NFCIP1_OFF       = (0U<<2),   /*!< Disable NFCIP1 mode: do not append protocol bytes while Tx nor skip while Rx          */
-    RFAL_TXRX_FLAGS_AGC_OFF          = (1U<<3),   /*!< Disable Automatic Gain Control, improving multiple devices collision detection        */
-    RFAL_TXRX_FLAGS_AGC_ON           = (0U<<3),   /*!< Enable Automatic Gain Control, improving single device reception                      */
-    RFAL_TXRX_FLAGS_PAR_RX_KEEP      = (1U<<4),   /*!< Disable Parity and CRC check and keep the Parity and CRC bits in the received buffer  */
-    RFAL_TXRX_FLAGS_PAR_RX_REMV      = (0U<<0),   /*!< Enable Parity check and remove the parity bits from the received buffer               */
-    RFAL_TXRX_FLAGS_PAR_TX_NONE      = (1U<<5),   /*!< Disable automatic Parity generation (ISO14443A) and use the one provided in the buffer*/
-    RFAL_TXRX_FLAGS_PAR_TX_AUTO      = (0U<<5),   /*!< Enable automatic Parity generation (ISO14443A)                                        */
-    RFAL_TXRX_FLAGS_NFCV_FLAG_MANUAL = (1U<<6),   /*!< Disable automatic adaption of flag byte (ISO15693) according to current comm params   */
-    RFAL_TXRX_FLAGS_NFCV_FLAG_AUTO   = (0U<<6),   /*!< Enable automatic adaption of flag byte (ISO115693) according to current comm params   */
+    RFAL_TXRX_FLAGS_CRC_TX_AUTO =
+        (0U
+         << 0), /*!< CRC will be generated automatic upon transmission                                     */
+    RFAL_TXRX_FLAGS_CRC_TX_MANUAL =
+        (1U
+         << 0), /*!< CRC was calculated manually, included in txBuffer                                     */
+    RFAL_TXRX_FLAGS_CRC_RX_KEEP =
+        (1U
+         << 1), /*!< Upon Reception keep the CRC in rxBuffer (reflected on rcvd length)                    */
+    RFAL_TXRX_FLAGS_CRC_RX_REMV =
+        (0U
+         << 1), /*!< Enable CRC check and remove the CRC from rxBuffer                                     */
+    RFAL_TXRX_FLAGS_NFCIP1_ON =
+        (1U
+         << 2), /*!< Enable NFCIP1 mode: Add SB(F0) and LEN bytes during Tx and skip SB(F0) byte during Rx */
+    RFAL_TXRX_FLAGS_NFCIP1_OFF =
+        (0U
+         << 2), /*!< Disable NFCIP1 mode: do not append protocol bytes while Tx nor skip while Rx          */
+    RFAL_TXRX_FLAGS_AGC_OFF =
+        (1U
+         << 3), /*!< Disable Automatic Gain Control, improving multiple devices collision detection        */
+    RFAL_TXRX_FLAGS_AGC_ON =
+        (0U
+         << 3), /*!< Enable Automatic Gain Control, improving single device reception                      */
+    RFAL_TXRX_FLAGS_PAR_RX_KEEP =
+        (1U
+         << 4), /*!< Disable Parity and CRC check and keep the Parity and CRC bits in the received buffer  */
+    RFAL_TXRX_FLAGS_PAR_RX_REMV =
+        (0U
+         << 0), /*!< Enable Parity check and remove the parity bits from the received buffer               */
+    RFAL_TXRX_FLAGS_PAR_TX_NONE =
+        (1U
+         << 5), /*!< Disable automatic Parity generation (ISO14443A) and use the one provided in the buffer*/
+    RFAL_TXRX_FLAGS_PAR_TX_AUTO =
+        (0U
+         << 5), /*!< Enable automatic Parity generation (ISO14443A)                                        */
+    RFAL_TXRX_FLAGS_NFCV_FLAG_MANUAL =
+        (1U
+         << 6), /*!< Disable automatic adaption of flag byte (ISO15693) according to current comm params   */
+    RFAL_TXRX_FLAGS_NFCV_FLAG_AUTO =
+        (0U
+         << 6), /*!< Enable automatic adaption of flag byte (ISO115693) according to current comm params   */
 };
-
 
 /*! RFAL error handling                                                                                                                      */
 typedef enum {
-    RFAL_ERRORHANDLING_NONE          = 0,         /*!< No special error handling will be performed                                           */
-    RFAL_ERRORHANDLING_NFC           = 1,         /*!< Error handling set to perform as NFC compliant device                                 */
-    RFAL_ERRORHANDLING_EMVCO         = 2          /*!< Error handling set to perform as EMVCo compliant device                               */
+    RFAL_ERRORHANDLING_NONE =
+        0, /*!< No special error handling will be performed                                           */
+    RFAL_ERRORHANDLING_NFC =
+        1, /*!< Error handling set to perform as NFC compliant device                                 */
+    RFAL_ERRORHANDLING_EMVCO =
+        2 /*!< Error handling set to perform as EMVCo compliant device                               */
 } rfalEHandling;
-
 
 /*! Struct that holds all context to be used on a Transceive                                                */
 typedef struct {
@@ -403,16 +533,18 @@ typedef struct {
     uint32_t              fwt;                    /*!< (In)  Frame Waiting Time in 1/fc                     */
 } rfalTransceiveContext;
 
+    uint32_t flags; /*!< (In)  TransceiveFlags indication special handling    */
+    uint32_t fwt; /*!< (In)  Frame Waiting Time in 1/fc                     */
+} rfalTransceiveContext;
 
 /*! System callback to indicate an event that requires a system reRun        */
-typedef void (* rfalUpperLayerCallback)(void);
+typedef void (*rfalUpperLayerCallback)(void);
 
 /*! Callback to be executed before a Transceive                              */
-typedef void (* rfalPreTxRxCallback)(void);
+typedef void (*rfalPreTxRxCallback)(void);
 
 /*! Callback to be executed after a Transceive                               */
-typedef void (* rfalPostTxRxCallback)(void);
-
+typedef void (*rfalPostTxRxCallback)(void);
 
 /*******************************************************************************/
 /*  ISO14443A                                                                  */
@@ -427,16 +559,20 @@ typedef enum
 
 /*******************************************************************************/
 
-
 /*******************************************************************************/
 /*  FeliCa                                                                     */
 /*******************************************************************************/
 
-#define RFAL_FELICA_LEN_LEN                        1U                                           /*!< FeliCa LEN byte length                                              */
-#define RFAL_FELICA_POLL_REQ_LEN                   (RFAL_FELICA_LEN_LEN + 1U + 2U + 1U + 1U)    /*!< FeliCa Poll Request length (LEN + CMD + SC + RC + TSN)              */
-#define RFAL_FELICA_POLL_RES_LEN                   (RFAL_FELICA_LEN_LEN + 1U + 8U + 8U + 2U)    /*!< Maximum FeliCa Poll Response length (LEN + CMD + NFCID2 + PAD + RD) */
-#define RFAL_FELICA_POLL_MAX_SLOTS                 16U                                          /*!< Maximum number of slots (TSN) on FeliCa Poll                        */
-
+#define RFAL_FELICA_LEN_LEN \
+    1U /*!< FeliCa LEN byte length                                              */
+#define RFAL_FELICA_POLL_REQ_LEN          \
+    (RFAL_FELICA_LEN_LEN + 1U + 2U + 1U + \
+     1U) /*!< FeliCa Poll Request length (LEN + CMD + SC + RC + TSN)              */
+#define RFAL_FELICA_POLL_RES_LEN          \
+    (RFAL_FELICA_LEN_LEN + 1U + 8U + 8U + \
+     2U) /*!< Maximum FeliCa Poll Response length (LEN + CMD + NFCID2 + PAD + RD) */
+#define RFAL_FELICA_POLL_MAX_SLOTS \
+    16U /*!< Maximum number of slots (TSN) on FeliCa Poll                        */
 
 /*! NFC-F RC (Request Code) codes  NFC Forum Digital 1.1 Table 42                                                                                                        */
 enum
@@ -445,7 +581,6 @@ enum
     RFAL_FELICA_POLL_RC_SYSTEM_CODE       =     0x01,                                           /*!< RC: System Code information requested                               */
     RFAL_FELICA_POLL_RC_COM_PERFORMANCE   =     0x02                                            /*!< RC: Advanced protocol features supported                            */
 };
-
 
 /*! NFC-F TSN (Time Slot Number) codes  NFC Forum Digital 1.1 Table 43   */
 typedef enum
@@ -457,13 +592,10 @@ typedef enum
     RFAL_FELICA_16_SLOTS  =  15   /*!< TSN with number of Time Slots: 16 */
 } rfalFeliCaPollSlots;
 
-
 /*! NFCF Poll Response  NFC Forum Digital 1.1 Table 44 */
 typedef uint8_t rfalFeliCaPollRes[RFAL_FELICA_POLL_RES_LEN];
 
-
 /*******************************************************************************/
-
 
 /*******************************************************************************/
 /*  Listen Mode                                                                */
@@ -476,7 +608,6 @@ typedef enum
     RFAL_LM_NFCID_LEN_07  = RFAL_NFCID1_DOUBLE_LEN, /*!< Listen mode indicates  7 byte NFCID */
     RFAL_LM_NFCID_LEN_10  = RFAL_NFCID1_TRIPLE_LEN, /*!< Listen mode indicates 10 byte NFCID */
 } rfalLmNfcidLen;
-
 
 /*! RFAL Listen Mode States */
 typedef enum
@@ -500,7 +631,6 @@ typedef enum
     RFAL_LM_STATE_SLEEP_AF              = 0x10,     /*!< Sleep AF state  Activity 1.1  5.19          */
 } rfalLmState;
 
-
 /*! RFAL Listen Mode Passive A configs */
 typedef struct
 {
@@ -510,13 +640,11 @@ typedef struct
     uint8_t          SEL_RES;                         /*!< SEL_RES (SAK) with complete NFCID1 (UID)  */
 } rfalLmConfPA;
 
-
 /*! RFAL Listen Mode Passive B configs */
 typedef struct
 {
     uint8_t          SENSB_RES[RFAL_LM_SENSB_RES_LEN];  /*!< SENSF_RES                               */
 } rfalLmConfPB;
-
 
 /*! RFAL Listen Mode Passive F configs */
 typedef struct
@@ -527,12 +655,11 @@ typedef struct
 
 /*******************************************************************************/
 
-
 /*******************************************************************************/
 /*  Wake-Up Mode                                                               */
 /*******************************************************************************/
 
-#define RFAL_WUM_REFERENCE_AUTO           0xFFU      /*!< Indicates new reference is set by the driver*/
+#define RFAL_WUM_REFERENCE_AUTO 0xFFU /*!< Indicates new reference is set by the driver*/
 
 /*! RFAL Wake-Up Mode States */
 typedef enum
@@ -563,7 +690,6 @@ typedef enum
     RFAL_WUM_PERIOD_800MS     = 0x17,     /*!< Wake-Up timer 800ms                         */
 } rfalWumPeriod;
 
-
 /*! RFAL Wake-Up Period/Timer */
 typedef enum
 {
@@ -572,7 +698,6 @@ typedef enum
     RFAL_WUM_AA_WEIGHT_16      = 0x02,     /*!< Wake-Up Auto Average Weight 16             */
     RFAL_WUM_AA_WEIGHT_32      = 0x03,     /*!< Wake-Up Auto Average Weight 32             */
 } rfalWumAAWeight;
-
 
 /*! RFAL Wake-Up Mode configuration */
 typedef struct
@@ -607,7 +732,6 @@ typedef struct
     }cap;                            /*!< Capacitive Configuration                                  */
 } rfalWakeUpConfig;
 
-
 /*******************************************************************************/
 
 /*
@@ -632,8 +756,7 @@ typedef struct
  * \return ERR_NONE         : No error
  *****************************************************************************
  */
-ReturnCode rfalInitialize( void );
-
+ReturnCode rfalInitialize(void);
 
 /*!
  *****************************************************************************
@@ -647,8 +770,7 @@ ReturnCode rfalInitialize( void );
  *
  *****************************************************************************
  */
-ReturnCode rfalCalibrate( void );
-
+ReturnCode rfalCalibrate(void);
 
 /*!
  *****************************************************************************
@@ -664,8 +786,7 @@ ReturnCode rfalCalibrate( void );
  *
  *****************************************************************************
  */
-ReturnCode rfalAdjustRegulators( uint16_t* result );
-
+ReturnCode rfalAdjustRegulators(uint16_t* result);
 
 /*!
  *****************************************************************************
@@ -678,8 +799,7 @@ ReturnCode rfalAdjustRegulators( uint16_t* result );
  *
  *****************************************************************************
  */
-void rfalSetUpperLayerCallback( rfalUpperLayerCallback pFunc );
-
+void rfalSetUpperLayerCallback(rfalUpperLayerCallback pFunc);
 
 /*!
  *****************************************************************************
@@ -691,7 +811,7 @@ void rfalSetUpperLayerCallback( rfalUpperLayerCallback pFunc );
  *
  *****************************************************************************
  */
-void rfalSetPreTxRxCallback( rfalPreTxRxCallback pFunc );
+void rfalSetPreTxRxCallback(rfalPreTxRxCallback pFunc);
 
 /*!
  *****************************************************************************
@@ -703,7 +823,7 @@ void rfalSetPreTxRxCallback( rfalPreTxRxCallback pFunc );
  *
  *****************************************************************************
  */
-void rfalSetPostTxRxCallback( rfalPostTxRxCallback pFunc );
+void rfalSetPostTxRxCallback(rfalPostTxRxCallback pFunc);
 
 /*!
  *****************************************************************************
@@ -715,8 +835,7 @@ void rfalSetPostTxRxCallback( rfalPostTxRxCallback pFunc );
  *
  *****************************************************************************
  */
-ReturnCode rfalDeinitialize( void );
-
+ReturnCode rfalDeinitialize(void);
 
 /*!
  *****************************************************************************
@@ -743,8 +862,7 @@ ReturnCode rfalDeinitialize( void );
  *
  *****************************************************************************
  */
-ReturnCode rfalSetMode( rfalMode mode, rfalBitRate txBR, rfalBitRate rxBR );
-
+ReturnCode rfalSetMode(rfalMode mode, rfalBitRate txBR, rfalBitRate rxBR);
 
 /*!
  *****************************************************************************
@@ -757,8 +875,7 @@ ReturnCode rfalSetMode( rfalMode mode, rfalBitRate txBR, rfalBitRate rxBR );
  * \return rfalMode : The current RFAL mode
  *****************************************************************************
  */
-rfalMode rfalGetMode( void );
-
+rfalMode rfalGetMode(void);
 
 /*!
  *****************************************************************************
@@ -785,8 +902,7 @@ rfalMode rfalGetMode( void );
  *
  *****************************************************************************
  */
-ReturnCode rfalSetBitRate( rfalBitRate txBR, rfalBitRate rxBR );
-
+ReturnCode rfalSetBitRate(rfalBitRate txBR, rfalBitRate rxBR);
 
 /*!
  *****************************************************************************
@@ -807,8 +923,7 @@ ReturnCode rfalSetBitRate( rfalBitRate txBR, rfalBitRate rxBR );
  * \return ERR_NONE         : No error
  *****************************************************************************
  */
-ReturnCode rfalGetBitRate( rfalBitRate *txBR, rfalBitRate *rxBR );
-
+ReturnCode rfalGetBitRate(rfalBitRate* txBR, rfalBitRate* rxBR);
 
 /*!
  *****************************************************************************
@@ -820,8 +935,7 @@ ReturnCode rfalGetBitRate( rfalBitRate *txBR, rfalBitRate *rxBR );
  *
  *****************************************************************************
  */
-void rfalSetErrorHandling( rfalEHandling eHandling );
-
+void rfalSetErrorHandling(rfalEHandling eHandling);
 
 /*!
  *****************************************************************************
@@ -832,8 +946,7 @@ void rfalSetErrorHandling( rfalEHandling eHandling );
  * \return rfalEHandling : Current error handling mode
  *****************************************************************************
  */
-rfalEHandling rfalGetErrorHandling( void );
-
+rfalEHandling rfalGetErrorHandling(void);
 
 /*!
  *****************************************************************************
@@ -849,8 +962,7 @@ rfalEHandling rfalGetErrorHandling( void );
  *          Please refer to the corresponding Datasheet or Application Note(s)
  *****************************************************************************
  */
-void rfalSetObsvMode( uint8_t txMode, uint8_t rxMode );
-
+void rfalSetObsvMode(uint8_t txMode, uint8_t rxMode);
 
 /*!
  *****************************************************************************
@@ -863,8 +975,7 @@ void rfalSetObsvMode( uint8_t txMode, uint8_t rxMode );
  *
  *****************************************************************************
  */
-void rfalGetObsvMode( uint8_t* txMode, uint8_t* rxMode );
-
+void rfalGetObsvMode(uint8_t* txMode, uint8_t* rxMode);
 
 /*!
  *****************************************************************************
@@ -873,8 +984,7 @@ void rfalGetObsvMode( uint8_t* txMode, uint8_t* rxMode );
  * Disables the ST25R391x observation mode
  *****************************************************************************
  */
-void rfalDisableObsvMode( void );
-
+void rfalDisableObsvMode(void);
 
 /*!
  *****************************************************************************
@@ -892,8 +1002,7 @@ void rfalDisableObsvMode( void );
  *
  *****************************************************************************
  */
-void rfalSetFDTPoll( uint32_t FDTPoll );
-
+void rfalSetFDTPoll(uint32_t FDTPoll);
 
 /*!
  *****************************************************************************
@@ -910,8 +1019,7 @@ void rfalSetFDTPoll( uint32_t FDTPoll );
  *
  *****************************************************************************
  */
-uint32_t rfalGetFDTPoll( void );
-
+uint32_t rfalGetFDTPoll(void);
 
 /*!
  *****************************************************************************
@@ -927,8 +1035,7 @@ uint32_t rfalGetFDTPoll( void );
  *
  *****************************************************************************
  */
-void rfalSetFDTListen( uint32_t FDTListen );
-
+void rfalSetFDTListen(uint32_t FDTListen);
 
 /*!
  *****************************************************************************
@@ -943,8 +1050,7 @@ void rfalSetFDTListen( uint32_t FDTListen );
  *
  *****************************************************************************
  */
-uint32_t rfalGetFDTListen( void );
-
+uint32_t rfalGetFDTListen(void);
 
 /*!
  *****************************************************************************
@@ -959,8 +1065,7 @@ uint32_t rfalGetFDTListen( void );
  *
  *****************************************************************************
  */
-uint32_t rfalGetGT( void );
-
+uint32_t rfalGetGT(void);
 
 /*!
  *****************************************************************************
@@ -976,8 +1081,7 @@ uint32_t rfalGetGT( void );
  *
  *****************************************************************************
  */
-void rfalSetGT( uint32_t GT );
-
+void rfalSetGT(uint32_t GT);
 
 /*!
  *****************************************************************************
@@ -990,8 +1094,7 @@ void rfalSetGT( uint32_t GT );
  *
  *****************************************************************************
  */
-bool rfalIsGTExpired( void );
-
+bool rfalIsGTExpired(void);
 
 /*!
  *****************************************************************************
@@ -1007,8 +1110,7 @@ bool rfalIsGTExpired( void );
  *
  *****************************************************************************
  */
-ReturnCode rfalFieldOnAndStartGT( void );
-
+ReturnCode rfalFieldOnAndStartGT(void);
 
 /*!
  *****************************************************************************
@@ -1019,9 +1121,7 @@ ReturnCode rfalFieldOnAndStartGT( void );
  * \return ERR_NONE : Field turned Off
  *****************************************************************************
  */
-ReturnCode rfalFieldOff( void );
-
-
+ReturnCode rfalFieldOff(void);
 
 /*****************************************************************************
  *  Transceive                                                               *
@@ -1048,8 +1148,7 @@ ReturnCode rfalFieldOff( void );
  * \return ERR_PARAM       : Invalid parameter or configuration
  *****************************************************************************
  */
-ReturnCode rfalStartTransceive( const rfalTransceiveContext *ctx );
-
+ReturnCode rfalStartTransceive(const rfalTransceiveContext* ctx);
 
 /*!
  *****************************************************************************
@@ -1060,8 +1159,7 @@ ReturnCode rfalStartTransceive( const rfalTransceiveContext *ctx );
  * \return rfalTransceiveState : the current Transceive internal State
  *****************************************************************************
  */
-rfalTransceiveState rfalGetTransceiveState( void );
-
+rfalTransceiveState rfalGetTransceiveState(void);
 
 /*!
  *****************************************************************************
@@ -1081,8 +1179,7 @@ rfalTransceiveState rfalGetTransceiveState( void );
  * \return  ERR_IO           : Internal error
  *****************************************************************************
  */
-ReturnCode rfalGetTransceiveStatus( void );
-
+ReturnCode rfalGetTransceiveStatus(void);
 
 /*!
  *****************************************************************************
@@ -1094,8 +1191,7 @@ ReturnCode rfalGetTransceiveStatus( void );
  * \return false  Not in transmission state
  *****************************************************************************
  */
-bool rfalIsTransceiveInTx( void );
-
+bool rfalIsTransceiveInTx(void);
 
 /*!
  *****************************************************************************
@@ -1107,8 +1203,7 @@ bool rfalIsTransceiveInTx( void );
  * \return false  Not in reception state
  *****************************************************************************
  */
-bool rfalIsTransceiveInRx( void );
-
+bool rfalIsTransceiveInRx(void);
 
 /*!
  *****************************************************************************
@@ -1123,8 +1218,7 @@ bool rfalIsTransceiveInRx( void );
  * \return  ERR_NONE    : No error
  *****************************************************************************
  */
-ReturnCode rfalGetTransceiveRSSI( uint16_t *rssi );
-
+ReturnCode rfalGetTransceiveRSSI(uint16_t* rssi);
 
 /*!
  *****************************************************************************
@@ -1136,8 +1230,7 @@ ReturnCode rfalGetTransceiveRSSI( uint16_t *rssi );
  *
  *****************************************************************************
  */
-void rfalWorker( void );
-
+void rfalWorker(void);
 
 /*****************************************************************************
  *  ISO1443A                                                                 *
@@ -1169,8 +1262,12 @@ void rfalWorker( void );
  *
  *****************************************************************************
  */
-ReturnCode rfalISO14443ATransceiveShortFrame( rfal14443AShortFrameCmd txCmd, uint8_t* rxBuf, uint8_t rxBufLen, uint16_t* rxRcvdLen, uint32_t fwt );
-
+ReturnCode rfalISO14443ATransceiveShortFrame(
+    rfal14443AShortFrameCmd txCmd,
+    uint8_t* rxBuf,
+    uint8_t rxBufLen,
+    uint16_t* rxRcvdLen,
+    uint32_t fwt);
 
 /*!
  *****************************************************************************
@@ -1192,8 +1289,12 @@ ReturnCode rfalISO14443ATransceiveShortFrame( rfal14443AShortFrameCmd txCmd, uin
  * \return ERR_NONE if there is no error
  *****************************************************************************
  */
-ReturnCode rfalISO14443ATransceiveAnticollisionFrame( uint8_t *buf, uint8_t *bytesToSend, uint8_t *bitsToSend, uint16_t *rxLength, uint32_t fwt );
-
+ReturnCode rfalISO14443ATransceiveAnticollisionFrame(
+    uint8_t* buf,
+    uint8_t* bytesToSend,
+    uint8_t* bitsToSend,
+    uint16_t* rxLength,
+    uint32_t fwt);
 
 /*****************************************************************************
  *  FeliCa                                                                   *
@@ -1219,8 +1320,14 @@ ReturnCode rfalISO14443ATransceiveAnticollisionFrame( uint8_t *buf, uint8_t *byt
  * \return ERR_TIMEOUT if there is no response
  *****************************************************************************
  */
-ReturnCode rfalFeliCaPoll( rfalFeliCaPollSlots slots, uint16_t sysCode, uint8_t reqCode, rfalFeliCaPollRes* pollResList, uint8_t pollResListSize, uint8_t *devicesDetected, uint8_t *collisionsDetected );
-
+ReturnCode rfalFeliCaPoll(
+    rfalFeliCaPollSlots slots,
+    uint16_t sysCode,
+    uint8_t reqCode,
+    rfalFeliCaPollRes* pollResList,
+    uint8_t pollResListSize,
+    uint8_t* devicesDetected,
+    uint8_t* collisionsDetected);
 
 /*****************************************************************************
  *  ISO15693                                                                 *
@@ -1245,8 +1352,12 @@ ReturnCode rfalFeliCaPoll( rfalFeliCaPollSlots slots, uint16_t sysCode, uint8_t 
  * \return  ERR_IO          : Internal error
  *****************************************************************************
  */
-ReturnCode rfalISO15693TransceiveAnticollisionFrame( uint8_t *txBuf, uint8_t txBufLen, uint8_t *rxBuf, uint8_t rxBufLen, uint16_t *actLen );
-
+ReturnCode rfalISO15693TransceiveAnticollisionFrame(
+    uint8_t* txBuf,
+    uint8_t txBufLen,
+    uint8_t* rxBuf,
+    uint8_t rxBufLen,
+    uint16_t* actLen);
 
 /*!
  *****************************************************************************
@@ -1265,8 +1376,8 @@ ReturnCode rfalISO15693TransceiveAnticollisionFrame( uint8_t *txBuf, uint8_t txB
  * \return  ERR_IO          : Internal error
  *****************************************************************************
  */
-ReturnCode rfalISO15693TransceiveEOFAnticollision( uint8_t *rxBuf, uint8_t rxBufLen, uint16_t *actLen );
-
+ReturnCode
+    rfalISO15693TransceiveEOFAnticollision(uint8_t* rxBuf, uint8_t rxBufLen, uint16_t* actLen);
 
 /*!
  *****************************************************************************
@@ -1284,8 +1395,7 @@ ReturnCode rfalISO15693TransceiveEOFAnticollision( uint8_t *rxBuf, uint8_t rxBuf
  * \return  ERR_IO          : Internal error
  *****************************************************************************
  */
-ReturnCode rfalISO15693TransceiveEOF( uint8_t *rxBuf, uint8_t rxBufLen, uint16_t *actLen );
-
+ReturnCode rfalISO15693TransceiveEOF(uint8_t* rxBuf, uint8_t rxBufLen, uint16_t* actLen);
 
 /*!
  *****************************************************************************
@@ -1310,7 +1420,14 @@ ReturnCode rfalISO15693TransceiveEOF( uint8_t *rxBuf, uint8_t rxBufLen, uint16_t
  * \return  ERR_IO           : Internal error
  *****************************************************************************
  */
-ReturnCode rfalTransceiveBlockingTx( uint8_t* txBuf, uint16_t txBufLen, uint8_t* rxBuf, uint16_t rxBufLen, uint16_t* actLen, uint32_t flags, uint32_t fwt );
+ReturnCode rfalTransceiveBlockingTx(
+    uint8_t* txBuf,
+    uint16_t txBufLen,
+    uint8_t* rxBuf,
+    uint16_t rxBufLen,
+    uint16_t* actLen,
+    uint32_t flags,
+    uint32_t fwt);
 
 /*!
  *****************************************************************************
@@ -1331,7 +1448,7 @@ ReturnCode rfalTransceiveBlockingTx( uint8_t* txBuf, uint16_t txBufLen, uint8_t*
  * \return  ERR_IO           : Internal error
  *****************************************************************************
  */
-ReturnCode rfalTransceiveBlockingRx( void );
+ReturnCode rfalTransceiveBlockingRx(void);
 
 /*!
  *****************************************************************************
@@ -1360,9 +1477,14 @@ ReturnCode rfalTransceiveBlockingRx( void );
  * \return  ERR_IO           : Internal error
  *****************************************************************************
  */
-ReturnCode rfalTransceiveBlockingTxRx( uint8_t* txBuf, uint16_t txBufLen, uint8_t* rxBuf, uint16_t rxBufLen, uint16_t* actLen, uint32_t flags, uint32_t fwt );
-
-
+ReturnCode rfalTransceiveBlockingTxRx(
+    uint8_t* txBuf,
+    uint16_t txBufLen,
+    uint8_t* rxBuf,
+    uint16_t rxBufLen,
+    uint16_t* actLen,
+    uint32_t flags,
+    uint32_t fwt);
 
 /*****************************************************************************
  *  Listen Mode                                                              *
@@ -1379,8 +1501,7 @@ ReturnCode rfalTransceiveBlockingTxRx( uint8_t* txBuf, uint16_t txBufLen, uint8_
  *
  *****************************************************************************
  */
-bool rfalIsExtFieldOn( void );
-
+bool rfalIsExtFieldOn(void);
 
 /*!
  *****************************************************************************
@@ -1406,8 +1527,14 @@ bool rfalIsExtFieldOn( void );
  *
  *****************************************************************************
  */
-ReturnCode rfalListenStart( uint32_t lmMask, const rfalLmConfPA *confA, const rfalLmConfPB *confB, const rfalLmConfPF *confF, uint8_t *rxBuf, uint16_t rxBufLen, uint16_t *rxLen );
-
+ReturnCode rfalListenStart(
+    uint32_t lmMask,
+    const rfalLmConfPA* confA,
+    const rfalLmConfPB* confB,
+    const rfalLmConfPF* confF,
+    uint8_t* rxBuf,
+    uint16_t rxBufLen,
+    uint16_t* rxLen);
 
 /*!
  *****************************************************************************
@@ -1416,8 +1543,8 @@ ReturnCode rfalListenStart( uint32_t lmMask, const rfalLmConfPA *confA, const rf
  *
  *****************************************************************************
  */
-ReturnCode rfalListenSleepStart( rfalLmState sleepSt, uint8_t *rxBuf, uint16_t rxBufLen, uint16_t *rxLen );
-
+ReturnCode
+    rfalListenSleepStart(rfalLmState sleepSt, uint8_t* rxBuf, uint16_t rxBufLen, uint16_t* rxLen);
 
 /*!
  *****************************************************************************
@@ -1432,8 +1559,7 @@ ReturnCode rfalListenSleepStart( rfalLmState sleepSt, uint8_t *rxBuf, uint16_t r
  *
  *****************************************************************************
  */
-ReturnCode rfalListenStop( void );
-
+ReturnCode rfalListenStop(void);
 
 /*!
  *****************************************************************************
@@ -1455,8 +1581,7 @@ ReturnCode rfalListenStop( void );
  *
  *****************************************************************************
  */
-rfalLmState rfalListenGetState( bool *dataFlag, rfalBitRate *lastBR );
-
+rfalLmState rfalListenGetState(bool* dataFlag, rfalBitRate* lastBR);
 
 /*!
  *****************************************************************************
@@ -1473,8 +1598,7 @@ rfalLmState rfalListenGetState( bool *dataFlag, rfalBitRate *lastBR );
  *
  *****************************************************************************
  */
-ReturnCode rfalListenSetState( rfalLmState newSt );
-
+ReturnCode rfalListenSetState(rfalLmState newSt);
 
 /*****************************************************************************
  *  Wake-Up Mode                                                             *
@@ -1497,8 +1621,7 @@ ReturnCode rfalListenSetState( rfalLmState newSt );
  *
  *****************************************************************************
  */
-ReturnCode rfalWakeUpModeStart( const rfalWakeUpConfig *config );
-
+ReturnCode rfalWakeUpModeStart(const rfalWakeUpConfig* config);
 
 /*!
  *****************************************************************************
@@ -1513,8 +1636,7 @@ ReturnCode rfalWakeUpModeStart( const rfalWakeUpConfig *config );
  *
  *****************************************************************************
  */
-bool rfalWakeUpModeHasWoke( void );
-
+bool rfalWakeUpModeHasWoke(void);
 
 /*!
  *****************************************************************************
@@ -1528,8 +1650,7 @@ bool rfalWakeUpModeHasWoke( void );
  *
  *****************************************************************************
  */
-ReturnCode rfalWakeUpModeStop( void );
-
+ReturnCode rfalWakeUpModeStop(void);
 
 /*!
  *****************************************************************************
@@ -1546,8 +1667,7 @@ ReturnCode rfalWakeUpModeStop( void );
  *
  *****************************************************************************
  */
-ReturnCode rfalLowPowerModeStart( void );
-
+ReturnCode rfalLowPowerModeStart(void);
 
 /*!
  *****************************************************************************
@@ -1561,11 +1681,9 @@ ReturnCode rfalLowPowerModeStart( void );
  *
  *****************************************************************************
  */
-ReturnCode rfalLowPowerModeStop( void );
-
+ReturnCode rfalLowPowerModeStop(void);
 
 #endif /* RFAL_RF_H */
-
 
 /**
   * @}
