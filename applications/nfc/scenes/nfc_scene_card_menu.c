@@ -52,7 +52,7 @@ bool nfc_scene_card_menu_on_event(void* context, SceneManagerEvent event) {
                 scene_manager_next_scene(nfc->scene_manager, NfcSceneReadMifareUl);
             } else if(nfc->dev->dev_data.nfc_data.protocol == NfcDeviceProtocolEMV) {
                 scene_manager_next_scene(nfc->scene_manager, NfcSceneReadEmvApp);
-            } else if (nfc->dev->dev_data.nfc_data.protocol == NfcDeviceProtocolMifareClassic) {
+            } else if(nfc->dev->dev_data.nfc_data.protocol == NfcDeviceProtocolMifareClassic) {
                 scene_manager_next_scene(nfc->scene_manager, NfcSceneReadMifareClassic);
             }
             return true;

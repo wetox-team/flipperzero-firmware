@@ -227,7 +227,13 @@ ReturnCode furi_hal_nfc_raw_bitstream_exchange(
     return ERR_NONE;
 }
 
-ReturnCode furi_hal_nfc_custom_flags_exchange(uint8_t* tx_buff, uint16_t tx_len, uint8_t** rx_buff, uint16_t** rx_len, bool deactivate, uint32_t flags) {
+ReturnCode furi_hal_nfc_custom_flags_exchange(
+    uint8_t* tx_buff,
+    uint16_t tx_len,
+    uint8_t** rx_buff,
+    uint16_t** rx_len,
+    bool deactivate,
+    uint32_t flags) {
     furi_assert(rx_buff);
     furi_assert(rx_len);
 
@@ -270,7 +276,6 @@ ReturnCode furi_hal_nfc_data_no_crc_exchange(
     bool deactivate) {
     furi_assert(rx_buff);
     furi_assert(rx_len);
-    
 
     ReturnCode ret;
     rfalNfcState state = RFAL_NFC_STATE_ACTIVATED;
@@ -303,104 +308,123 @@ ReturnCode furi_hal_nfc_data_no_crc_exchange(
     return ERR_NONE;
 }
 
-static uint16_t furi_hal_nfc_parbytes2bitstream(uint8_t* buff_parbytes, uint16_t buff_len, uint8_t* output_bitstream) {
+static uint16_t furi_hal_nfc_parbytes2bitstream(
+    uint8_t* buff_parbytes,
+    uint16_t buff_len,
+    uint8_t* output_bitstream) {
     furi_assert(buff_len % 2 == 0);
-    
+
     uint16_t in_i, out_i = 0, accum = 0, accum_len = 0, bit_count = 0;
-    for (in_i = 0; in_i < buff_len; in_i++) {
-        if (in_i % 2 == 0) {  // data byte
-            accum |= buff_parbytes[in_i] << accum_len;  // append entire data byte
+    for(in_i = 0; in_i < buff_len; in_i++) {
+        if(in_i % 2 == 0) { // data byte
+            accum |= buff_parbytes[in_i] << accum_len; // append entire data byte
             accum_len += 8;
-        } else {  // parity byte (0x80 / 0x00)
-            accum |= (buff_parbytes[in_i] ? 1 : 0) << accum_len;  // append one bit
+        } else { // parity byte (0x80 / 0x00)
+            accum |= (buff_parbytes[in_i] ? 1 : 0) << accum_len; // append one bit
             accum_len += 1;
         }
-        while (accum_len >= 8) {
+        while(accum_len >= 8) {
             output_bitstream[out_i++] = accum & 0xFF;
             accum >>= 8;
             accum_len -= 8;
             bit_count += 8;
         }
     }
-    if (accum_len != 0) {
+    if(accum_len != 0) {
         output_bitstream[out_i++] = accum & 0xFF;
         bit_count += accum_len;
     }
-    
+
     return bit_count;
 }
 
-static uint16_t furi_hal_nfc_bitstream2parbytes(uint8_t* buff_bitstream, uint16_t bit_count, uint8_t* output_parbytes) {
+static uint16_t furi_hal_nfc_bitstream2parbytes(
+    uint8_t* buff_bitstream,
+    uint16_t bit_count,
+    uint8_t* output_parbytes) {
     furi_assert(bit_count % 9 == 0);
-    
+
     uint16_t in_i = 0, out_len = 0, accum = 0, accum_len = 0, need_bits;
-    while (bit_count > 0) {
-        if (out_len % 2 == 0) {  // expect data byte
+    while(bit_count > 0) {
+        if(out_len % 2 == 0) { // expect data byte
             need_bits = 8;
-        } else {  // expect parity bit
+        } else { // expect parity bit
             need_bits = 1;
         }
-        if (accum_len < need_bits) {
-            if (bit_count < need_bits) {
+        if(accum_len < need_bits) {
+            if(bit_count < need_bits) {
                 break;
             }
             accum |= buff_bitstream[in_i++] << accum_len;
             accum_len += 8;
         }
-        if (out_len % 2 == 0) {  // shift off a data byte
+        if(out_len % 2 == 0) { // shift off a data byte
             output_parbytes[out_len++] = accum & 0xFF;
             accum >>= 8;
             accum_len -= 8;
-        } else {  // shift off a parity bit
+        } else { // shift off a parity bit
             output_parbytes[out_len++] = (accum & 1) ? 0x80 : 0x00;
             accum >>= 1;
             accum_len -= 1;
         }
         bit_count -= need_bits;
     }
-    
+
     return out_len;
 }
 
 static uint8_t furi_hal_nfc_tmp_buff[RFAL_FEATURE_NFC_RF_BUF_LEN * 2];
 static uint16_t furi_hal_nfc_tmp_buff_len;
 
-ReturnCode furi_hal_nfc_raw_parbytes_exchange(uint8_t* tx_buff_parbytes, uint16_t tx_buff_len, uint8_t** rx_buff_parbytes, uint16_t** rx_buff_len, bool deactivate) {
+ReturnCode furi_hal_nfc_raw_parbytes_exchange(
+    uint8_t* tx_buff_parbytes,
+    uint16_t tx_buff_len,
+    uint8_t** rx_buff_parbytes,
+    uint16_t** rx_buff_len,
+    bool deactivate) {
     furi_assert(rx_buff_parbytes);
     furi_assert(rx_buff_len);
     furi_assert(tx_buff_len % 2 == 0);
-    
-    uint16_t tx_bit_count = furi_hal_nfc_parbytes2bitstream(tx_buff_parbytes, tx_buff_len, furi_hal_nfc_tmp_buff);
+
+    uint16_t tx_bit_count =
+        furi_hal_nfc_parbytes2bitstream(tx_buff_parbytes, tx_buff_len, furi_hal_nfc_tmp_buff);
     uint8_t* rx_buff_bitstream;
     uint16_t* rx_bit_count;
-    ReturnCode ret = furi_hal_nfc_raw_bitstream_exchange(furi_hal_nfc_tmp_buff, tx_bit_count, &rx_buff_bitstream, &rx_bit_count, deactivate);
-    if (ret == ERR_NONE || (ret >= ERR_INCOMPLETE_BYTE && ret <= ERR_INCOMPLETE_BYTE_07)) {
-        furi_hal_nfc_tmp_buff_len = furi_hal_nfc_bitstream2parbytes(rx_buff_bitstream, *rx_bit_count, furi_hal_nfc_tmp_buff);
+    ReturnCode ret = furi_hal_nfc_raw_bitstream_exchange(
+        furi_hal_nfc_tmp_buff, tx_bit_count, &rx_buff_bitstream, &rx_bit_count, deactivate);
+    if(ret == ERR_NONE || (ret >= ERR_INCOMPLETE_BYTE && ret <= ERR_INCOMPLETE_BYTE_07)) {
+        furi_hal_nfc_tmp_buff_len = furi_hal_nfc_bitstream2parbytes(
+            rx_buff_bitstream, *rx_bit_count, furi_hal_nfc_tmp_buff);
         *rx_buff_parbytes = furi_hal_nfc_tmp_buff;
         *rx_buff_len = &furi_hal_nfc_tmp_buff_len;
     }
     return ret;
 }
 
-static uint16_t furi_hal_nfc_parbits2bitstream(uint8_t* buff, uint16_t len, uint8_t* parity_bits, uint8_t* output_bitstream) {
+static uint16_t furi_hal_nfc_parbits2bitstream(
+    uint8_t* buff,
+    uint16_t len,
+    uint8_t* parity_bits,
+    uint8_t* output_bitstream) {
     uint16_t in_i, out_i = 0, accum = 0, accum_len = 0, bit_count = 0;
-    for (in_i = 0; in_i < len; in_i++) {
-        accum |= buff[in_i] << accum_len;  // append data byte
+    for(in_i = 0; in_i < len; in_i++) {
+        accum |= buff[in_i] << accum_len; // append data byte
         accum_len += 8;
-        accum |= ((parity_bits[in_i / 8] & (0x80u >> (in_i % 8))) ? 1 : 0) << accum_len;  // append parity bit
+        accum |= ((parity_bits[in_i / 8] & (0x80u >> (in_i % 8))) ? 1 : 0)
+                 << accum_len; // append parity bit
         accum_len += 1;
-        while (accum_len >= 8) {
+        while(accum_len >= 8) {
             output_bitstream[out_i++] = accum & 0xFF;
             accum >>= 8;
             accum_len -= 8;
             bit_count += 8;
         }
     }
-    if (accum_len != 0) {
+    if(accum_len != 0) {
         output_bitstream[out_i++] = accum & 0xFF;
         bit_count += accum_len;
     }
-    
+
     return bit_count;
 }
 
@@ -448,17 +472,27 @@ static uint16_t furi_hal_nfc_bitstream2parbits(
     return out_len;
 }
 
-ReturnCode furi_hal_nfc_raw_parbits_exchange(uint8_t* tx_buff, uint16_t tx_len, uint8_t* tx_parity_bits, uint8_t** rx_buff, uint16_t** rx_len, uint8_t** rx_parity_bits, bool deactivate) {
+ReturnCode furi_hal_nfc_raw_parbits_exchange(
+    uint8_t* tx_buff,
+    uint16_t tx_len,
+    uint8_t* tx_parity_bits,
+    uint8_t** rx_buff,
+    uint16_t** rx_len,
+    uint8_t** rx_parity_bits,
+    bool deactivate) {
     furi_assert(rx_buff);
     furi_assert(rx_len);
     furi_assert(rx_parity_bits);
-    
-    uint16_t tx_bit_count = furi_hal_nfc_parbits2bitstream(tx_buff, tx_len, tx_parity_bits, furi_hal_nfc_tmp_buff);
+
+    uint16_t tx_bit_count =
+        furi_hal_nfc_parbits2bitstream(tx_buff, tx_len, tx_parity_bits, furi_hal_nfc_tmp_buff);
     uint8_t* rx_buff_bitstream;
     uint16_t* rx_bit_count;
-    ReturnCode ret = furi_hal_nfc_raw_bitstream_exchange(furi_hal_nfc_tmp_buff, tx_bit_count, &rx_buff_bitstream, &rx_bit_count, deactivate);
-    if (ret == ERR_NONE || (ret >= ERR_INCOMPLETE_BYTE && ret <= ERR_INCOMPLETE_BYTE_07)) {
-        furi_hal_nfc_tmp_buff_len = furi_hal_nfc_bitstream2parbits(rx_buff_bitstream, *rx_bit_count, furi_hal_nfc_tmp_buff, rx_buff_bitstream);
+    ReturnCode ret = furi_hal_nfc_raw_bitstream_exchange(
+        furi_hal_nfc_tmp_buff, tx_bit_count, &rx_buff_bitstream, &rx_bit_count, deactivate);
+    if(ret == ERR_NONE || (ret >= ERR_INCOMPLETE_BYTE && ret <= ERR_INCOMPLETE_BYTE_07)) {
+        furi_hal_nfc_tmp_buff_len = furi_hal_nfc_bitstream2parbits(
+            rx_buff_bitstream, *rx_bit_count, furi_hal_nfc_tmp_buff, rx_buff_bitstream);
         *rx_buff = furi_hal_nfc_tmp_buff;
         *rx_len = &furi_hal_nfc_tmp_buff_len;
         *rx_parity_bits = rx_buff_bitstream;

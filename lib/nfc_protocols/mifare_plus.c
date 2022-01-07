@@ -1,6 +1,6 @@
 #include "mifare_classic.h"
 #include <furi.h>
-#include <furi-hal.h>
+#include <furi_hal.h>
 #include <stdlib.h>
 
 bool mf_plus_check_card_type(uint8_t ATQA0, uint8_t ATQA1, uint8_t SAK) {

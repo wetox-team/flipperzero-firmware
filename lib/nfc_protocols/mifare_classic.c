@@ -1,6 +1,6 @@
 #include "mifare_classic.h"
 #include <furi.h>
-#include <furi-hal.h>
+#include <furi_hal.h>
 #include <stdlib.h>
 
 #define RFAL_TXRX_FLAGS_FIRST_AUTH                                                   \

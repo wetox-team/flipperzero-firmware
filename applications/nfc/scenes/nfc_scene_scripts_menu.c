@@ -54,10 +54,10 @@ bool nfc_scene_scripts_menu_on_event(void* context, SceneManagerEvent event) {
             scene_manager_next_scene(nfc->scene_manager, NfcSceneReadMifareUl);
             return true;
         } else if(event.event == SubmenuIndexMifareClassic) {
-        scene_manager_set_scene_state(
-            nfc->scene_manager, NfcSceneScriptsMenu, SubmenuIndexMifareClassic);
-        scene_manager_next_scene(nfc->scene_manager, NfcSceneReadMifareClassic);
-        return true;
+            scene_manager_set_scene_state(
+                nfc->scene_manager, NfcSceneScriptsMenu, SubmenuIndexMifareClassic);
+            scene_manager_next_scene(nfc->scene_manager, NfcSceneReadMifareClassic);
+            return true;
         }
     }
 

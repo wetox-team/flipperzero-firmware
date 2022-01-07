@@ -95,7 +95,12 @@ bool furi_hal_nfc_get_first_frame(uint8_t** rx_buff, uint16_t** rx_len);
  *
  * @return     ST ReturnCode
  */
-ReturnCode furi_hal_nfc_data_exchange(uint8_t* tx_buff, uint16_t tx_len, uint8_t** rx_buff, uint16_t** rx_len, bool deactivate);
+ReturnCode furi_hal_nfc_data_exchange(
+    uint8_t* tx_buff,
+    uint16_t tx_len,
+    uint8_t** rx_buff,
+    uint16_t** rx_len,
+    bool deactivate);
 
 /** NFC data exchange without the CRC checksum on TX
  *
@@ -107,7 +112,12 @@ ReturnCode furi_hal_nfc_data_exchange(uint8_t* tx_buff, uint16_t tx_len, uint8_t
  *
  * @return     ST ReturnCode
  */
-ReturnCode furi_hal_nfc_data_no_crc_exchange(uint8_t* tx_buff, uint16_t tx_len, uint8_t** rx_buff, uint16_t** rx_len, bool deactivate);
+ReturnCode furi_hal_nfc_data_no_crc_exchange(
+    uint8_t* tx_buff,
+    uint16_t tx_len,
+    uint8_t** rx_buff,
+    uint16_t** rx_len,
+    bool deactivate);
 
 /** NFC raw bit stream exchange. If last byte is only used partially (e.g. bit length is 5), least significant bits are used
  *
@@ -120,8 +130,12 @@ ReturnCode furi_hal_nfc_data_no_crc_exchange(uint8_t* tx_buff, uint16_t tx_len, 
  * @return     ST ReturnCode
  */
 
-
-ReturnCode furi_hal_nfc_raw_bitstream_exchange(uint8_t* tx_buff_bitstream, uint16_t tx_bit_count, uint8_t** rx_buff_bitstream, uint16_t** rx_bit_count, bool deactivate);
+ReturnCode furi_hal_nfc_raw_bitstream_exchange(
+    uint8_t* tx_buff_bitstream,
+    uint16_t tx_bit_count,
+    uint8_t** rx_buff_bitstream,
+    uint16_t** rx_bit_count,
+    bool deactivate);
 
 /** NFC raw bit stream exchange. If last byte is only used partially (e.g. bit length is 5), least significant bits are used
  *
@@ -134,7 +148,13 @@ ReturnCode furi_hal_nfc_raw_bitstream_exchange(uint8_t* tx_buff_bitstream, uint1
  *
  * @return     ST ReturnCode
  */
-ReturnCode furi_hal_nfc_custom_flags_exchange(uint8_t* tx_buff, uint16_t tx_len, uint8_t** rx_buff, uint16_t** rx_len, bool deactivate, uint32_t flags);
+ReturnCode furi_hal_nfc_custom_flags_exchange(
+    uint8_t* tx_buff,
+    uint16_t tx_len,
+    uint8_t** rx_buff,
+    uint16_t** rx_len,
+    bool deactivate,
+    uint32_t flags);
 
 /** NFC raw exchange in parity bytes format: {data_byte, 0x80 or 0x00, data_byte, 0x80 or 0x00, ...}. E.g. 93 20 (ANTICOLL) would be {0x93, 0x80, 0x20, 0x00}
  *
@@ -146,7 +166,12 @@ ReturnCode furi_hal_nfc_custom_flags_exchange(uint8_t* tx_buff, uint16_t tx_len,
  *
  * @return     ST ReturnCode
  */
-ReturnCode furi_hal_nfc_raw_parbytes_exchange(uint8_t* tx_buff_parbytes, uint16_t tx_buff_len, uint8_t** rx_buff_parbytes, uint16_t** rx_buff_len, bool deactivate);
+ReturnCode furi_hal_nfc_raw_parbytes_exchange(
+    uint8_t* tx_buff_parbytes,
+    uint16_t tx_buff_len,
+    uint8_t** rx_buff_parbytes,
+    uint16_t** rx_buff_len,
+    bool deactivate);
 
 /** NFC raw exchange in detached parity bits format. Bits are packed MSB first. E.g. 50 00 57 CD (HALT) would be buff="\x50\x00\x57\xcd" parbits={0b11000000} (only first 1100 is used for 4 data bytes)
  *
@@ -158,7 +183,14 @@ ReturnCode furi_hal_nfc_raw_parbytes_exchange(uint8_t* tx_buff_parbytes, uint16_
  *
  * @return     ST ReturnCode
  */
-ReturnCode furi_hal_nfc_raw_parbits_exchange(uint8_t* tx_buff, uint16_t tx_len, uint8_t* tx_parity_bits, uint8_t** rx_buff, uint16_t** rx_len, uint8_t** rx_parity_bits, bool deactivate);
+ReturnCode furi_hal_nfc_raw_parbits_exchange(
+    uint8_t* tx_buff,
+    uint16_t tx_len,
+    uint8_t* tx_parity_bits,
+    uint8_t** rx_buff,
+    uint16_t** rx_len,
+    uint8_t** rx_parity_bits,
+    bool deactivate);
 
 /** NFC deactivate and start sleep
  */

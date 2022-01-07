@@ -687,8 +687,12 @@ ReturnCode rfalNfcDataExchangeStart(
 }
 
 /*******************************************************************************/
-ReturnCode rfalNfcDataNoCRCExchangeStart(uint8_t* txData, uint16_t txDataLen, uint8_t** rxData, uint16_t** rvdLen, uint32_t fwt)
-{
+ReturnCode rfalNfcDataNoCRCExchangeStart(
+    uint8_t* txData,
+    uint16_t txDataLen,
+    uint8_t** rxData,
+    uint16_t** rvdLen,
+    uint32_t fwt) {
     ReturnCode err;
     rfalTransceiveContext ctx;
 
@@ -825,25 +829,26 @@ ReturnCode rfalNfcDataNoCRCExchangeStart(uint8_t* txData, uint16_t txDataLen, ui
 }
 
 /*******************************************************************************/
-ReturnCode rfalNfcRawBitstreamExchangeStart( uint8_t *txData, uint16_t txDataLen, uint8_t **rxData, uint16_t **rvdLen, uint32_t fwt )
-{
-    ReturnCode            err;
+ReturnCode rfalNfcRawBitstreamExchangeStart(
+    uint8_t* txData,
+    uint16_t txDataLen,
+    uint8_t** rxData,
+    uint16_t** rvdLen,
+    uint32_t fwt) {
+    ReturnCode err;
     rfalTransceiveContext ctx;
 
     /*******************************************************************************/
     /* The Data Exchange is divided in two different moments, the trigger/Start of *
      *  the transfer followed by the check until its completion                    */
-    if( (gNfcDev.state >= RFAL_NFC_STATE_ACTIVATED) && (gNfcDev.activeDev != NULL) )
-    {
-
+    if((gNfcDev.state >= RFAL_NFC_STATE_ACTIVATED) && (gNfcDev.activeDev != NULL)) {
         /*******************************************************************************/
         /* In Listen mode is the Poller that initiates the communicatation             */
         /* Assign output parameters and rfalNfcDataExchangeGetStatus will return       */
         /* incoming data from Poller/Initiator                                         */
-        if( (gNfcDev.state == RFAL_NFC_STATE_ACTIVATED) && rfalNfcIsRemDevPoller( gNfcDev.activeDev->type ) )
-        {
-            if( txDataLen > 0U )
-            {
+        if((gNfcDev.state == RFAL_NFC_STATE_ACTIVATED) &&
+           rfalNfcIsRemDevPoller(gNfcDev.activeDev->type)) {
+            if(txDataLen > 0U) {
                 return ERR_WRONG_STATE;
             }
 
@@ -856,104 +861,108 @@ ReturnCode rfalNfcRawBitstreamExchangeStart( uint8_t *txData, uint16_t txDataLen
             return ERR_NONE;
         }
 
+        /*******************************************************************************/
+        switch(gNfcDev.activeDev
+                   ->rfInterface) /* Check which RF interface shall be used/has been activated */
+        {
+        /*******************************************************************************/
+        case RFAL_NFC_INTERFACE_RF:
+
+            rfalCreateByteFlagsTxRxContext(
+                ctx,
+                (uint8_t*)txData,
+                txDataLen,
+                gNfcDev.rxBuf.rfBuf,
+                sizeof(gNfcDev.rxBuf.rfBuf),
+                &gNfcDev.rxLen,
+                RFAL_TXRX_FLAGS_RAW,
+                fwt);
+            ctx.txBufLen = txDataLen;
+            *rxData = (uint8_t*)gNfcDev.rxBuf.rfBuf;
+            *rvdLen = (uint16_t*)&gNfcDev.rxLen;
+            err = rfalStartTransceive(&ctx);
+            break;
+
+#if RFAL_FEATURE_ISO_DEP
+        /*******************************************************************************/
+        case RFAL_NFC_INTERFACE_ISODEP: {
+            rfalIsoDepApduTxRxParam isoDepTxRx;
+
+            if(txDataLen > sizeof(gNfcDev.txBuf.isoDepBuf.apdu)) {
+                return ERR_NOMEM;
+            }
+
+            if(txDataLen > 0U) {
+                ST_MEMCPY((uint8_t*)gNfcDev.txBuf.isoDepBuf.apdu, txData, txDataLen);
+            }
+
+            isoDepTxRx.DID = RFAL_ISODEP_NO_DID;
+            isoDepTxRx.ourFSx = RFAL_ISODEP_FSX_KEEP;
+            isoDepTxRx.FSx = gNfcDev.activeDev->proto.isoDep.info.FSx;
+            isoDepTxRx.dFWT = gNfcDev.activeDev->proto.isoDep.info.dFWT;
+            isoDepTxRx.FWT = gNfcDev.activeDev->proto.isoDep.info.FWT;
+            isoDepTxRx.txBuf = &gNfcDev.txBuf.isoDepBuf;
+            isoDepTxRx.txBufLen = txDataLen;
+            isoDepTxRx.rxBuf = &gNfcDev.rxBuf.isoDepBuf;
+            isoDepTxRx.rxLen = &gNfcDev.rxLen;
+            isoDepTxRx.tmpBuf = &gNfcDev.tmpBuf.isoDepBuf;
+            *rxData = (uint8_t*)gNfcDev.rxBuf.isoDepBuf.apdu;
+            *rvdLen = (uint16_t*)&gNfcDev.rxLen;
+
+            /*******************************************************************************/
+            /* Trigger a RFAL ISO-DEP Transceive                                           */
+            err = rfalIsoDepStartApduTransceive(isoDepTxRx);
+            break;
+        }
+#endif /* RFAL_FEATURE_ISO_DEP */
+
+#if RFAL_FEATURE_NFC_DEP
+        /*******************************************************************************/
+        case RFAL_NFC_INTERFACE_NFCDEP: {
+            rfalNfcDepPduTxRxParam nfcDepTxRx;
+
+            if(txDataLen > sizeof(gNfcDev.txBuf.nfcDepBuf.pdu)) {
+                return ERR_NOMEM;
+            }
+
+            if(txDataLen > 0U) {
+                ST_MEMCPY((uint8_t*)gNfcDev.txBuf.nfcDepBuf.pdu, txData, txDataLen);
+            }
+
+            nfcDepTxRx.DID = RFAL_NFCDEP_DID_KEEP;
+            nfcDepTxRx.FSx =
+                rfalNfcIsRemDevListener(gNfcDev.activeDev->type) ?
+                    rfalNfcDepLR2FS((uint8_t)rfalNfcDepPP2LR(
+                        gNfcDev.activeDev->proto.nfcDep.activation.Target.ATR_RES.PPt)) :
+                    rfalNfcDepLR2FS((uint8_t)rfalNfcDepPP2LR(
+                        gNfcDev.activeDev->proto.nfcDep.activation.Initiator.ATR_REQ.PPi));
+            nfcDepTxRx.dFWT = gNfcDev.activeDev->proto.nfcDep.info.dFWT;
+            nfcDepTxRx.FWT = gNfcDev.activeDev->proto.nfcDep.info.FWT;
+            nfcDepTxRx.txBuf = &gNfcDev.txBuf.nfcDepBuf;
+            nfcDepTxRx.txBufLen = txDataLen;
+            nfcDepTxRx.rxBuf = &gNfcDev.rxBuf.nfcDepBuf;
+            nfcDepTxRx.rxLen = &gNfcDev.rxLen;
+            nfcDepTxRx.tmpBuf = &gNfcDev.tmpBuf.nfcDepBuf;
+            *rxData = (uint8_t*)gNfcDev.rxBuf.nfcDepBuf.pdu;
+            *rvdLen = (uint16_t*)&gNfcDev.rxLen;
+
+            /*******************************************************************************/
+            /* Trigger a RFAL NFC-DEP Transceive                                           */
+            err = rfalNfcDepStartPduTransceive(nfcDepTxRx);
+            break;
+        }
+#endif /* RFAL_FEATURE_NFC_DEP */
 
         /*******************************************************************************/
-        switch( gNfcDev.activeDev->rfInterface )                                      /* Check which RF interface shall be used/has been activated */
-        {
-            /*******************************************************************************/
-            case RFAL_NFC_INTERFACE_RF:
-
-                rfalCreateByteFlagsTxRxContext( ctx, (uint8_t*)txData, txDataLen, gNfcDev.rxBuf.rfBuf, sizeof(gNfcDev.rxBuf.rfBuf), &gNfcDev.rxLen, RFAL_TXRX_FLAGS_RAW, fwt );
-                ctx.txBufLen = txDataLen;
-                *rxData = (uint8_t*)gNfcDev.rxBuf.rfBuf;
-                *rvdLen = (uint16_t*)&gNfcDev.rxLen;
-                err = rfalStartTransceive( &ctx );
-                break;
-
-        #if RFAL_FEATURE_ISO_DEP
-            /*******************************************************************************/
-            case RFAL_NFC_INTERFACE_ISODEP:
-            {
-                rfalIsoDepApduTxRxParam isoDepTxRx;
-
-                if( txDataLen > sizeof(gNfcDev.txBuf.isoDepBuf.apdu) )
-                {
-                    return ERR_NOMEM;
-                }
-
-                if( txDataLen > 0U )
-                {
-                    ST_MEMCPY( (uint8_t*)gNfcDev.txBuf.isoDepBuf.apdu, txData, txDataLen );
-                }
-
-                isoDepTxRx.DID          = RFAL_ISODEP_NO_DID;
-                isoDepTxRx.ourFSx       = RFAL_ISODEP_FSX_KEEP;
-                isoDepTxRx.FSx          = gNfcDev.activeDev->proto.isoDep.info.FSx;
-                isoDepTxRx.dFWT         = gNfcDev.activeDev->proto.isoDep.info.dFWT;
-                isoDepTxRx.FWT          = gNfcDev.activeDev->proto.isoDep.info.FWT;
-                isoDepTxRx.txBuf        = &gNfcDev.txBuf.isoDepBuf;
-                isoDepTxRx.txBufLen     = txDataLen;
-                isoDepTxRx.rxBuf        = &gNfcDev.rxBuf.isoDepBuf;
-                isoDepTxRx.rxLen        = &gNfcDev.rxLen;
-                isoDepTxRx.tmpBuf       = &gNfcDev.tmpBuf.isoDepBuf;
-                *rxData                 = (uint8_t*)gNfcDev.rxBuf.isoDepBuf.apdu;
-                *rvdLen                 = (uint16_t*)&gNfcDev.rxLen;
-
-                /*******************************************************************************/
-                /* Trigger a RFAL ISO-DEP Transceive                                           */
-                err = rfalIsoDepStartApduTransceive( isoDepTxRx );
-                break;
-            }
-        #endif /* RFAL_FEATURE_ISO_DEP */
-
-        #if RFAL_FEATURE_NFC_DEP
-            /*******************************************************************************/
-            case RFAL_NFC_INTERFACE_NFCDEP:
-            {
-                rfalNfcDepPduTxRxParam nfcDepTxRx;
-
-                if( txDataLen > sizeof(gNfcDev.txBuf.nfcDepBuf.pdu) )
-                {
-                    return ERR_NOMEM;
-                }
-
-                if( txDataLen > 0U)
-                {
-                    ST_MEMCPY( (uint8_t*)gNfcDev.txBuf.nfcDepBuf.pdu, txData, txDataLen );
-                }
-
-                nfcDepTxRx.DID          = RFAL_NFCDEP_DID_KEEP;
-                nfcDepTxRx.FSx          = rfalNfcIsRemDevListener(gNfcDev.activeDev->type) ?
-                                              rfalNfcDepLR2FS( (uint8_t)rfalNfcDepPP2LR( gNfcDev.activeDev->proto.nfcDep.activation.Target.ATR_RES.PPt ) ) :
-                                              rfalNfcDepLR2FS( (uint8_t)rfalNfcDepPP2LR( gNfcDev.activeDev->proto.nfcDep.activation.Initiator.ATR_REQ.PPi ) );
-                nfcDepTxRx.dFWT         = gNfcDev.activeDev->proto.nfcDep.info.dFWT;
-                nfcDepTxRx.FWT          = gNfcDev.activeDev->proto.nfcDep.info.FWT;
-                nfcDepTxRx.txBuf        = &gNfcDev.txBuf.nfcDepBuf;
-                nfcDepTxRx.txBufLen     = txDataLen;
-                nfcDepTxRx.rxBuf        = &gNfcDev.rxBuf.nfcDepBuf;
-                nfcDepTxRx.rxLen        = &gNfcDev.rxLen;
-                nfcDepTxRx.tmpBuf       = &gNfcDev.tmpBuf.nfcDepBuf;
-                *rxData                 = (uint8_t*)gNfcDev.rxBuf.nfcDepBuf.pdu;
-                *rvdLen                 = (uint16_t*)&gNfcDev.rxLen;
-
-                /*******************************************************************************/
-                /* Trigger a RFAL NFC-DEP Transceive                                           */
-                err = rfalNfcDepStartPduTransceive( nfcDepTxRx );
-                break;
-            }
-        #endif /* RFAL_FEATURE_NFC_DEP */
-
-            /*******************************************************************************/
-            default:
-                err = ERR_PARAM;
-                break;
+        default:
+            err = ERR_PARAM;
+            break;
         }
 
         /* If a transceive has succesfully started flag Data Exchange as ongoing */
-        if( err == ERR_NONE )
-        {
+        if(err == ERR_NONE) {
             gNfcDev.dataExErr = ERR_BUSY;
-            gNfcDev.state     = RFAL_NFC_STATE_DATAEXCHANGE;
+            gNfcDev.state = RFAL_NFC_STATE_DATAEXCHANGE;
         }
 
         return err;
@@ -961,29 +970,30 @@ ReturnCode rfalNfcRawBitstreamExchangeStart( uint8_t *txData, uint16_t txDataLen
 
     return ERR_WRONG_STATE;
 }
-
-
 
 /*******************************************************************************/
-ReturnCode rfalNfcRawBitstreamParityExchangeStart( uint8_t *txData, uint16_t txDataLen, uint8_t *par, uint16_t parLen, uint8_t **rxData, uint16_t **rvdLen, uint32_t fwt )
-{
-    ReturnCode            err;
+ReturnCode rfalNfcRawBitstreamParityExchangeStart(
+    uint8_t* txData,
+    uint16_t txDataLen,
+    uint8_t* par,
+    uint16_t parLen,
+    uint8_t** rxData,
+    uint16_t** rvdLen,
+    uint32_t fwt) {
+    ReturnCode err;
     rfalTransceiveContext ctx;
 
     /*******************************************************************************/
     /* The Data Exchange is divided in two different moments, the trigger/Start of *
      *  the transfer followed by the check until its completion                    */
-    if( (gNfcDev.state >= RFAL_NFC_STATE_ACTIVATED) && (gNfcDev.activeDev != NULL) )
-    {
-
+    if((gNfcDev.state >= RFAL_NFC_STATE_ACTIVATED) && (gNfcDev.activeDev != NULL)) {
         /*******************************************************************************/
         /* In Listen mode is the Poller that initiates the communicatation             */
         /* Assign output parameters and rfalNfcDataExchangeGetStatus will return       */
         /* incoming data from Poller/Initiator                                         */
-        if( (gNfcDev.state == RFAL_NFC_STATE_ACTIVATED) && rfalNfcIsRemDevPoller( gNfcDev.activeDev->type ) )
-        {
-            if( txDataLen > 0U )
-            {
+        if((gNfcDev.state == RFAL_NFC_STATE_ACTIVATED) &&
+           rfalNfcIsRemDevPoller(gNfcDev.activeDev->type)) {
+            if(txDataLen > 0U) {
                 return ERR_WRONG_STATE;
             }
 
@@ -996,104 +1006,108 @@ ReturnCode rfalNfcRawBitstreamParityExchangeStart( uint8_t *txData, uint16_t txD
             return ERR_NONE;
         }
 
+        /*******************************************************************************/
+        switch(gNfcDev.activeDev
+                   ->rfInterface) /* Check which RF interface shall be used/has been activated */
+        {
+        /*******************************************************************************/
+        case RFAL_NFC_INTERFACE_RF:
+
+            rfalCreateByteFlagsTxRxContext(
+                ctx,
+                (uint8_t*)txData,
+                txDataLen,
+                gNfcDev.rxBuf.rfBuf,
+                sizeof(gNfcDev.rxBuf.rfBuf),
+                &gNfcDev.rxLen,
+                RFAL_TXRX_FLAGS_RAW,
+                fwt);
+            ctx.txBufLen = txDataLen;
+            *rxData = (uint8_t*)gNfcDev.rxBuf.rfBuf;
+            *rvdLen = (uint16_t*)&gNfcDev.rxLen;
+            err = rfalStartTransceive(&ctx);
+            break;
+
+#if RFAL_FEATURE_ISO_DEP
+        /*******************************************************************************/
+        case RFAL_NFC_INTERFACE_ISODEP: {
+            rfalIsoDepApduTxRxParam isoDepTxRx;
+
+            if(txDataLen > sizeof(gNfcDev.txBuf.isoDepBuf.apdu)) {
+                return ERR_NOMEM;
+            }
+
+            if(txDataLen > 0U) {
+                ST_MEMCPY((uint8_t*)gNfcDev.txBuf.isoDepBuf.apdu, txData, txDataLen);
+            }
+
+            isoDepTxRx.DID = RFAL_ISODEP_NO_DID;
+            isoDepTxRx.ourFSx = RFAL_ISODEP_FSX_KEEP;
+            isoDepTxRx.FSx = gNfcDev.activeDev->proto.isoDep.info.FSx;
+            isoDepTxRx.dFWT = gNfcDev.activeDev->proto.isoDep.info.dFWT;
+            isoDepTxRx.FWT = gNfcDev.activeDev->proto.isoDep.info.FWT;
+            isoDepTxRx.txBuf = &gNfcDev.txBuf.isoDepBuf;
+            isoDepTxRx.txBufLen = txDataLen;
+            isoDepTxRx.rxBuf = &gNfcDev.rxBuf.isoDepBuf;
+            isoDepTxRx.rxLen = &gNfcDev.rxLen;
+            isoDepTxRx.tmpBuf = &gNfcDev.tmpBuf.isoDepBuf;
+            *rxData = (uint8_t*)gNfcDev.rxBuf.isoDepBuf.apdu;
+            *rvdLen = (uint16_t*)&gNfcDev.rxLen;
+
+            /*******************************************************************************/
+            /* Trigger a RFAL ISO-DEP Transceive                                           */
+            err = rfalIsoDepStartApduTransceive(isoDepTxRx);
+            break;
+        }
+#endif /* RFAL_FEATURE_ISO_DEP */
+
+#if RFAL_FEATURE_NFC_DEP
+        /*******************************************************************************/
+        case RFAL_NFC_INTERFACE_NFCDEP: {
+            rfalNfcDepPduTxRxParam nfcDepTxRx;
+
+            if(txDataLen > sizeof(gNfcDev.txBuf.nfcDepBuf.pdu)) {
+                return ERR_NOMEM;
+            }
+
+            if(txDataLen > 0U) {
+                ST_MEMCPY((uint8_t*)gNfcDev.txBuf.nfcDepBuf.pdu, txData, txDataLen);
+            }
+
+            nfcDepTxRx.DID = RFAL_NFCDEP_DID_KEEP;
+            nfcDepTxRx.FSx =
+                rfalNfcIsRemDevListener(gNfcDev.activeDev->type) ?
+                    rfalNfcDepLR2FS((uint8_t)rfalNfcDepPP2LR(
+                        gNfcDev.activeDev->proto.nfcDep.activation.Target.ATR_RES.PPt)) :
+                    rfalNfcDepLR2FS((uint8_t)rfalNfcDepPP2LR(
+                        gNfcDev.activeDev->proto.nfcDep.activation.Initiator.ATR_REQ.PPi));
+            nfcDepTxRx.dFWT = gNfcDev.activeDev->proto.nfcDep.info.dFWT;
+            nfcDepTxRx.FWT = gNfcDev.activeDev->proto.nfcDep.info.FWT;
+            nfcDepTxRx.txBuf = &gNfcDev.txBuf.nfcDepBuf;
+            nfcDepTxRx.txBufLen = txDataLen;
+            nfcDepTxRx.rxBuf = &gNfcDev.rxBuf.nfcDepBuf;
+            nfcDepTxRx.rxLen = &gNfcDev.rxLen;
+            nfcDepTxRx.tmpBuf = &gNfcDev.tmpBuf.nfcDepBuf;
+            *rxData = (uint8_t*)gNfcDev.rxBuf.nfcDepBuf.pdu;
+            *rvdLen = (uint16_t*)&gNfcDev.rxLen;
+
+            /*******************************************************************************/
+            /* Trigger a RFAL NFC-DEP Transceive                                           */
+            err = rfalNfcDepStartPduTransceive(nfcDepTxRx);
+            break;
+        }
+#endif /* RFAL_FEATURE_NFC_DEP */
 
         /*******************************************************************************/
-        switch( gNfcDev.activeDev->rfInterface )                                      /* Check which RF interface shall be used/has been activated */
-        {
-            /*******************************************************************************/
-            case RFAL_NFC_INTERFACE_RF:
-
-                rfalCreateByteFlagsTxRxContext( ctx, (uint8_t*)txData, txDataLen, gNfcDev.rxBuf.rfBuf, sizeof(gNfcDev.rxBuf.rfBuf), &gNfcDev.rxLen, RFAL_TXRX_FLAGS_RAW, fwt );
-                ctx.txBufLen = txDataLen;
-                *rxData = (uint8_t*)gNfcDev.rxBuf.rfBuf;
-                *rvdLen = (uint16_t*)&gNfcDev.rxLen;
-                err = rfalStartTransceive( &ctx );
-                break;
-
-        #if RFAL_FEATURE_ISO_DEP
-            /*******************************************************************************/
-            case RFAL_NFC_INTERFACE_ISODEP:
-            {
-                rfalIsoDepApduTxRxParam isoDepTxRx;
-
-                if( txDataLen > sizeof(gNfcDev.txBuf.isoDepBuf.apdu) )
-                {
-                    return ERR_NOMEM;
-                }
-
-                if( txDataLen > 0U )
-                {
-                    ST_MEMCPY( (uint8_t*)gNfcDev.txBuf.isoDepBuf.apdu, txData, txDataLen );
-                }
-
-                isoDepTxRx.DID          = RFAL_ISODEP_NO_DID;
-                isoDepTxRx.ourFSx       = RFAL_ISODEP_FSX_KEEP;
-                isoDepTxRx.FSx          = gNfcDev.activeDev->proto.isoDep.info.FSx;
-                isoDepTxRx.dFWT         = gNfcDev.activeDev->proto.isoDep.info.dFWT;
-                isoDepTxRx.FWT          = gNfcDev.activeDev->proto.isoDep.info.FWT;
-                isoDepTxRx.txBuf        = &gNfcDev.txBuf.isoDepBuf;
-                isoDepTxRx.txBufLen     = txDataLen;
-                isoDepTxRx.rxBuf        = &gNfcDev.rxBuf.isoDepBuf;
-                isoDepTxRx.rxLen        = &gNfcDev.rxLen;
-                isoDepTxRx.tmpBuf       = &gNfcDev.tmpBuf.isoDepBuf;
-                *rxData                 = (uint8_t*)gNfcDev.rxBuf.isoDepBuf.apdu;
-                *rvdLen                 = (uint16_t*)&gNfcDev.rxLen;
-
-                /*******************************************************************************/
-                /* Trigger a RFAL ISO-DEP Transceive                                           */
-                err = rfalIsoDepStartApduTransceive( isoDepTxRx );
-                break;
-            }
-        #endif /* RFAL_FEATURE_ISO_DEP */
-
-        #if RFAL_FEATURE_NFC_DEP
-            /*******************************************************************************/
-            case RFAL_NFC_INTERFACE_NFCDEP:
-            {
-                rfalNfcDepPduTxRxParam nfcDepTxRx;
-
-                if( txDataLen > sizeof(gNfcDev.txBuf.nfcDepBuf.pdu) )
-                {
-                    return ERR_NOMEM;
-                }
-
-                if( txDataLen > 0U)
-                {
-                    ST_MEMCPY( (uint8_t*)gNfcDev.txBuf.nfcDepBuf.pdu, txData, txDataLen );
-                }
-
-                nfcDepTxRx.DID          = RFAL_NFCDEP_DID_KEEP;
-                nfcDepTxRx.FSx          = rfalNfcIsRemDevListener(gNfcDev.activeDev->type) ?
-                                              rfalNfcDepLR2FS( (uint8_t)rfalNfcDepPP2LR( gNfcDev.activeDev->proto.nfcDep.activation.Target.ATR_RES.PPt ) ) :
-                                              rfalNfcDepLR2FS( (uint8_t)rfalNfcDepPP2LR( gNfcDev.activeDev->proto.nfcDep.activation.Initiator.ATR_REQ.PPi ) );
-                nfcDepTxRx.dFWT         = gNfcDev.activeDev->proto.nfcDep.info.dFWT;
-                nfcDepTxRx.FWT          = gNfcDev.activeDev->proto.nfcDep.info.FWT;
-                nfcDepTxRx.txBuf        = &gNfcDev.txBuf.nfcDepBuf;
-                nfcDepTxRx.txBufLen     = txDataLen;
-                nfcDepTxRx.rxBuf        = &gNfcDev.rxBuf.nfcDepBuf;
-                nfcDepTxRx.rxLen        = &gNfcDev.rxLen;
-                nfcDepTxRx.tmpBuf       = &gNfcDev.tmpBuf.nfcDepBuf;
-                *rxData                 = (uint8_t*)gNfcDev.rxBuf.nfcDepBuf.pdu;
-                *rvdLen                 = (uint16_t*)&gNfcDev.rxLen;
-
-                /*******************************************************************************/
-                /* Trigger a RFAL NFC-DEP Transceive                                           */
-                err = rfalNfcDepStartPduTransceive( nfcDepTxRx );
-                break;
-            }
-        #endif /* RFAL_FEATURE_NFC_DEP */
-
-            /*******************************************************************************/
-            default:
-                err = ERR_PARAM;
-                break;
+        default:
+            err = ERR_PARAM;
+            break;
         }
 
         /* If a transceive has succesfully started flag Data Exchange as ongoing */
-        if( err == ERR_NONE )
-        {
+        if(err == ERR_NONE) {
             gNfcDev.dataExErr = ERR_BUSY;
-            gNfcDev.state     = RFAL_NFC_STATE_DATAEXCHANGE;
+            gNfcDev.state = RFAL_NFC_STATE_DATAEXCHANGE;
         }
 
         return err;
@@ -1101,7 +1115,6 @@ ReturnCode rfalNfcRawBitstreamParityExchangeStart( uint8_t *txData, uint16_t txD
 
     return ERR_WRONG_STATE;
 }
-
 
 /*******************************************************************************/
 ReturnCode rfalNfcDataExchangeGetStatus(void) {

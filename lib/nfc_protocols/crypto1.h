@@ -13,17 +13,19 @@ int filter(uint32_t const x);
 #define LF_POLY_ODD (0x29CE5C)
 #define LF_POLY_EVEN (0x870804)
 
-struct Crypto1State {uint32_t odd, even;};
+struct Crypto1State {
+    uint32_t odd, even;
+};
 
 void crypto1_init(struct Crypto1State* state, uint64_t key);
 void crypto1_deinit(struct Crypto1State*);
 
 static inline uint8_t oddparity16(uint16_t x) {
-  return !__builtin_parity(x);
+    return !__builtin_parity(x);
 }
 
 static inline uint8_t evenparity32(uint32_t x) {
-  return (__builtin_parity(x) & 0xFF);
+    return (__builtin_parity(x) & 0xFF);
 }
 
 typedef enum {

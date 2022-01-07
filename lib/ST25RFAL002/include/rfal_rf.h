@@ -109,30 +109,47 @@
 #define RFAL_CRC_LEN 2U /*!< RF CRC LEN                                        */
 
 /*! Default TxRx flags: Tx CRC automatic, Rx CRC removed, NFCIP1 mode off, AGC On, Tx Parity automatic, Rx Parity removed */
-#define RFAL_TXRX_FLAGS_DEFAULT                    ( (uint32_t)RFAL_TXRX_FLAGS_CRC_TX_AUTO | (uint32_t)RFAL_TXRX_FLAGS_CRC_RX_REMV | (uint32_t)RFAL_TXRX_FLAGS_NFCIP1_OFF | (uint32_t)RFAL_TXRX_FLAGS_AGC_ON | (uint32_t)RFAL_TXRX_FLAGS_PAR_RX_REMV | (uint32_t)RFAL_TXRX_FLAGS_PAR_TX_AUTO | (uint32_t)RFAL_TXRX_FLAGS_NFCV_FLAG_AUTO)
+#define RFAL_TXRX_FLAGS_DEFAULT                                                      \
+    ((uint32_t)RFAL_TXRX_FLAGS_CRC_TX_AUTO | (uint32_t)RFAL_TXRX_FLAGS_CRC_RX_REMV | \
+     (uint32_t)RFAL_TXRX_FLAGS_NFCIP1_OFF | (uint32_t)RFAL_TXRX_FLAGS_AGC_ON |       \
+     (uint32_t)RFAL_TXRX_FLAGS_PAR_RX_REMV | (uint32_t)RFAL_TXRX_FLAGS_PAR_TX_AUTO | \
+     (uint32_t)RFAL_TXRX_FLAGS_NFCV_FLAG_AUTO)
 
-#define RFAL_TXRX_FLAGS_RAW                      ( (uint32_t)RFAL_TXRX_FLAGS_CRC_TX_MANUAL | (uint32_t)RFAL_TXRX_FLAGS_CRC_RX_KEEP | (uint32_t)RFAL_TXRX_FLAGS_NFCIP1_OFF | (uint32_t)RFAL_TXRX_FLAGS_AGC_ON | (uint32_t)RFAL_TXRX_FLAGS_PAR_RX_KEEP | (uint32_t)RFAL_TXRX_FLAGS_PAR_TX_NONE| (uint32_t)RFAL_TXRX_FLAGS_NFCV_FLAG_AUTO)
+#define RFAL_TXRX_FLAGS_RAW                                                            \
+    ((uint32_t)RFAL_TXRX_FLAGS_CRC_TX_MANUAL | (uint32_t)RFAL_TXRX_FLAGS_CRC_RX_KEEP | \
+     (uint32_t)RFAL_TXRX_FLAGS_NFCIP1_OFF | (uint32_t)RFAL_TXRX_FLAGS_AGC_ON |         \
+     (uint32_t)RFAL_TXRX_FLAGS_PAR_RX_KEEP | (uint32_t)RFAL_TXRX_FLAGS_PAR_TX_NONE |   \
+     (uint32_t)RFAL_TXRX_FLAGS_NFCV_FLAG_AUTO)
 
-#define RFAL_TXRX_FLAGS_NOCRC                      ( (uint32_t)RFAL_TXRX_FLAGS_CRC_TX_MANUAL | (uint32_t)RFAL_TXRX_FLAGS_CRC_RX_KEEP | (uint32_t)RFAL_TXRX_FLAGS_NFCIP1_OFF | (uint32_t)RFAL_TXRX_FLAGS_AGC_ON | (uint32_t)RFAL_TXRX_FLAGS_PAR_RX_KEEP | (uint32_t)RFAL_TXRX_FLAGS_PAR_TX_AUTO| (uint32_t)RFAL_TXRX_FLAGS_NFCV_FLAG_AUTO)
+#define RFAL_TXRX_FLAGS_NOCRC                                                          \
+    ((uint32_t)RFAL_TXRX_FLAGS_CRC_TX_MANUAL | (uint32_t)RFAL_TXRX_FLAGS_CRC_RX_KEEP | \
+     (uint32_t)RFAL_TXRX_FLAGS_NFCIP1_OFF | (uint32_t)RFAL_TXRX_FLAGS_AGC_ON |         \
+     (uint32_t)RFAL_TXRX_FLAGS_PAR_RX_KEEP | (uint32_t)RFAL_TXRX_FLAGS_PAR_TX_AUTO |   \
+     (uint32_t)RFAL_TXRX_FLAGS_NFCV_FLAG_AUTO)
 
+#define RFAL_LM_MASK_NFCA \
+    ((uint32_t)1U         \
+     << (uint8_t)RFAL_MODE_LISTEN_NFCA) /*!< Bitmask for Listen Mode enabling NFCA    */
+#define RFAL_LM_MASK_NFCB \
+    ((uint32_t)1U         \
+     << (uint8_t)RFAL_MODE_LISTEN_NFCB) /*!< Bitmask for Listen Mode enabling NFCB    */
+#define RFAL_LM_MASK_NFCF \
+    ((uint32_t)1U         \
+     << (uint8_t)RFAL_MODE_LISTEN_NFCF) /*!< Bitmask for Listen Mode enabling NFCF    */
+#define RFAL_LM_MASK_ACTIVE_P2P \
+    ((uint32_t)1U               \
+     << (uint8_t)RFAL_MODE_LISTEN_ACTIVE_P2P) /*!< Bitmask for Listen Mode enabling AP2P    */
 
+#define RFAL_LM_SENS_RES_LEN 2U /*!< NFC-A SENS_RES (ATQA) length                      */
+#define RFAL_LM_SENSB_RES_LEN 13U /*!< NFC-B SENSB_RES (ATQB) length                     */
+#define RFAL_LM_SENSF_RES_LEN 19U /*!< NFC-F SENSF_RES  length                           */
+#define RFAL_LM_SENSF_SC_LEN 2U /*!< NFC-F System Code length                          */
 
-#define RFAL_LM_MASK_NFCA                          ((uint32_t)1U<<(uint8_t)RFAL_MODE_LISTEN_NFCA)        /*!< Bitmask for Listen Mode enabling NFCA    */
-#define RFAL_LM_MASK_NFCB                          ((uint32_t)1U<<(uint8_t)RFAL_MODE_LISTEN_NFCB)        /*!< Bitmask for Listen Mode enabling NFCB    */
-#define RFAL_LM_MASK_NFCF                          ((uint32_t)1U<<(uint8_t)RFAL_MODE_LISTEN_NFCF)        /*!< Bitmask for Listen Mode enabling NFCF    */
-#define RFAL_LM_MASK_ACTIVE_P2P                    ((uint32_t)1U<<(uint8_t)RFAL_MODE_LISTEN_ACTIVE_P2P)  /*!< Bitmask for Listen Mode enabling AP2P    */
-
-#define RFAL_LM_SENS_RES_LEN                       2U                                           /*!< NFC-A SENS_RES (ATQA) length                      */
-#define RFAL_LM_SENSB_RES_LEN                      13U                                          /*!< NFC-B SENSB_RES (ATQB) length                     */
-#define RFAL_LM_SENSF_RES_LEN                      19U                                          /*!< NFC-F SENSF_RES  length                           */
-#define RFAL_LM_SENSF_SC_LEN                       2U                                           /*!< NFC-F System Code length                          */
-
-#define RFAL_NFCID3_LEN                            10U                                          /*!< NFCID3 length                                     */
-#define RFAL_NFCID2_LEN                            8U                                           /*!< NFCID2 length                                     */
-#define RFAL_NFCID1_TRIPLE_LEN                     10U                                          /*!< NFCID1 length                                     */
-#define RFAL_NFCID1_DOUBLE_LEN                     7U                                           /*!< NFCID1 length                                     */
-#define RFAL_NFCID1_SINGLE_LEN                     4U                                           /*!< NFCID1 length                                     */
-
+#define RFAL_NFCID3_LEN 10U /*!< NFCID3 length                                     */
+#define RFAL_NFCID2_LEN 8U /*!< NFCID2 length                                     */
+#define RFAL_NFCID1_TRIPLE_LEN 10U /*!< NFCID1 length                                     */
+#define RFAL_NFCID1_DOUBLE_LEN 7U /*!< NFCID1 length                                     */
+#define RFAL_NFCID1_SINGLE_LEN 4U /*!< NFCID1 length                                     */
 
 /*
 ******************************************************************************
@@ -423,44 +440,42 @@ typedef enum {
 
 /*! RFAL main states flags    */
 typedef enum {
-    RFAL_STATE_IDLE                  = 0,
-    RFAL_STATE_INIT                  = 1,
-    RFAL_STATE_MODE_SET              = 2,
+    RFAL_STATE_IDLE = 0,
+    RFAL_STATE_INIT = 1,
+    RFAL_STATE_MODE_SET = 2,
 
-    RFAL_STATE_TXRX                  = 3,
-    RFAL_STATE_LM                    = 4,
-    RFAL_STATE_WUM                   = 5
+    RFAL_STATE_TXRX = 3,
+    RFAL_STATE_LM = 4,
+    RFAL_STATE_WUM = 5
 
 } rfalState;
 
 /*! RFAL transceive states    */
 typedef enum {
-    RFAL_TXRX_STATE_IDLE             = 0,
-    RFAL_TXRX_STATE_INIT             = 1,
-    RFAL_TXRX_STATE_START            = 2,
+    RFAL_TXRX_STATE_IDLE = 0,
+    RFAL_TXRX_STATE_INIT = 1,
+    RFAL_TXRX_STATE_START = 2,
 
-    RFAL_TXRX_STATE_TX_IDLE          = 11,
-    RFAL_TXRX_STATE_TX_WAIT_GT       = 12,
-    RFAL_TXRX_STATE_TX_WAIT_FDT      = 13,
-    RFAL_TXRX_STATE_TX_TRANSMIT      = 14,
-    RFAL_TXRX_STATE_TX_WAIT_WL       = 15,
-    RFAL_TXRX_STATE_TX_RELOAD_FIFO   = 16,
-    RFAL_TXRX_STATE_TX_WAIT_TXE      = 17,
-    RFAL_TXRX_STATE_TX_DONE          = 18,
-    RFAL_TXRX_STATE_TX_FAIL          = 19,
+    RFAL_TXRX_STATE_TX_IDLE = 11,
+    RFAL_TXRX_STATE_TX_WAIT_GT = 12,
+    RFAL_TXRX_STATE_TX_WAIT_FDT = 13,
+    RFAL_TXRX_STATE_TX_TRANSMIT = 14,
+    RFAL_TXRX_STATE_TX_WAIT_WL = 15,
+    RFAL_TXRX_STATE_TX_RELOAD_FIFO = 16,
+    RFAL_TXRX_STATE_TX_WAIT_TXE = 17,
+    RFAL_TXRX_STATE_TX_DONE = 18,
+    RFAL_TXRX_STATE_TX_FAIL = 19,
 
-    RFAL_TXRX_STATE_RX_IDLE          = 81,
-    RFAL_TXRX_STATE_RX_WAIT_EON      = 82,
-    RFAL_TXRX_STATE_RX_WAIT_RXS      = 83,
-    RFAL_TXRX_STATE_RX_WAIT_RXE      = 84,
-    RFAL_TXRX_STATE_RX_READ_FIFO     = 85,
-    RFAL_TXRX_STATE_RX_ERR_CHECK     = 86,
-    RFAL_TXRX_STATE_RX_READ_DATA     = 87,
-    RFAL_TXRX_STATE_RX_WAIT_EOF      = 88,
-    RFAL_TXRX_STATE_RX_DONE          = 89,
-    RFAL_TXRX_STATE_RX_FAIL          = 90,
-
-} rfalTransceiveState;
+    RFAL_TXRX_STATE_RX_IDLE = 81,
+    RFAL_TXRX_STATE_RX_WAIT_EON = 82,
+    RFAL_TXRX_STATE_RX_WAIT_RXS = 83,
+    RFAL_TXRX_STATE_RX_WAIT_RXE = 84,
+    RFAL_TXRX_STATE_RX_READ_FIFO = 85,
+    RFAL_TXRX_STATE_RX_ERR_CHECK = 86,
+    RFAL_TXRX_STATE_RX_READ_DATA = 87,
+    RFAL_TXRX_STATE_RX_WAIT_EOF = 88,
+    RFAL_TXRX_STATE_RX_DONE = 89,
+    RFAL_TXRX_STATE_RX_FAIL = 90,
 
 } rfalTransceiveState;
 
@@ -522,16 +537,12 @@ typedef enum {
 
 /*! Struct that holds all context to be used on a Transceive                                                */
 typedef struct {
-    uint8_t*              txBuf;                  /*!< (In)  Buffer where outgoing message is located       */
-    uint16_t              txBufLen;               /*!< (In)  Length of the outgoing message in bits         */
+    uint8_t* txBuf; /*!< (In)  Buffer where outgoing message is located       */
+    uint16_t txBufLen; /*!< (In)  Length of the outgoing message in bits         */
 
-    uint8_t*              rxBuf;                  /*!< (Out) Buffer where incoming message will be placed   */
-    uint16_t              rxBufLen;               /*!< (In)  Maximum length of the incoming message in bits */
-    uint16_t*             rxRcvdLen;              /*!< (Out) Actual received length in bits                 */
-
-    uint32_t              flags;                  /*!< (In)  TransceiveFlags indication special handling    */
-    uint32_t              fwt;                    /*!< (In)  Frame Waiting Time in 1/fc                     */
-} rfalTransceiveContext;
+    uint8_t* rxBuf; /*!< (Out) Buffer where incoming message will be placed   */
+    uint16_t rxBufLen; /*!< (In)  Maximum length of the incoming message in bits */
+    uint16_t* rxRcvdLen; /*!< (Out) Actual received length in bits                 */
 
     uint32_t flags; /*!< (In)  TransceiveFlags indication special handling    */
     uint32_t fwt; /*!< (In)  Frame Waiting Time in 1/fc                     */
@@ -551,10 +562,9 @@ typedef void (*rfalPostTxRxCallback)(void);
 /*******************************************************************************/
 
 /*! RFAL ISO 14443A Short Frame Command */
-typedef enum
-{
-     RFAL_14443A_SHORTFRAME_CMD_WUPA = 0x52,  /*!< ISO14443A WUPA / NFC-A ALL_REQ  */
-     RFAL_14443A_SHORTFRAME_CMD_REQA = 0x26   /*!< ISO14443A REQA / NFC-A SENS_REQ */
+typedef enum {
+    RFAL_14443A_SHORTFRAME_CMD_WUPA = 0x52, /*!< ISO14443A WUPA / NFC-A ALL_REQ  */
+    RFAL_14443A_SHORTFRAME_CMD_REQA = 0x26 /*!< ISO14443A REQA / NFC-A SENS_REQ */
 } rfal14443AShortFrameCmd;
 
 /*******************************************************************************/
@@ -575,21 +585,22 @@ typedef enum
     16U /*!< Maximum number of slots (TSN) on FeliCa Poll                        */
 
 /*! NFC-F RC (Request Code) codes  NFC Forum Digital 1.1 Table 42                                                                                                        */
-enum
-{
-    RFAL_FELICA_POLL_RC_NO_REQUEST        =     0x00,                                           /*!< RC: No System Code information requested                            */
-    RFAL_FELICA_POLL_RC_SYSTEM_CODE       =     0x01,                                           /*!< RC: System Code information requested                               */
-    RFAL_FELICA_POLL_RC_COM_PERFORMANCE   =     0x02                                            /*!< RC: Advanced protocol features supported                            */
+enum {
+    RFAL_FELICA_POLL_RC_NO_REQUEST =
+        0x00, /*!< RC: No System Code information requested                            */
+    RFAL_FELICA_POLL_RC_SYSTEM_CODE =
+        0x01, /*!< RC: System Code information requested                               */
+    RFAL_FELICA_POLL_RC_COM_PERFORMANCE =
+        0x02 /*!< RC: Advanced protocol features supported                            */
 };
 
 /*! NFC-F TSN (Time Slot Number) codes  NFC Forum Digital 1.1 Table 43   */
-typedef enum
-{
-    RFAL_FELICA_1_SLOT    =  0,   /*!< TSN with number of Time Slots: 1  */
-    RFAL_FELICA_2_SLOTS   =  1,   /*!< TSN with number of Time Slots: 2  */
-    RFAL_FELICA_4_SLOTS   =  3,   /*!< TSN with number of Time Slots: 4  */
-    RFAL_FELICA_8_SLOTS   =  7,   /*!< TSN with number of Time Slots: 8  */
-    RFAL_FELICA_16_SLOTS  =  15   /*!< TSN with number of Time Slots: 16 */
+typedef enum {
+    RFAL_FELICA_1_SLOT = 0, /*!< TSN with number of Time Slots: 1  */
+    RFAL_FELICA_2_SLOTS = 1, /*!< TSN with number of Time Slots: 2  */
+    RFAL_FELICA_4_SLOTS = 3, /*!< TSN with number of Time Slots: 4  */
+    RFAL_FELICA_8_SLOTS = 7, /*!< TSN with number of Time Slots: 8  */
+    RFAL_FELICA_16_SLOTS = 15 /*!< TSN with number of Time Slots: 16 */
 } rfalFeliCaPollSlots;
 
 /*! NFCF Poll Response  NFC Forum Digital 1.1 Table 44 */
@@ -602,55 +613,50 @@ typedef uint8_t rfalFeliCaPollRes[RFAL_FELICA_POLL_RES_LEN];
 /*******************************************************************************/
 
 /*! RFAL Listen Mode NFCID Length */
-typedef enum
-{
-    RFAL_LM_NFCID_LEN_04  = RFAL_NFCID1_SINGLE_LEN, /*!< Listen mode indicates  4 byte NFCID */
-    RFAL_LM_NFCID_LEN_07  = RFAL_NFCID1_DOUBLE_LEN, /*!< Listen mode indicates  7 byte NFCID */
-    RFAL_LM_NFCID_LEN_10  = RFAL_NFCID1_TRIPLE_LEN, /*!< Listen mode indicates 10 byte NFCID */
+typedef enum {
+    RFAL_LM_NFCID_LEN_04 = RFAL_NFCID1_SINGLE_LEN, /*!< Listen mode indicates  4 byte NFCID */
+    RFAL_LM_NFCID_LEN_07 = RFAL_NFCID1_DOUBLE_LEN, /*!< Listen mode indicates  7 byte NFCID */
+    RFAL_LM_NFCID_LEN_10 = RFAL_NFCID1_TRIPLE_LEN, /*!< Listen mode indicates 10 byte NFCID */
 } rfalLmNfcidLen;
 
 /*! RFAL Listen Mode States */
-typedef enum
-{
-    RFAL_LM_STATE_NOT_INIT              = 0x00,     /*!< Not Initialized state                       */
-    RFAL_LM_STATE_POWER_OFF             = 0x01,     /*!< Power Off state                             */
-    RFAL_LM_STATE_IDLE                  = 0x02,     /*!< Idle state  Activity 1.1  5.2               */
-    RFAL_LM_STATE_READY_A               = 0x03,     /*!< Ready A state  Activity 1.1  5.3 5.4 & 5.5  */
-    RFAL_LM_STATE_READY_B               = 0x04,     /*!< Ready B state  Activity 1.1  5.11 5.12      */
-    RFAL_LM_STATE_READY_F               = 0x05,     /*!< Ready F state  Activity 1.1  5.15           */
-    RFAL_LM_STATE_ACTIVE_A              = 0x06,     /*!< Active A state  Activity 1.1  5.6           */
-    RFAL_LM_STATE_CARDEMU_4A            = 0x07,     /*!< Card Emulation 4A state  Activity 1.1  5.10 */
-    RFAL_LM_STATE_CARDEMU_4B            = 0x08,     /*!< Card Emulation 4B state  Activity 1.1  5.14 */
-    RFAL_LM_STATE_CARDEMU_3             = 0x09,     /*!< Card Emulation 3 state  Activity 1.1  5.18  */
-    RFAL_LM_STATE_TARGET_A              = 0x0A,     /*!< Target A state  Activity 1.1  5.9           */
-    RFAL_LM_STATE_TARGET_F              = 0x0B,     /*!< Target F state  Activity 1.1  5.17          */
-    RFAL_LM_STATE_SLEEP_A               = 0x0C,     /*!< Sleep A state  Activity 1.1  5.7            */
-    RFAL_LM_STATE_SLEEP_B               = 0x0D,     /*!< Sleep B state  Activity 1.1  5.13           */
-    RFAL_LM_STATE_READY_Ax              = 0x0E,     /*!< Ready A* state  Activity 1.1  5.3 5.4 & 5.5 */
-    RFAL_LM_STATE_ACTIVE_Ax             = 0x0F,     /*!< Active A* state  Activity 1.1  5.6          */
-    RFAL_LM_STATE_SLEEP_AF              = 0x10,     /*!< Sleep AF state  Activity 1.1  5.19          */
+typedef enum {
+    RFAL_LM_STATE_NOT_INIT = 0x00, /*!< Not Initialized state                       */
+    RFAL_LM_STATE_POWER_OFF = 0x01, /*!< Power Off state                             */
+    RFAL_LM_STATE_IDLE = 0x02, /*!< Idle state  Activity 1.1  5.2               */
+    RFAL_LM_STATE_READY_A = 0x03, /*!< Ready A state  Activity 1.1  5.3 5.4 & 5.5  */
+    RFAL_LM_STATE_READY_B = 0x04, /*!< Ready B state  Activity 1.1  5.11 5.12      */
+    RFAL_LM_STATE_READY_F = 0x05, /*!< Ready F state  Activity 1.1  5.15           */
+    RFAL_LM_STATE_ACTIVE_A = 0x06, /*!< Active A state  Activity 1.1  5.6           */
+    RFAL_LM_STATE_CARDEMU_4A = 0x07, /*!< Card Emulation 4A state  Activity 1.1  5.10 */
+    RFAL_LM_STATE_CARDEMU_4B = 0x08, /*!< Card Emulation 4B state  Activity 1.1  5.14 */
+    RFAL_LM_STATE_CARDEMU_3 = 0x09, /*!< Card Emulation 3 state  Activity 1.1  5.18  */
+    RFAL_LM_STATE_TARGET_A = 0x0A, /*!< Target A state  Activity 1.1  5.9           */
+    RFAL_LM_STATE_TARGET_F = 0x0B, /*!< Target F state  Activity 1.1  5.17          */
+    RFAL_LM_STATE_SLEEP_A = 0x0C, /*!< Sleep A state  Activity 1.1  5.7            */
+    RFAL_LM_STATE_SLEEP_B = 0x0D, /*!< Sleep B state  Activity 1.1  5.13           */
+    RFAL_LM_STATE_READY_Ax = 0x0E, /*!< Ready A* state  Activity 1.1  5.3 5.4 & 5.5 */
+    RFAL_LM_STATE_ACTIVE_Ax = 0x0F, /*!< Active A* state  Activity 1.1  5.6          */
+    RFAL_LM_STATE_SLEEP_AF = 0x10, /*!< Sleep AF state  Activity 1.1  5.19          */
 } rfalLmState;
 
 /*! RFAL Listen Mode Passive A configs */
-typedef struct
-{
-    rfalLmNfcidLen   nfcidLen;                        /*!< NFCID Len (4, 7 or 10 bytes)              */
-    uint8_t          nfcid[RFAL_NFCID1_TRIPLE_LEN];   /*!< NFCID                                     */
-    uint8_t          SENS_RES[RFAL_LM_SENS_RES_LEN];  /*!< NFC-106k; SENS_REQ Response               */
-    uint8_t          SEL_RES;                         /*!< SEL_RES (SAK) with complete NFCID1 (UID)  */
+typedef struct {
+    rfalLmNfcidLen nfcidLen; /*!< NFCID Len (4, 7 or 10 bytes)              */
+    uint8_t nfcid[RFAL_NFCID1_TRIPLE_LEN]; /*!< NFCID                                     */
+    uint8_t SENS_RES[RFAL_LM_SENS_RES_LEN]; /*!< NFC-106k; SENS_REQ Response               */
+    uint8_t SEL_RES; /*!< SEL_RES (SAK) with complete NFCID1 (UID)  */
 } rfalLmConfPA;
 
 /*! RFAL Listen Mode Passive B configs */
-typedef struct
-{
-    uint8_t          SENSB_RES[RFAL_LM_SENSB_RES_LEN];  /*!< SENSF_RES                               */
+typedef struct {
+    uint8_t SENSB_RES[RFAL_LM_SENSB_RES_LEN]; /*!< SENSF_RES                               */
 } rfalLmConfPB;
 
 /*! RFAL Listen Mode Passive F configs */
-typedef struct
-{
-    uint8_t          SC[RFAL_LM_SENSF_SC_LEN];          /*!< System Code to listen for               */
-    uint8_t          SENSF_RES[RFAL_LM_SENSF_RES_LEN];  /*!< SENSF_RES                               */
+typedef struct {
+    uint8_t SC[RFAL_LM_SENSF_SC_LEN]; /*!< System Code to listen for               */
+    uint8_t SENSF_RES[RFAL_LM_SENSF_RES_LEN]; /*!< SENSF_RES                               */
 } rfalLmConfPF;
 
 /*******************************************************************************/
@@ -662,74 +668,70 @@ typedef struct
 #define RFAL_WUM_REFERENCE_AUTO 0xFFU /*!< Indicates new reference is set by the driver*/
 
 /*! RFAL Wake-Up Mode States */
-typedef enum
-{
-    RFAL_WUM_STATE_NOT_INIT              = 0x00,     /*!< Not Initialized state                       */
-    RFAL_WUM_STATE_ENABLED               = 0x01,     /*!< Wake-Up mode is enabled                     */
-    RFAL_WUM_STATE_ENABLED_WOKE          = 0x02,     /*!< Wake-Up mode enabled and has received IRQ(s)*/
+typedef enum {
+    RFAL_WUM_STATE_NOT_INIT = 0x00, /*!< Not Initialized state                       */
+    RFAL_WUM_STATE_ENABLED = 0x01, /*!< Wake-Up mode is enabled                     */
+    RFAL_WUM_STATE_ENABLED_WOKE = 0x02, /*!< Wake-Up mode enabled and has received IRQ(s)*/
 } rfalWumState;
 
 /*! RFAL Wake-Up Period/Timer */
-typedef enum
-{
-    RFAL_WUM_PERIOD_10MS      = 0x00,     /*!< Wake-Up timer 10ms                          */
-    RFAL_WUM_PERIOD_20MS      = 0x01,     /*!< Wake-Up timer 20ms                          */
-    RFAL_WUM_PERIOD_30MS      = 0x02,     /*!< Wake-Up timer 30ms                          */
-    RFAL_WUM_PERIOD_40MS      = 0x03,     /*!< Wake-Up timer 40ms                          */
-    RFAL_WUM_PERIOD_50MS      = 0x04,     /*!< Wake-Up timer 50ms                          */
-    RFAL_WUM_PERIOD_60MS      = 0x05,     /*!< Wake-Up timer 60ms                          */
-    RFAL_WUM_PERIOD_70MS      = 0x06,     /*!< Wake-Up timer 70ms                          */
-    RFAL_WUM_PERIOD_80MS      = 0x07,     /*!< Wake-Up timer 80ms                          */
-    RFAL_WUM_PERIOD_100MS     = 0x10,     /*!< Wake-Up timer 100ms                         */
-    RFAL_WUM_PERIOD_200MS     = 0x11,     /*!< Wake-Up timer 200ms                         */
-    RFAL_WUM_PERIOD_300MS     = 0x12,     /*!< Wake-Up timer 300ms                         */
-    RFAL_WUM_PERIOD_400MS     = 0x13,     /*!< Wake-Up timer 400ms                         */
-    RFAL_WUM_PERIOD_500MS     = 0x14,     /*!< Wake-Up timer 500ms                         */
-    RFAL_WUM_PERIOD_600MS     = 0x15,     /*!< Wake-Up timer 600ms                         */
-    RFAL_WUM_PERIOD_700MS     = 0x16,     /*!< Wake-Up timer 700ms                         */
-    RFAL_WUM_PERIOD_800MS     = 0x17,     /*!< Wake-Up timer 800ms                         */
+typedef enum {
+    RFAL_WUM_PERIOD_10MS = 0x00, /*!< Wake-Up timer 10ms                          */
+    RFAL_WUM_PERIOD_20MS = 0x01, /*!< Wake-Up timer 20ms                          */
+    RFAL_WUM_PERIOD_30MS = 0x02, /*!< Wake-Up timer 30ms                          */
+    RFAL_WUM_PERIOD_40MS = 0x03, /*!< Wake-Up timer 40ms                          */
+    RFAL_WUM_PERIOD_50MS = 0x04, /*!< Wake-Up timer 50ms                          */
+    RFAL_WUM_PERIOD_60MS = 0x05, /*!< Wake-Up timer 60ms                          */
+    RFAL_WUM_PERIOD_70MS = 0x06, /*!< Wake-Up timer 70ms                          */
+    RFAL_WUM_PERIOD_80MS = 0x07, /*!< Wake-Up timer 80ms                          */
+    RFAL_WUM_PERIOD_100MS = 0x10, /*!< Wake-Up timer 100ms                         */
+    RFAL_WUM_PERIOD_200MS = 0x11, /*!< Wake-Up timer 200ms                         */
+    RFAL_WUM_PERIOD_300MS = 0x12, /*!< Wake-Up timer 300ms                         */
+    RFAL_WUM_PERIOD_400MS = 0x13, /*!< Wake-Up timer 400ms                         */
+    RFAL_WUM_PERIOD_500MS = 0x14, /*!< Wake-Up timer 500ms                         */
+    RFAL_WUM_PERIOD_600MS = 0x15, /*!< Wake-Up timer 600ms                         */
+    RFAL_WUM_PERIOD_700MS = 0x16, /*!< Wake-Up timer 700ms                         */
+    RFAL_WUM_PERIOD_800MS = 0x17, /*!< Wake-Up timer 800ms                         */
 } rfalWumPeriod;
 
 /*! RFAL Wake-Up Period/Timer */
-typedef enum
-{
-    RFAL_WUM_AA_WEIGHT_4       = 0x00,     /*!< Wake-Up Auto Average Weight 4              */
-    RFAL_WUM_AA_WEIGHT_8       = 0x01,     /*!< Wake-Up Auto Average Weight 8              */
-    RFAL_WUM_AA_WEIGHT_16      = 0x02,     /*!< Wake-Up Auto Average Weight 16             */
-    RFAL_WUM_AA_WEIGHT_32      = 0x03,     /*!< Wake-Up Auto Average Weight 32             */
+typedef enum {
+    RFAL_WUM_AA_WEIGHT_4 = 0x00, /*!< Wake-Up Auto Average Weight 4              */
+    RFAL_WUM_AA_WEIGHT_8 = 0x01, /*!< Wake-Up Auto Average Weight 8              */
+    RFAL_WUM_AA_WEIGHT_16 = 0x02, /*!< Wake-Up Auto Average Weight 16             */
+    RFAL_WUM_AA_WEIGHT_32 = 0x03, /*!< Wake-Up Auto Average Weight 32             */
 } rfalWumAAWeight;
 
 /*! RFAL Wake-Up Mode configuration */
-typedef struct
-{
-    rfalWumPeriod        period;     /*!< Wake-Up Timer period;how often measurement(s) is performed */
-    bool                 irqTout;    /*!< IRQ at every timeout will refresh the measurement(s)       */
-    bool                 swTagDetect;/*!< Use SW Tag Detection instead of HW Wake-Up mode            */
+typedef struct {
+    rfalWumPeriod period; /*!< Wake-Up Timer period;how often measurement(s) is performed */
+    bool irqTout; /*!< IRQ at every timeout will refresh the measurement(s)       */
+    bool swTagDetect; /*!< Use SW Tag Detection instead of HW Wake-Up mode            */
 
-    struct{
-        bool             enabled;    /*!< Inductive Amplitude measurement enabled                   */
-        uint8_t          delta;      /*!< Delta between the reference and measurement to wake-up    */
-        uint16_t         reference;  /*!< Reference to be used;RFAL_WUM_REFERENCE_AUTO sets it auto */
-        bool             autoAvg;    /*!< Use the HW Auto Averaging feature                         */
-        bool             aaInclMeas; /*!< When AutoAvg is enabled, include IRQ measurement          */
-        rfalWumAAWeight  aaWeight;   /*!< When AutoAvg is enabled, last measure weight              */
-    }indAmp;                         /*!< Inductive Amplitude Configuration                         */
-    struct{
-        bool             enabled;    /*!< Inductive Phase measurement enabled                       */
-        uint8_t          delta;      /*!< Delta between the reference and measurement to wake-up    */
-        uint16_t         reference;  /*!< Reference to be used;RFAL_WUM_REFERENCE_AUTO sets it auto */
-        bool             autoAvg;    /*!< Use the HW Auto Averaging feature                         */
-        bool             aaInclMeas; /*!< When AutoAvg is enabled, include IRQ measurement          */
-        rfalWumAAWeight  aaWeight;   /*!< When AutoAvg is enabled, last measure weight              */
-    }indPha;                         /*!< Inductive Phase Configuration                             */
-    struct{
-        bool             enabled;    /*!< Capacitive measurement enabled                            */
-        uint8_t          delta;      /*!< Delta between the reference and measurement to wake-up    */
-        uint16_t         reference;  /*!< Reference to be used;RFAL_WUM_REFERENCE_AUTO sets it auto */
-        bool             autoAvg;    /*!< Use the HW Auto Averaging feature                         */
-        bool             aaInclMeas; /*!< When AutoAvg is enabled, include IRQ measurement          */
-        rfalWumAAWeight  aaWeight;   /*!< When AutoAvg is enabled, last measure weight              */
-    }cap;                            /*!< Capacitive Configuration                                  */
+    struct {
+        bool enabled; /*!< Inductive Amplitude measurement enabled                   */
+        uint8_t delta; /*!< Delta between the reference and measurement to wake-up    */
+        uint16_t reference; /*!< Reference to be used;RFAL_WUM_REFERENCE_AUTO sets it auto */
+        bool autoAvg; /*!< Use the HW Auto Averaging feature                         */
+        bool aaInclMeas; /*!< When AutoAvg is enabled, include IRQ measurement          */
+        rfalWumAAWeight aaWeight; /*!< When AutoAvg is enabled, last measure weight              */
+    } indAmp; /*!< Inductive Amplitude Configuration                         */
+    struct {
+        bool enabled; /*!< Inductive Phase measurement enabled                       */
+        uint8_t delta; /*!< Delta between the reference and measurement to wake-up    */
+        uint16_t reference; /*!< Reference to be used;RFAL_WUM_REFERENCE_AUTO sets it auto */
+        bool autoAvg; /*!< Use the HW Auto Averaging feature                         */
+        bool aaInclMeas; /*!< When AutoAvg is enabled, include IRQ measurement          */
+        rfalWumAAWeight aaWeight; /*!< When AutoAvg is enabled, last measure weight              */
+    } indPha; /*!< Inductive Phase Configuration                             */
+    struct {
+        bool enabled; /*!< Capacitive measurement enabled                            */
+        uint8_t delta; /*!< Delta between the reference and measurement to wake-up    */
+        uint16_t reference; /*!< Reference to be used;RFAL_WUM_REFERENCE_AUTO sets it auto */
+        bool autoAvg; /*!< Use the HW Auto Averaging feature                         */
+        bool aaInclMeas; /*!< When AutoAvg is enabled, include IRQ measurement          */
+        rfalWumAAWeight aaWeight; /*!< When AutoAvg is enabled, last measure weight              */
+    } cap; /*!< Capacitive Configuration                                  */
 } rfalWakeUpConfig;
 
 /*******************************************************************************/
@@ -739,7 +741,6 @@ typedef struct
 * GLOBAL FUNCTION PROTOTYPES
 ******************************************************************************
 */
-
 
 /*!
  *****************************************************************************

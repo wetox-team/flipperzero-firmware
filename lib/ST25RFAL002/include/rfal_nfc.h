@@ -167,53 +167,33 @@ typedef enum {
 } rfalNfcRfInterface;
 
 /*! Device struct containing all its details                                          */
-typedef struct{
-    rfalNfcDevType type;                            /*!< Device's type                */
-    union{                              /*  PRQA S 0750 # MISRA 19.2 - Members of the union will not be used concurrently, only one technology at a time */
-        rfalNfcaListenDevice   nfca;                /*!< NFC-A Listen Device instance */
-        rfalNfcbListenDevice   nfcb;                /*!< NFC-B Listen Device instance */
-        rfalNfcfListenDevice   nfcf;                /*!< NFC-F Listen Device instance */
-        rfalNfcvListenDevice   nfcv;                /*!< NFC-V Listen Device instance */
-        rfalSt25tbListenDevice st25tb;              /*!< ST25TB Listen Device instance*/
-    }dev;                                           /*!< Device's instance            */
+typedef struct {
+    rfalNfcDevType type; /*!< Device's type                */
+    union { /*  PRQA S 0750 # MISRA 19.2 - Members of the union will not be used concurrently, only one technology at a time */
+        rfalNfcaListenDevice nfca; /*!< NFC-A Listen Device instance */
+        rfalNfcbListenDevice nfcb; /*!< NFC-B Listen Device instance */
+        rfalNfcfListenDevice nfcf; /*!< NFC-F Listen Device instance */
+        rfalNfcvListenDevice nfcv; /*!< NFC-V Listen Device instance */
+        rfalSt25tbListenDevice st25tb; /*!< ST25TB Listen Device instance*/
+    } dev; /*!< Device's instance            */
 
-    uint8_t                    *nfcid;              /*!< Device's NFCID               */
-    uint8_t                    nfcidLen;            /*!< Device's NFCID length        */
-    rfalNfcRfInterface         rfInterface;         /*!< Device's interface           */
+    uint8_t* nfcid; /*!< Device's NFCID               */
+    uint8_t nfcidLen; /*!< Device's NFCID length        */
+    rfalNfcRfInterface rfInterface; /*!< Device's interface           */
 
-    union{                              /*  PRQA S 0750 # MISRA 19.2 - Members of the union will not be used concurrently, only one protocol at a time */
-        rfalIsoDepDevice       isoDep;              /*!< ISO-DEP instance             */
-        rfalNfcDepDevice       nfcDep;              /*!< NFC-DEP instance             */
-    }proto;                                         /*!< Device's protocol            */
-}rfalNfcDevice;
-
+    union { /*  PRQA S 0750 # MISRA 19.2 - Members of the union will not be used concurrently, only one protocol at a time */
+        rfalIsoDepDevice isoDep; /*!< ISO-DEP instance             */
+        rfalNfcDepDevice nfcDep; /*!< NFC-DEP instance             */
+    } proto; /*!< Device's protocol            */
+} rfalNfcDevice;
 
 /*! Discovery parameters                                                                                           */
-typedef struct{
-    rfalComplianceMode compMode;                        /*!< Compliancy mode to be used                            */
-    uint16_t           techs2Find;                      /*!< Technologies to search for                            */
-    uint16_t           totalDuration;                   /*!< Duration of a whole Poll + Listen cycle               */
-    uint8_t            devLimit;                        /*!< Max number of devices                                 */
-    rfalBitRate        maxBR;                           /*!< Max Bit rate to be used for communications            */
-
-    rfalBitRate        nfcfBR;                          /*!< Bit rate to poll for NFC-F                            */
-    uint8_t            nfcid3[RFAL_NFCDEP_NFCID3_LEN];  /*!< NFCID3 to be used on the ATR_REQ/ATR_RES              */
-    uint8_t            GB[RFAL_NFCDEP_GB_MAX_LEN];      /*!< General bytes to be used on the ATR-REQ               */
-    uint8_t            GBLen;                           /*!< Length of the General Bytes                           */
-    rfalBitRate        ap2pBR;                          /*!< Bit rate to poll for AP2P                             */
-
-
-    rfalLmConfPA       lmConfigPA;                      /*!< Configuration for Passive Listen mode NFC-A           */
-    rfalLmConfPF       lmConfigPF;                      /*!< Configuration for Passive Listen mode NFC-A           */
-
-    void               (*notifyCb)( rfalNfcState st );  /*!< Callback to Notify upper layer                        */
-
-    bool               wakeupEnabled;                   /*!< Enable Wake-Up mode before polling                    */
-    bool               wakeupConfigDefault;             /*!< Wake-Up mode default configuration                    */
-    rfalWakeUpConfig   wakeupConfig;                    /*!< Wake-Up mode configuration                            */
-
-    bool               activate_after_sak; // Set device to Active mode after SAK responce
-}rfalNfcDiscoverParam;
+typedef struct {
+    rfalComplianceMode compMode; /*!< Compliancy mode to be used                            */
+    uint16_t techs2Find; /*!< Technologies to search for                            */
+    uint16_t totalDuration; /*!< Duration of a whole Poll + Listen cycle               */
+    uint8_t devLimit; /*!< Max number of devices                                 */
+    rfalBitRate maxBR; /*!< Max Bit rate to be used for communications            */
 
     rfalBitRate nfcfBR; /*!< Bit rate to poll for NFC-F                            */
     uint8_t
@@ -379,10 +359,33 @@ ReturnCode rfalNfcSelect(uint8_t devIdx);
  * \return ERR_NONE         : No error
  *****************************************************************************
  */
-ReturnCode rfalNfcDataExchangeStart( uint8_t *txData, uint16_t txDataLen, uint8_t **rxData, uint16_t **rvdLen, uint32_t fwt, uint32_t flags);
-ReturnCode rfalNfcDataNoCRCExchangeStart(uint8_t* txData, uint16_t txDataLen, uint8_t** rxData, uint16_t** rvdLen, uint32_t fwt);
-ReturnCode rfalNfcRawBitstreamExchangeStart( uint8_t *txData, uint16_t txDataLen, uint8_t **rxData, uint16_t **rvdLen, uint32_t fwt );
-ReturnCode rfalNfcRawBitstreamParityExchangeStart( uint8_t *txData, uint16_t txDataLen, uint8_t *par, uint16_t parLen, uint8_t **rxData, uint16_t **rvdLen, uint32_t fwt );
+ReturnCode rfalNfcDataExchangeStart(
+    uint8_t* txData,
+    uint16_t txDataLen,
+    uint8_t** rxData,
+    uint16_t** rvdLen,
+    uint32_t fwt,
+    uint32_t flags);
+ReturnCode rfalNfcDataNoCRCExchangeStart(
+    uint8_t* txData,
+    uint16_t txDataLen,
+    uint8_t** rxData,
+    uint16_t** rvdLen,
+    uint32_t fwt);
+ReturnCode rfalNfcRawBitstreamExchangeStart(
+    uint8_t* txData,
+    uint16_t txDataLen,
+    uint8_t** rxData,
+    uint16_t** rvdLen,
+    uint32_t fwt);
+ReturnCode rfalNfcRawBitstreamParityExchangeStart(
+    uint8_t* txData,
+    uint16_t txDataLen,
+    uint8_t* par,
+    uint16_t parLen,
+    uint8_t** rxData,
+    uint16_t** rvdLen,
+    uint32_t fwt);
 
 /*!
  *****************************************************************************
