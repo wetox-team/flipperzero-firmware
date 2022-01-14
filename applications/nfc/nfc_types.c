@@ -53,6 +53,8 @@ const char* nfc_guess_protocol(NfcProtocol protocol) {
         return "EMV bank card";
     } else if(protocol == NfcDeviceProtocolMifareUl) {
         return "Mifare Ultral/NTAG";
+    } else if(protocol == NfcDeviceProtocolMifareClassic) {
+        return "Mifare Classic";
     } else {
         return "Unrecognized";
     }
@@ -72,4 +74,8 @@ const char* nfc_mf_ul_type(MfUltralightType type, bool full_name) {
     } else {
         return "Mifare Ultralight";
     }
+}
+
+const char* nfc_mf_classic_type(MfClassicType type, bool full_name) {
+    return "Mifare Classic";
 }
