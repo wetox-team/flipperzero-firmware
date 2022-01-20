@@ -9,6 +9,12 @@
      (uint32_t)RFAL_TXRX_FLAGS_PAR_RX_REMV | (uint32_t)RFAL_TXRX_FLAGS_PAR_TX_AUTO | \
      (uint32_t)RFAL_TXRX_FLAGS_NFCV_FLAG_AUTO)
 
+#define RFAL_TXRX_FLAGS_NOCRC_TX                                                       \
+    ((uint32_t)RFAL_TXRX_FLAGS_CRC_TX_MANUAL | (uint32_t)RFAL_TXRX_FLAGS_CRC_RX_KEEP | \
+     (uint32_t)RFAL_TXRX_FLAGS_NFCIP1_OFF | (uint32_t)RFAL_TXRX_FLAGS_AGC_ON |         \
+     (uint32_t)RFAL_TXRX_FLAGS_PAR_RX_REMV | (uint32_t)RFAL_TXRX_FLAGS_PAR_TX_AUTO |   \
+     (uint32_t)RFAL_TXRX_FLAGS_NFCV_FLAG_AUTO)
+
 #define AddCrc14A(data, len) \
     compute_crc(CRC_14443_A, (data), (len), (data) + (len), (data) + (len) + 1)
 
@@ -55,7 +61,7 @@ int mifare_sendcmd_short(
     uint16_t* len;
     uint8_t dcmd[2] = {cmd, data};
     uint8_t ecmd[2] = {0x00, 0x00};
-    AddCrc14A(dcmd, 2);
+    //AddCrc14A(dcmd, 2);
     memcpy(ecmd, dcmd, sizeof(dcmd));
     uint8_t* answer2 = answer;
     if(pcs && crypted) {
@@ -103,7 +109,7 @@ int mifare_sendcmd_short(
     return *len;
 }
 
-// send 2 byte commands without crc
+// send 2 byte commands without automatic crc
 int mifare_sendcmd_short_no_crc(
     struct Crypto1State* pcs,
     uint8_t crypted,
@@ -135,8 +141,8 @@ int mifare_sendcmd_short_no_crc(
         //ReaderTransmit(dcmd, sizeof(dcmd), timing);
         // FURI_LOG_I("MIFARE", "dcmd_no_crc = %02X", dcmd[1]);
         // FURI_LOG_I("MIFARE", "par_no_crc = %02X", par[0]);
-        furi_hal_nfc_raw_parbits_exchange(
-            dcmd, sizeof(dcmd), par, &answer2, &len, &rx_parbits, false);
+        furi_hal_nfc_custom_flags_exchange(
+            ecmd, sizeof(dcmd), &answer2, &len, false, RFAL_TXRX_FLAGS_NOCRC_TX);
     }
     //FURI_LOG_I("MIFARE", "len = %d", *len);
     memcpy(answer, answer2, *len);
@@ -158,58 +164,6 @@ int mifare_sendcmd_short_no_crc(
         }
     }
     return *len;
-}
-
-// send 2 byte commands without crc
-int mifare_sendcmd_halt(
-    struct Crypto1State* pcs,
-    uint8_t crypted,
-    uint8_t cmd,
-    uint8_t data,
-    uint8_t* answer) {
-    uint16_t pos;
-    //uint8_t* rx_parbits;
-    //uint16_t* len;
-    uint8_t dcmd[4] = {cmd, data, 0x00, 0x00};
-    uint8_t ecmd[4] = {0x00, 0x00, 0x00, 0x00};
-    uint8_t par[1] = {0x00}; // 1 Byte parity is enough here
-    AddCrc14A(dcmd, 2);
-    memcpy(ecmd, dcmd, sizeof(dcmd));
-
-    if(pcs && crypted) {
-        par[0] = 0;
-        for(pos = 0; pos < 4; pos++) {
-            ecmd[pos] = crypto1_byte(pcs, 0x00, 0) ^ dcmd[pos];
-            par[0] |= (((filter(pcs->odd) ^ oddparity8(dcmd[pos])) & 0x01) << (7 - pos));
-        }
-        //ReaderTransmitPar(ecmd, sizeof(ecmd), par, timing);
-        // FURI_LOG_I("MIFARE", "ecmd_halt = %02X", ecmd[1]);
-        // FURI_LOG_I("MIFARE", "par_halt = %02X", par[0]);
-        //furi_hal_nfc_raw_parbits_exchange(ecmd, sizeof(ecmd), par, &answer, &len, &rx_parbits, false);
-    } else {
-        //ReaderTransmit(dcmd, sizeof(dcmd), timing);
-        // FURI_LOG_I("MIFARE", "dcmd_halt = %02X", dcmd[1]);
-        // FURI_LOG_I("MIFARE", "par_halt = %02X", par[0]);
-        //furi_hal_nfc_raw_parbits_exchange(dcmd, sizeof(dcmd), par, &answer, &len, &rx_parbits, false);
-    }
-
-    //int len = ReaderReceive(answer, par);
-
-    // if(crypted == CRYPT_ALL) {
-    //     if(*len == 1) {
-    //         FURI_LOG_I("ASTRA", "len = 1");
-    //         uint16_t res = 0;
-    //         res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 0)) << 0;
-    //         res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 1)) << 1;
-    //         res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 2)) << 2;
-    //         res |= (crypto1_bit(pcs, 0, 0) ^ BIT(answer[0], 3)) << 3;
-    //         answer[0] = res;
-    //     } else {
-    //         FURI_LOG_I("ASTRA", "len = %d", *len);
-    //         for(pos = 0; pos < *len; pos++) answer[pos] = crypto1_byte(pcs, 0x00, 0) ^ answer[pos];
-    //     }
-    // }
-    return 0;
 }
 
 // mifare classic commands
@@ -247,8 +201,8 @@ int mifare_classic_authex(
     num_to_bytes(prng_successor(DWT->CYCCNT, 32), 4, nr);
 
     // Transmit MIFARE_CLASSIC_AUTH
-    len = mifare_sendcmd_short(
-        pcs, isNested, 0x60 + (keyType & 0x01), blockNo, receivedAnswer, timing);
+    len = mifare_sendcmd_short_no_crc(
+        pcs, isNested, 0x60 + (keyType & 0x01), blockNo, receivedAnswer);
     //if(len != 4) return 1;
 
     // Save the tag nonce (nt)
@@ -412,18 +366,6 @@ void MifareReadBlock(uint8_t blockNo, uint8_t keyType, uint64_t ui64Key, uint8_t
     FURI_LOG_I("MFC", "READ BLOCK FINISHED");
 
     //reply_ng(CMD_HF_MIFARE_READBL, status, dataoutbuf, 16);
-}
-
-int mifare_classic_halt(struct Crypto1State* pcs) {
-    uint8_t* receivedAnswer[] = {0x00};
-    uint16_t len = mifare_sendcmd_halt(
-        pcs, (pcs == NULL) ? CRYPT_NONE : CRYPT_ALL, ISO14443A_CMD_HALT, 0x00, *receivedAnswer);
-    crypto1_deinit(pcs);
-    if(len != 0) {
-        FURI_LOG_E("MIFARE", "halt warning. response len: %d", len);
-        return 1;
-    }
-    return 0;
 }
 
 void mf_classic_prepare_emulation(MifareClassicDevice* mf_classic_emulate, MifareClassicData* data) {

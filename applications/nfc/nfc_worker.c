@@ -705,28 +705,29 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
                                (dev_list[0].dev.nfca.nfcId1[2] << 8) +
                                dev_list[0].dev.nfca.nfcId1[3];
                 //FURI_LOG_I("MIFARE", "Start reading");
-                for(uint8_t block = 0; block < mf_classic_read.blocks_to_read; block++) {
-                    // auth if we're starting to read a new sector
-                    if(block % 4 == 0) {
-                        furi_hal_nfc_deactivate();
-                        if(furi_hal_nfc_detect(&dev_list, &dev_cnt, 150, false)) {
-                            //FURI_LOG_I(TAG, "Trying to auth, block %d", block);
-                            if(!mifare_classic_auth(pcs, uid, block, 0, key, 0)) {
-                                //FURI_LOG_I("MIFARE", "Successfully authenticated on block %d", block);
+                if(furi_hal_nfc_detect(&dev_list, &dev_cnt, 150, false)) {
+                    for(uint8_t block = 0; block < mf_classic_read.blocks_to_read; block++) {
+                        // auth if we're starting to read a new sector
+                        if(block % 4 == 0) {
+                            FURI_LOG_I(TAG, "Trying to auth, block %d", block);
+                            if(block == 0) {
+                                furi_hal_nfc_deactivate();
+                                furi_hal_nfc_detect(&dev_list, &dev_cnt, 140, false);
+                                mifare_classic_auth(pcs, uid, block, 0, key, AUTH_FIRST);
                             } else {
-                                //FURI_LOG_E("MIFARE", "Failed to authenticate");
+                                mifare_classic_auth(pcs, uid, block, 0, key, AUTH_NESTED);
                             }
-                        } else {
-                            //FURI_LOG_E("MIFARE", "No card detected");
-                            break;
                         }
+                        //}
+                        FURI_LOG_I("MIFARE", "Reading block %d", block);
+                        mf_classic_read_block(pcs, uid, block, block_data);
+                        mf_classic_read.data.data_size = (block + 1) * 16;
+                        memcpy(&mf_classic_read.data.data[block * 16], block_data, 16);
                     }
-                    //FURI_LOG_I("MIFARE", "Reading block %d", block);
-                    mf_classic_read_block(pcs, uid, block, block_data);
-                    mf_classic_read.data.data_size = (block + 1) * 16;
-                    memcpy(&mf_classic_read.data.data[block * 16], block_data, 16);
+                    furi_hal_nfc_deactivate();
+                } else {
+                    break;
                 }
-                furi_hal_nfc_deactivate();
             }
             // fill the results
             result->nfc_data.uid_len = dev_list[0].dev.nfca.nfcId1Len;
