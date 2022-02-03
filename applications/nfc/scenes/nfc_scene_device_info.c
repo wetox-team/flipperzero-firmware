@@ -225,7 +225,7 @@ void nfc_scene_device_info_on_exit(void* context) {
         string_reset(nfc->text_box_store);
     } else if(nfc->dev->format == NfcDeviceSaveFormatMifareClassic) {
         // Clear TextBox
-        text_box_clean(nfc->text_box);
+        text_box_free(nfc->text_box);
         string_reset(nfc->text_box_store);
     } else if(nfc->dev->format == NfcDeviceSaveFormatBankCard) {
         // Clear Bank Card

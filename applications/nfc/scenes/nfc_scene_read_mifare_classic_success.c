@@ -152,8 +152,8 @@ void nfc_scene_read_mifare_classic_success_on_exit(void* context) {
     dialog_ex_set_result_callback(dialog_ex, NULL);
     dialog_ex_set_context(dialog_ex, NULL);
 
-    // Clean TextBox
+    // Clean Text box
     TextBox* text_box = nfc->text_box;
-    text_box_clean(text_box);
+    text_box_free(text_box);
     string_reset(nfc->text_box_store);
 }

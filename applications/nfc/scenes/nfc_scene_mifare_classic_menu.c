@@ -63,5 +63,5 @@ bool nfc_scene_mifare_classic_menu_on_event(void* context, SceneManagerEvent eve
 void nfc_scene_mifare_classic_menu_on_exit(void* context) {
     Nfc* nfc = (Nfc*)context;
 
-    submenu_clean(nfc->submenu);
+    submenu_free(nfc->submenu);
 }
