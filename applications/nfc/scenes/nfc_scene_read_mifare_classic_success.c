@@ -78,8 +78,6 @@ void nfc_scene_read_mifare_classic_success_on_enter(void* context) {
 
     // Setup TextBox view
     TextBox* text_box = nfc->text_box;
-    text_box_set_context(text_box, nfc);
-    text_box_set_exit_callback(text_box, nfc_scene_read_mifare_classic_success_text_box_callback);
     text_box_set_font(text_box, TextBoxFontHex);
     for(uint16_t i = 0; i < mf_classic_data->data_size; i += 2) {
         if(!(i % 8) && i) {
