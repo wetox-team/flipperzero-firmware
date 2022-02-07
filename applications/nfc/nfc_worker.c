@@ -93,6 +93,8 @@ void nfc_worker_task(void* context) {
         nfc_worker_field(nfc_worker);
     } else if(nfc_worker->state == NfcWorkerStateReadMifareClassic) {
         nfc_worker_read_mifare_classic(nfc_worker);
+    } else if(nfc_worker->state == NfcWorkerStateEmulateMifareClassic) {
+        nfc_worker_emulate_mifare_classic(nfc_worker);
     }
     furi_hal_nfc_deactivate();
     nfc_worker_change_state(nfc_worker, NfcWorkerStateReady);
@@ -734,66 +736,92 @@ void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker) {
     }
 }
 
+// void nfc_worker_emulate_mifare_classic(NfcWorker* nfc_worker) {
+//     ReturnCode err;
+//     uint8_t tx_buff[255] = {};
+//     uint16_t tx_len = 0;
+//     uint8_t* rx_buff;
+//     uint16_t* rx_len;
+//     NfcDeviceData* data = nfc_worker->dev_data;
+//     MifareClassicDevice mf_classic_emulate;
+//     FURI_LOG_I(TAG, "Starting emulation of Mifare Classic");
+//     // Setup emulation parameters from mifare ultralight data structure
+//     mf_classic_prepare_emulation(&mf_classic_emulate, &data->mf_classic_data);
+//     while(nfc_worker->state == NfcWorkerStateEmulateMifareClassic) {
+//         // WARNING
+//         // DO NOT call any blocking functions (e.g. FURI_LOG_*) in this loop,
+//         // as any delay will negatively affect the stability of the emulation.
+//         if(furi_hal_nfc_listen(
+//                data->nfc_data.uid,
+//                data->nfc_data.uid_len,
+//                data->nfc_data.atqa,
+//                data->nfc_data.sak,
+//                true,
+//                200)) {
+//             if(furi_hal_nfc_get_first_frame(&rx_buff, &rx_len)) {
+//                 FURI_LOG_I(TAG, "Got first frame!");
+//                 // Data exchange loop
+//                 while(nfc_worker->state == NfcWorkerStateEmulateMifareClassic) {
+//                     tx_len = mf_classic_prepare_emulation_response(
+//                         rx_buff, *rx_len, tx_buff, &mf_classic_emulate);
+//                     if(tx_len > 0) {
+//                         if(tx_len < 8) {
+//                             err = furi_hal_nfc_raw_bitstream_exchange(
+//                                 tx_buff, tx_len, &rx_buff, &rx_len, false);
+//                             *rx_len /= 8;
+//                         } else {
+//                             err = furi_hal_nfc_data_exchange(
+//                                 tx_buff, tx_len / 8, &rx_buff, &rx_len, false);
+//                         }
+//                         if(err == ERR_NONE) {
+//                             continue;
+//                         } else {
+//                             FURI_LOG_D(TAG, "Communication error: %d", err);
+//                             break;
+//                         }
+//                     } else {
+//                         furi_hal_nfc_deactivate();
+//                         break;
+//                     }
+//                 }
+//             } else {
+//                 FURI_LOG_D(TAG, "Error in 1st data exchange");
+//                 furi_hal_nfc_deactivate();
+//             }
+//         }
+//         // Check if data was modified
+//         if(mf_classic_emulate.data_changed) {
+//             nfc_worker->dev_data->mf_classic_data = mf_classic_emulate.data;
+//             if(nfc_worker->callback) {
+//                 nfc_worker->callback(nfc_worker->context);
+//             }
+//         }
+//         FURI_LOG_D(TAG, "Can't find reader");
+//         osThreadYield();
+//     }
+// }
+
 void nfc_worker_emulate_mifare_classic(NfcWorker* nfc_worker) {
-    ReturnCode err;
-    uint8_t tx_buff[255] = {};
-    uint16_t tx_len = 0;
-    uint8_t* rx_buff;
-    uint16_t* rx_len;
-    NfcDeviceData* data = nfc_worker->dev_data;
+    NfcDeviceCommonData* nfc_common = &nfc_worker->dev_data->nfc_data;
     MifareClassicDevice mf_classic_emulate;
-    // Setup emulation parameters from mifare ultralight data structure
-    mf_classic_prepare_emulation(&mf_classic_emulate, &data->mf_classic_data);
+    mf_classic_prepare_emulation(&mf_classic_emulate, &nfc_worker->dev_data->mf_classic_data);
     while(nfc_worker->state == NfcWorkerStateEmulateMifareClassic) {
-        // WARNING
-        // DO NOT call any blocking functions (e.g. FURI_LOG_*) in this loop,
-        // as any delay will negatively affect the stability of the emulation.
-        if(furi_hal_nfc_listen(
-               data->nfc_data.uid,
-               data->nfc_data.uid_len,
-               data->nfc_data.atqa,
-               data->nfc_data.sak,
-               true,
-               200)) {
-            if(furi_hal_nfc_get_first_frame(&rx_buff, &rx_len)) {
-                // Data exchange loop
-                while(nfc_worker->state == NfcWorkerStateEmulateMifareClassic) {
-                    tx_len = mf_classic_prepare_emulation_response(
-                        rx_buff, *rx_len, tx_buff, &mf_classic_emulate);
-                    if(tx_len > 0) {
-                        if(tx_len < 8) {
-                            err = furi_hal_nfc_raw_bitstream_exchange(
-                                tx_buff, tx_len, &rx_buff, &rx_len, false);
-                            *rx_len /= 8;
-                        } else {
-                            err = furi_hal_nfc_data_exchange(
-                                tx_buff, tx_len / 8, &rx_buff, &rx_len, false);
-                        }
-                        if(err == ERR_NONE) {
-                            continue;
-                        } else {
-                            FURI_LOG_D(TAG, "Communication error: %d", err);
-                            break;
-                        }
-                    } else {
-                        furi_hal_nfc_deactivate();
-                        break;
-                    }
-                }
-            } else {
-                FURI_LOG_D(TAG, "Error in 1st data exchange");
-                furi_hal_nfc_deactivate();
-            }
-        }
+        furi_hal_nfc_emulate_nfca(
+            nfc_common->uid,
+            nfc_common->uid_len,
+            nfc_common->atqa,
+            nfc_common->sak,
+            mf_classic_prepare_emulation_response,
+            &mf_classic_emulate,
+            15000);
         // Check if data was modified
         if(mf_classic_emulate.data_changed) {
             nfc_worker->dev_data->mf_classic_data = mf_classic_emulate.data;
             if(nfc_worker->callback) {
                 nfc_worker->callback(nfc_worker->context);
             }
+            mf_classic_emulate.data_changed = false;
         }
-        FURI_LOG_D(TAG, "Can't find reader");
-        osThreadYield();
     }
 }
 

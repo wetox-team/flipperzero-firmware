@@ -91,6 +91,8 @@ typedef struct {
     MfClassicType type;
     uint8_t blocks_to_read;
     uint8_t blocks_read;
+    bool in_auth;
+    bool authed;
     bool data_changed;
     MifareClassicData data;
 } MifareClassicDevice;
@@ -132,8 +134,10 @@ int mifare_classic_authex(
 int mifare_classic_halt(struct Crypto1State* pcs);
 
 void mf_classic_prepare_emulation(MifareClassicDevice* mf_classic_emulate, MifareClassicData* data);
-uint16_t mf_classic_prepare_emulation_response(
+bool mf_classic_prepare_emulation_response(
     uint8_t* buff_rx,
-    uint16_t len_rx,
+    uint16_t buff_rx_len,
     uint8_t* buff_tx,
-    MifareClassicDevice* mf_classic_emulate);
+    uint16_t* buff_tx_len,
+    uint32_t* data_type,
+    void* context);

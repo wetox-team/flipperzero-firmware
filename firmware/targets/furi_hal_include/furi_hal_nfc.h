@@ -227,6 +227,14 @@ void furi_hal_nfc_deactivate();
 
 void furi_hal_nfc_stop();
 
+uint16_t furi_hal_nfc_parbits2bitstream(
+    uint8_t* buff,
+    uint16_t len,
+    uint8_t* parity_bits,
+    uint8_t* output_bitstream);
+
 #ifdef __cplusplus
 }
 #endif
+
+

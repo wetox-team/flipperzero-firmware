@@ -41,3 +41,4 @@ void nfc_worker_start(
 
 void nfc_worker_stop(NfcWorker* nfc_worker);
 void nfc_worker_read_mifare_classic(NfcWorker* nfc_worker);
+void nfc_worker_emulate_mifare_classic(NfcWorker* nfc_worker);

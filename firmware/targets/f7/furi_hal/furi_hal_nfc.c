@@ -532,7 +532,7 @@ ReturnCode furi_hal_nfc_raw_parbytes_exchange(
     return ret;
 }
 
-static uint16_t furi_hal_nfc_parbits2bitstream(
+uint16_t furi_hal_nfc_parbits2bitstream(
     uint8_t* buff,
     uint16_t len,
     uint8_t* parity_bits,

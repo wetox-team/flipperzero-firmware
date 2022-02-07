@@ -3,6 +3,8 @@
 #include <furi_hal.h>
 #include <stdlib.h>
 
+#define TAG "MIFARE"
+
 #define RFAL_TXRX_FLAGS_FIRST_AUTH                                                   \
     ((uint32_t)RFAL_TXRX_FLAGS_CRC_TX_AUTO | (uint32_t)RFAL_TXRX_FLAGS_CRC_RX_KEEP | \
      (uint32_t)RFAL_TXRX_FLAGS_NFCIP1_OFF | (uint32_t)RFAL_TXRX_FLAGS_AGC_ON |       \
@@ -371,139 +373,63 @@ void MifareReadBlock(uint8_t blockNo, uint8_t keyType, uint64_t ui64Key, uint8_t
 void mf_classic_prepare_emulation(MifareClassicDevice* mf_classic_emulate, MifareClassicData* data) {
     mf_classic_emulate->data = *data;
     mf_classic_emulate->data_changed = false;
-
-    // TODO
 }
 
-uint16_t mf_classic_prepare_emulation_response(
+bool mf_classic_prepare_emulation_response(
     uint8_t* buff_rx,
-    uint16_t len_rx,
+    uint16_t buff_rx_len,
     uint8_t* buff_tx,
-    MifareClassicDevice* mf_classic_emulate) {
-    // TODO
+    uint16_t* buff_tx_len,
+    uint32_t* data_type,
+    void* context) {
+    //uint8_t par[1] = {0x00}; // parity
 
-    return 0x00;
-    //return tx_bits;
+    furi_assert(context);
+    MifareClassicDevice* mf_classic_emulate = context;
+    uint8_t cmd = buff_rx[0];
+    //uint16_t block_num = mf_classic_emulate->data.data_size / 16;
+    uint16_t tx_bytes = 0;
+    uint16_t tx_bits = 0;
+    uint8_t nr[4] = {0x00, 0x00, 0x00, 0x00};
+    bool command_parsed = false;
+
+    if (mf_classic_emulate->in_auth && cmd != 0x60) {
+        memcpy(nr, buff_rx, 4);
+        FURI_LOG_I(TAG, "nr[0] is %02x", nr[0]);
+        FURI_LOG_I(TAG, "nr[1] is %02x", nr[1]);
+        FURI_LOG_I(TAG, "nr[2] is %02x", nr[2]);
+    }
+
+    if (cmd == 0x60){ // if command is AUTH-A
+        FURI_LOG_I(TAG, "AUTH-A");
+        buff_tx[0] = 0x12;
+        buff_tx[1] = 0x34;
+        
+        mf_classic_emulate->authed = false;
+        mf_classic_emulate->in_auth = true;
+
+        tx_bits = 18;
+        *data_type = FURI_HAL_NFC_TXRX_RAW;
+
+        command_parsed = true;
+    } else if (cmd == 0x93){ // if command is ANTICOLL
+        FURI_LOG_I(TAG, "ANTICOLL");
+        mf_classic_emulate->in_auth = false;
+        command_parsed = true;
+    } 
+
+    if(!command_parsed) {
+        // Send NACK
+        buff_tx[0] = 0x00;
+        tx_bits = 8;
+        *data_type = FURI_HAL_NFC_TXRX_RAW;
+    }
+
+    // Return tx buffer size in bits
+    if(tx_bytes) {
+        tx_bits = tx_bytes * 8;
+    }
+
+    *buff_tx_len = tx_bits;
+    return tx_bits > 0;
 }
-
-//-----------------------------------------------------------------------------
-// acquire encrypted nonces in order to perform the attack described in
-// Carlo Meijer, Roel Verdult, "Ciphertext-only Cryptanalysis on Hardened
-// Mifare Classic Cards" in Proceedings of the 22nd ACM SIGSAC Conference on
-// Computer and Communications Security, 2015
-//-----------------------------------------------------------------------------
-// void MifareAcquireEncryptedNonces(uint32_t arg0, uint32_t arg1, uint32_t flags, uint8_t* datain) {
-//     struct Crypto1State mpcs = {0, 0};
-//     struct Crypto1State* pcs;
-//     pcs = &mpcs;
-
-//     uint8_t uid[10] = {0x00};
-//     uint8_t receivedAnswer[MAX_MIFARE_FRAME_SIZE] = {0x00};
-//     uint8_t par_enc[1] = {0x00};
-//     uint8_t buf[PM3_CMD_DATA_SIZE] = {0x00};
-
-//     uint64_t ui64Key = bytes_to_num(datain, 6);
-//     uint32_t cuid = 0;
-//     int16_t isOK = 0;
-//     uint16_t num_nonces = 0;
-//     uint8_t nt_par_enc = 0;
-//     uint8_t cascade_levels = 0;
-//     uint8_t blockNo = arg0 & 0xff;
-//     uint8_t keyType = (arg0 >> 8) & 0xff;
-//     uint8_t targetBlockNo = arg1 & 0xff;
-//     uint8_t targetKeyType = (arg1 >> 8) & 0xff;
-//     bool initialize = flags & 0x0001;
-//     bool slow = flags & 0x0002;
-//     bool field_off = flags & 0x0004;
-//     bool have_uid = false;
-
-//     BigBuf_free();
-//     BigBuf_Clear_ext(false);
-//     clear_trace();
-//     set_tracing(false);
-
-//     if(initialize) iso14443a_setup(FPGA_HF_ISO14443A_READER_LISTEN);
-
-//     LED_C_ON();
-
-//     for(uint16_t i = 0; i <= PM3_CMD_DATA_SIZE - 9;) {
-//         // Test if the action was cancelled
-//         if(BUTTON_PRESS()) {
-//             isOK = 2;
-//             field_off = true;
-//             break;
-//         }
-
-//         if(!have_uid) { // need a full select cycle to get the uid first
-//             iso14a_card_select_t card_info;
-//             if(!iso14443a_select_card(uid, &card_info, &cuid, true, 0, true)) {
-//                 if(g_dbglevel >= DBG_ERROR)
-//                     Dbprintf("AcquireEncryptedNonces: Can't select card (ALL)");
-//                 continue;
-//             }
-//             switch(card_info.uidlen) {
-//             case 4:
-//                 cascade_levels = 1;
-//                 break;
-//             case 7:
-//                 cascade_levels = 2;
-//                 break;
-//             case 10:
-//                 cascade_levels = 3;
-//                 break;
-//             default:
-//                 break;
-//             }
-//             have_uid = true;
-//         } else { // no need for anticollision. We can directly select the card
-//             if(!iso14443a_fast_select_card(uid, cascade_levels)) {
-//                 if(g_dbglevel >= DBG_ERROR)
-//                     Dbprintf("AcquireEncryptedNonces: Can't select card (UID)");
-//                 continue;
-//             }
-//         }
-
-//         if(slow) SpinDelayUs(HARDNESTED_PRE_AUTHENTICATION_LEADTIME);
-
-//         uint32_t nt1;
-//         if(mifare_classic_authex(pcs, cuid, blockNo, keyType, ui64Key, AUTH_FIRST, &nt1, NULL)) {
-//             if(g_dbglevel >= DBG_ERROR) Dbprintf("AcquireEncryptedNonces: Auth1 error");
-//             continue;
-//         }
-
-//         // nested authentication
-//         uint16_t len = mifare_sendcmd_short(
-//             pcs,
-//             AUTH_NESTED,
-//             0x60 + (targetKeyType & 0x01),
-//             targetBlockNo,
-//             receivedAnswer,
-//             par_enc,
-//             NULL);
-
-//         // wait for the card to become ready again
-//         CHK_TIMEOUT();
-
-//         if(len != 4) {
-//             if(g_dbglevel >= DBG_ERROR)
-//                 Dbprintf("AcquireEncryptedNonces: Auth2 error len=%d", len);
-//             continue;
-//         }
-
-//         num_nonces++;
-//         if(num_nonces % 2) {
-//             memcpy(buf + i, receivedAnswer, 4);
-//             nt_par_enc = par_enc[0] & 0xf0;
-//         } else {
-//             nt_par_enc |= par_enc[0] >> 4;
-//             memcpy(buf + i + 4, receivedAnswer, 4);
-//             memcpy(buf + i + 8, &nt_par_enc, 1);
-//             i += 9;
-//         }
-//     }
-
-//     crypto1_deinit(pcs);
-//     reply_old(CMD_ACK, isOK, cuid, num_nonces, buf, sizeof(buf));
-
-//     FURI_LOG_I("MIFARE", "AcquireEncryptedNonces finished");
-// }
