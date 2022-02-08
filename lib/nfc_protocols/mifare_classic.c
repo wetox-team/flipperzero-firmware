@@ -382,53 +382,69 @@ bool mf_classic_prepare_emulation_response(
     uint16_t* buff_tx_len,
     uint32_t* data_type,
     void* context) {
-    //uint8_t par[1] = {0x00}; // parity
+    uint8_t par[1] = {0x00}; // parity
+    uint8_t at[4] = {0xAA, 0x18, 0xC6, 0xAB};
 
     furi_assert(context);
     MifareClassicDevice* mf_classic_emulate = context;
     uint8_t cmd = buff_rx[0];
     //uint16_t block_num = mf_classic_emulate->data.data_size / 16;
-    uint16_t tx_bytes = 0;
+    //uint16_t tx_bytes = 0;
     uint16_t tx_bits = 0;
-    uint8_t nr[4] = {0x00, 0x00, 0x00, 0x00};
+    //uint8_t nr[4] = {0x00, 0x00, 0x00, 0x00};
     bool command_parsed = false;
 
-    if (mf_classic_emulate->in_auth && cmd != 0x60) {
-        memcpy(nr, buff_rx, 4);
-        FURI_LOG_I(TAG, "nr[0] is %02x", nr[0]);
-        FURI_LOG_I(TAG, "nr[1] is %02x", nr[1]);
-        FURI_LOG_I(TAG, "nr[2] is %02x", nr[2]);
+    if(mf_classic_emulate->in_auth && cmd != 0x60) {
+        FURI_LOG_I(TAG, "AUTH-A part 2");
+        //memcpy(nr, buff_rx, 4);
+        //memcpy(buff_tx, at, 4);
+        par[0] = 0x30;
+
+        tx_bits = 40;
+
+        tx_bits = furi_hal_nfc_parbits2bitstream(at, 4, par, buff_tx);
+        FURI_LOG_I(TAG, "tx_bits = %d", tx_bits);
+
+        *data_type = FURI_HAL_NFC_TXRX_RAW;
+        command_parsed = true;
     }
 
-    if (cmd == 0x60){ // if command is AUTH-A
+    if(cmd == 0x60) { // if command is AUTH-A
         FURI_LOG_I(TAG, "AUTH-A");
-        buff_tx[0] = 0x12;
-        buff_tx[1] = 0x34;
-        
+        uint8_t nt[4] = {0x01, 0x20, 0x01, 0x45};
+
+        tx_bits = 32;
+        *buff_tx_len = tx_bits;
+
+        //par[0] = 0x00;
+        memcpy(buff_tx, nt, tx_bits / 8);
+        //furi_hal_nfc_parbits2bitstream(nt, tx_bits / 8, par, buff_tx);
+
         mf_classic_emulate->authed = false;
         mf_classic_emulate->in_auth = true;
 
-        tx_bits = 18;
         *data_type = FURI_HAL_NFC_TXRX_RAW;
 
         command_parsed = true;
-    } else if (cmd == 0x93){ // if command is ANTICOLL
+    } else if(cmd == 0x93) { // if command is ANTICOLL
         FURI_LOG_I(TAG, "ANTICOLL");
         mf_classic_emulate->in_auth = false;
         command_parsed = true;
-    } 
+    }
 
     if(!command_parsed) {
-        // Send NACK
-        buff_tx[0] = 0x00;
-        tx_bits = 8;
-        *data_type = FURI_HAL_NFC_TXRX_RAW;
+        buff_tx[0] = 0x12;
+        buff_tx[1] = 0x34;
+
+        tx_bits = 16;
+        *data_type = FURI_HAL_NFC_TXRX_DEFAULT;
+        FURI_LOG_I(TAG, "Sending random at");
     }
 
     // Return tx buffer size in bits
-    if(tx_bytes) {
-        tx_bits = tx_bytes * 8;
-    }
+    // if(tx_bytes) {
+    //     tx_bits = tx_bytes * 8;
+    // }
 
     *buff_tx_len = tx_bits;
     return tx_bits > 0;
