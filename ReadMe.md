@@ -1,4 +1,4 @@
-# Flipper Zero Firmware
+# Flipper Zero Firmware (Wetox fork, unofficial!)
 
 [![Discord](https://img.shields.io/discord/740930220399525928.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](http://flipperzero.one/discord)
 
