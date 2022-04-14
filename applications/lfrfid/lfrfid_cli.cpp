@@ -5,6 +5,7 @@
 #include <lib/toolbox/args.h>
 
 #include "helpers/rfid_reader.h"
+#include "helpers/rfid_writer.h"
 #include "helpers/rfid_timer_emulator.h"
 
 static void lfrfid_cli(Cli* cli, string_t args, void* context);
@@ -104,6 +105,22 @@ static void lfrfid_cli_write(Cli* cli, string_t args) {
     printf("Not implemented :(\r\n");
 }
 
+
+static void lfrfid_cli_t5577_clear_password_and_config_to_EM(Cli* cli, string_t args) {
+    RfidWriter writer;
+    uint32_t blue_gun_def_password = 0x51243648;
+
+    ProtocolEMMarin em_card;
+    const uint32_t em_config_block_data = 0b00000000000101001000000001000000; //no pwd&aor config block
+
+    printf("Clearing T5577 password (use default password 0x51243648) and config to default (em-marine)...");
+    FURI_CRITICAL_ENTER();
+    writer.write_block(0, 0, false, em_config_block_data, true, blue_gun_def_password);
+    writer.write_reset();
+    FURI_CRITICAL_EXIT();
+    printf("Done\r\n");
+}
+
 static void lfrfid_cli_emulate(Cli* cli, string_t args) {
     string_t data;
     string_init(data);
@@ -162,6 +179,8 @@ static void lfrfid_cli(Cli* cli, string_t args, void* context) {
         lfrfid_cli_write(cli, args);
     } else if(string_cmp_str(cmd, "emulate") == 0) {
         lfrfid_cli_emulate(cli, args);
+    } else if(string_cmp_str(cmd, "clear_pass_t5577") == 0) {
+        lfrfid_cli_t5577_clear_password_and_config_to_EM(cli, args);
     } else {
         lfrfid_cli_print_usage();
     }
