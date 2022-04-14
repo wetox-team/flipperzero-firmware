@@ -65,16 +65,6 @@ CFLAGS			+= -I$(LIB_DIR)/app_scene_template
 CFLAGS			+= -I$(LIB_DIR)/fnv1a-hash
 C_SOURCES		+= $(LIB_DIR)/fnv1a-hash/fnv1a-hash.c
 
-# onewire library
-ONEWIRE_DIR		= $(LIB_DIR)/onewire
-CFLAGS			+= -I$(ONEWIRE_DIR)
-CPP_SOURCES		+= $(wildcard $(ONEWIRE_DIR)/*.cpp)
-
-# cyfral library
-CYFRAL_DIR		= $(LIB_DIR)/cyfral
-CFLAGS			+= -I$(CYFRAL_DIR)
-CPP_SOURCES		+= $(wildcard $(CYFRAL_DIR)/*.cpp)
-
 # common apps api
 CFLAGS			+= -I$(LIB_DIR)/common-api
 
@@ -83,11 +73,11 @@ CFLAGS			+= -I$(LIB_DIR)/drivers
 C_SOURCES		+= $(wildcard $(LIB_DIR)/drivers/*.c)
 
 # IR lib
-CFLAGS			+= -I$(LIB_DIR)/irda/encoder_decoder
-CFLAGS			+= -I$(LIB_DIR)/irda/worker
-C_SOURCES		+= $(wildcard $(LIB_DIR)/irda/encoder_decoder/*.c)
-C_SOURCES		+= $(wildcard $(LIB_DIR)/irda/encoder_decoder/*/*.c)
-C_SOURCES		+= $(wildcard $(LIB_DIR)/irda/worker/*.c)
+CFLAGS			+= -I$(LIB_DIR)/infrared/encoder_decoder
+CFLAGS			+= -I$(LIB_DIR)/infrared/worker
+C_SOURCES		+= $(wildcard $(LIB_DIR)/infrared/encoder_decoder/*.c)
+C_SOURCES		+= $(wildcard $(LIB_DIR)/infrared/encoder_decoder/*/*.c)
+C_SOURCES		+= $(wildcard $(LIB_DIR)/infrared/worker/*.c)
 
 # SubGhz
 C_SOURCES		+= $(wildcard $(LIB_DIR)/subghz/*.c)
@@ -128,3 +118,15 @@ C_SOURCES		+= $(wildcard $(LIB_DIR)/flipper_format/*.c)
 # Micro-ECC
 CFLAGS			+= -I$(LIB_DIR)/micro-ecc
 C_SOURCES		+= $(wildcard $(LIB_DIR)/micro-ecc/*.c)
+
+# iButton and OneWire
+C_SOURCES		+= $(wildcard $(LIB_DIR)/one_wire/*.c)
+C_SOURCES		+= $(wildcard $(LIB_DIR)/one_wire/*/*.c)
+C_SOURCES		+= $(wildcard $(LIB_DIR)/one_wire/*/*/*.c)
+
+# microtar
+CFLAGS			+= -I$(LIB_DIR)/microtar/src
+C_SOURCES		+= $(wildcard $(LIB_DIR)/microtar/src/*.c)
+
+# Update-related common code
+C_SOURCES		+= $(wildcard $(LIB_DIR)/update_util/*.c)

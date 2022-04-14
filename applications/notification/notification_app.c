@@ -139,12 +139,12 @@ void notification_vibro_off() {
     furi_hal_vibro_on(false);
 }
 
-void notification_sound_on(float pwm, float freq) {
-    hal_pwm_set(pwm, freq, &SPEAKER_TIM, SPEAKER_CH);
+void notification_sound_on(float freq, float volume) {
+    furi_hal_speaker_start(freq, volume);
 }
 
 void notification_sound_off() {
-    hal_pwm_stop(&SPEAKER_TIM, SPEAKER_CH);
+    furi_hal_speaker_stop();
 }
 
 // display timer
@@ -163,6 +163,7 @@ void notification_process_notification_message(
     notification_message = (*message->sequence)[notification_message_index];
 
     bool led_active = false;
+    uint8_t display_led_lock = 0;
     uint8_t led_values[NOTIFICATION_LED_COUNT] = {0x00, 0x00, 0x00};
     bool reset_notifications = true;
     float speaker_volume_setting = app->settings.speaker_volume;
@@ -188,6 +189,24 @@ void notification_process_notification_message(
                 }
             }
             reset_mask |= reset_display_mask;
+            break;
+        case NotificationMessageTypeLedDisplayLock:
+            furi_assert(display_led_lock < UINT8_MAX);
+            display_led_lock++;
+            if(display_led_lock == 1) {
+                notification_apply_internal_led_layer(
+                    &app->display,
+                    notification_message->data.led.value * display_brightness_setting);
+            }
+            break;
+        case NotificationMessageTypeLedDisplayUnlock:
+            furi_assert(display_led_lock > 0);
+            display_led_lock--;
+            if(display_led_lock == 0) {
+                notification_apply_internal_led_layer(
+                    &app->display,
+                    notification_message->data.led.value * display_brightness_setting);
+            }
             break;
         case NotificationMessageTypeLedRed:
             // store and send on delay or after seq
@@ -217,8 +236,8 @@ void notification_process_notification_message(
             break;
         case NotificationMessageTypeSoundOn:
             notification_sound_on(
-                notification_message->data.sound.pwm * speaker_volume_setting,
-                notification_message->data.sound.frequency);
+                notification_message->data.sound.frequency,
+                notification_message->data.sound.volume * speaker_volume_setting);
             reset_mask |= reset_sound_mask;
             break;
         case NotificationMessageTypeSoundOff:
@@ -229,7 +248,7 @@ void notification_process_notification_message(
             if(led_active) {
                 if(notification_is_any_led_layer_internal_and_not_empty(app)) {
                     notification_apply_notification_leds(app, led_off_values);
-                    delay(minimal_delay);
+                    furi_hal_delay_ms(minimal_delay);
                 }
 
                 led_active = false;
@@ -240,7 +259,7 @@ void notification_process_notification_message(
                 reset_mask |= reset_blue_mask;
             }
 
-            delay(notification_message->data.delay.length);
+            furi_hal_delay_ms(notification_message->data.delay.length);
             break;
         case NotificationMessageTypeDoNotReset:
             reset_notifications = false;
@@ -274,7 +293,7 @@ void notification_process_notification_message(
 
         if(need_minimal_delay) {
             notification_apply_notification_leds(app, led_off_values);
-            delay(minimal_delay);
+            furi_hal_delay_ms(minimal_delay);
         }
     }
 

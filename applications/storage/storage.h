@@ -1,5 +1,6 @@
 #pragma once
-#include <furi.h>
+#include <stdint.h>
+#include <m-string.h>
 #include "filesystem_api_defines.h"
 #include "storage_sd_api.h"
 
@@ -18,6 +19,24 @@ File* storage_file_alloc(Storage* storage);
  */
 void storage_file_free(File* file);
 
+typedef enum {
+    StorageEventTypeCardMount,
+    StorageEventTypeCardUnmount,
+    StorageEventTypeCardMountError,
+    StorageEventTypeFileClose,
+    StorageEventTypeDirClose,
+} StorageEventType;
+
+typedef struct {
+    StorageEventType type;
+} StorageEvent;
+
+/**
+ * Get storage pubsub.
+ * Storage will send StorageEvent messages.
+ * @param storage 
+ * @return FuriPubSub* 
+ */
 FuriPubSub* storage_get_pubsub(Storage* storage);
 
 /******************* File Functions *******************/
@@ -46,6 +65,12 @@ bool storage_file_close(File* file);
  * @return bool true if file is open
  */
 bool storage_file_is_open(File* file);
+
+/** Tells if the file is a directory
+ * @param file pointer to a file object
+ * @return bool true if file is a directory
+ */
+bool storage_file_is_dir(File* file);
 
 /** Reads bytes from a file into a buffer
  * @param file pointer to file object.
@@ -238,6 +263,22 @@ FS_Error storage_sd_info(Storage* api, SDInfo* info);
  */
 FS_Error storage_sd_status(Storage* api);
 
+/******************* Internal LFS Functions *******************/
+
+/** Backs up internal storage to a tar archive
+ * @param api pointer to the api
+ * @param dstmane destination archive path
+ * @return FS_Error operation result
+ */
+FS_Error storage_int_backup(Storage* api, const char* dstname);
+
+/** Restores internal storage from a tar archive
+ * @param api pointer to the api
+ * @param dstmane archive path
+ * @return FS_Error operation result
+ */
+FS_Error storage_int_restore(Storage* api, const char* dstname);
+
 /***************** Simplified Functions ******************/
 
 /**
@@ -272,13 +313,15 @@ bool storage_simply_mkdir(Storage* storage, const char* path);
  * @param filename 
  * @param fileextension 
  * @param nextfilename return name
+ * @param max_len  max len name
  */
 void storage_get_next_filename(
     Storage* storage,
     const char* dirname,
     const char* filename,
     const char* fileextension,
-    string_t nextfilename);
+    string_t nextfilename,
+    uint8_t max_len);
 
 #ifdef __cplusplus
 }

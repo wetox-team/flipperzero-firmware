@@ -2,6 +2,7 @@
 
 #include <stm32wbxx_ll_lptim.h>
 #include <stm32wbxx_ll_bus.h>
+#include <stm32wbxx_ll_rcc.h>
 #include <stdint.h>
 
 // Timer used for system ticks
@@ -13,7 +14,6 @@
 static inline void furi_hal_os_timer_init() {
     // Configure clock source
     LL_RCC_SetLPTIMClockSource(LL_RCC_LPTIM2_CLKSOURCE_LSE);
-    LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_LPTIM2);
     // Set interrupt priority and enable them
     NVIC_SetPriority(
         FURI_HAL_OS_TIMER_IRQ, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 15, 0));

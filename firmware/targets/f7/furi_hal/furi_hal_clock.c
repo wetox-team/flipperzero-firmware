@@ -4,11 +4,47 @@
 #include <stm32wbxx_ll_pwr.h>
 #include <stm32wbxx_ll_rcc.h>
 #include <stm32wbxx_ll_utils.h>
+#include <stm32wbxx_ll_cortex.h>
+#include <stm32wbxx_ll_bus.h>
 
 #define TAG "FuriHalClock"
 
+#define TICK_INT_PRIORITY 0U
 #define HS_CLOCK_IS_READY() (LL_RCC_HSE_IsReady() && LL_RCC_HSI_IsReady())
 #define LS_CLOCK_IS_READY() (LL_RCC_LSE_IsReady() && LL_RCC_LSI1_IsReady())
+
+void furi_hal_clock_init_early() {
+    LL_Init1msTick(4000000);
+    LL_SetSystemCoreClock(4000000);
+
+    LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOA);
+    LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOB);
+    LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOC);
+    LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOD);
+    LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOE);
+    LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOH);
+
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SPI1);
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_SPI2);
+
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_I2C1);
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_I2C3);
+}
+
+void furi_hal_clock_deinit_early() {
+    LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_I2C1);
+    LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_I2C3);
+
+    LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_SPI1);
+    LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_SPI2);
+
+    LL_AHB2_GRP1_DisableClock(LL_AHB2_GRP1_PERIPH_GPIOA);
+    LL_AHB2_GRP1_DisableClock(LL_AHB2_GRP1_PERIPH_GPIOB);
+    LL_AHB2_GRP1_DisableClock(LL_AHB2_GRP1_PERIPH_GPIOC);
+    LL_AHB2_GRP1_DisableClock(LL_AHB2_GRP1_PERIPH_GPIOD);
+    LL_AHB2_GRP1_DisableClock(LL_AHB2_GRP1_PERIPH_GPIOE);
+    LL_AHB2_GRP1_DisableClock(LL_AHB2_GRP1_PERIPH_GPIOH);
+}
 
 void furi_hal_clock_init() {
     /* Prepare Flash memory for 64mHz system clock */
@@ -83,9 +119,10 @@ void furi_hal_clock_init() {
     LL_SetSystemCoreClock(64000000);
 
     /* Update the time base */
-    if(HAL_InitTick(TICK_INT_PRIORITY) != HAL_OK) {
-        Error_Handler();
-    }
+    LL_InitTick(64000000, 1000);
+    LL_SYSTICK_EnableIT();
+    NVIC_SetPriority(SysTick_IRQn, TICK_INT_PRIORITY);
+    NVIC_EnableIRQ(SysTick_IRQn);
 
     LL_RCC_SetUSARTClockSource(LL_RCC_USART1_CLKSOURCE_PCLK2);
     LL_RCC_SetLPUARTClockSource(LL_RCC_LPUART1_CLKSOURCE_PCLK1);
@@ -98,33 +135,56 @@ void furi_hal_clock_init() {
     LL_RCC_SetSMPSPrescaler(LL_RCC_SMPS_DIV_1);
     LL_RCC_SetRFWKPClockSource(LL_RCC_RFWKP_CLKSOURCE_LSE);
 
-    // AHB1
-    LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMAMUX1);
+    // AHB1 GRP1
     LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA1);
-    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_I2C1);
-    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_SPI2);
+    LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA2);
+    LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMAMUX1);
+    LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_CRC);
+    // LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_TSC);
 
-    // AHB2
+    // AHB2 GRP1
     LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOA);
     LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOB);
     LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOC);
     LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOD);
     LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOE);
     LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOH);
-    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SPI1);
+    LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_ADC);
     LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_AES1);
 
-    // AHB3
+    // AHB3 GRP1
+    // LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_QUADSPI);
     LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_PKA);
-    LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_RNG);
     LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_AES2);
+    LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_RNG);
+    LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_HSEM);
+    LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_IPCC);
+    LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_FLASH);
 
-    // APB1
+    // APB1 GRP1
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM2);
+    // LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_LCD);
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_RTCAPB);
+    // LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_WWDG);
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_SPI2);
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_I2C1);
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_I2C3);
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_CRS);
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_USB);
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_LPTIM1);
+
+    // APB1 GRP2
     LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_LPUART1);
+    LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_LPTIM2);
 
     // APB2
+    // LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_ADC);
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_TIM1);
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SPI1);
     LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART1);
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_TIM16);
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_TIM17);
+    // LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SAI1);
 
     FURI_LOG_I(TAG, "Init OK");
 }

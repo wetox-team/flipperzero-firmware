@@ -93,7 +93,7 @@ static bool flipper_format_stream_read_valid_key(Stream* stream, string_t key) {
     return found;
 }
 
-static bool flipper_format_stream_seek_to_key(Stream* stream, const char* key, bool strict_mode) {
+bool flipper_format_stream_seek_to_key(Stream* stream, const char* key, bool strict_mode) {
     bool found = false;
     string_t read_key;
 
@@ -273,10 +273,12 @@ bool flipper_format_stream_write_value_line(Stream* stream, FlipperStreamWriteDa
                     const uint8_t* data = write_data->data;
                     string_printf(value, "%02X", data[i]);
                 }; break;
+#ifndef FLIPPER_STREAM_LITE
                 case FlipperStreamValueFloat: {
                     const float* data = write_data->data;
                     string_printf(value, "%f", data[i]);
                 }; break;
+#endif
                 case FlipperStreamValueInt32: {
                     const int32_t* data = write_data->data;
                     string_printf(value, "%" PRIi32, data[i]);
@@ -284,6 +286,10 @@ bool flipper_format_stream_write_value_line(Stream* stream, FlipperStreamWriteDa
                 case FlipperStreamValueUint32: {
                     const uint32_t* data = write_data->data;
                     string_printf(value, "%" PRId32, data[i]);
+                }; break;
+                case FlipperStreamValueBool: {
+                    const bool* data = write_data->data;
+                    string_printf(value, data[i] ? "true" : "false");
                 }; break;
                 default:
                     furi_crash("Unknown FF type");
@@ -353,6 +359,7 @@ bool flipper_format_stream_read_value_line(
                             }
                         }
                     }; break;
+#ifndef FLIPPER_STREAM_LITE
                     case FlipperStreamValueFloat: {
                         float* data = _data;
                         // newlib-nano does not have sscanf for floats
@@ -364,6 +371,7 @@ bool flipper_format_stream_read_value_line(
                             scan_values = 1;
                         }
                     }; break;
+#endif
                     case FlipperStreamValueInt32: {
                         int32_t* data = _data;
                         scan_values = sscanf(string_get_cstr(value), "%" PRIi32, &data[i]);
@@ -371,6 +379,11 @@ bool flipper_format_stream_read_value_line(
                     case FlipperStreamValueUint32: {
                         uint32_t* data = _data;
                         scan_values = sscanf(string_get_cstr(value), "%" PRId32, &data[i]);
+                    }; break;
+                    case FlipperStreamValueBool: {
+                        bool* data = _data;
+                        data[i] = !string_cmpi_str(value, "true");
+                        scan_values = 1;
                     }; break;
                     default:
                         furi_crash("Unknown FF type");

@@ -1,17 +1,12 @@
 TOOLCHAIN = arm
 
-BOOT_ADDRESS	= 0x08000000
-FW_ADDRESS		= 0x08008000
-OS_OFFSET		= 0x00008000
-FLASH_ADDRESS	= 0x08008000
-
-NO_BOOTLOADER ?= 0
-ifeq ($(NO_BOOTLOADER), 1)
-BOOT_ADDRESS	= 0x08000000
-FW_ADDRESS		= 0x08000000
-OS_OFFSET		= 0x00000000
 FLASH_ADDRESS	= 0x08000000
-CFLAGS			+= -DNO_BOOTLOADER
+
+RAM_EXEC ?= 0
+ifeq ($(RAM_EXEC), 1)
+CFLAGS 			+= -DFURI_RAM_EXEC -DVECT_TAB_SRAM -DFLIPPER_STREAM_LITE
+else
+LDFLAGS			+= -u _printf_float
 endif
 
 DEBUG_RTOS_THREADS ?= 1
@@ -21,11 +16,10 @@ else
 OPENOCD_OPTS	= -f interface/stlink.cfg -c "transport select hla_swd" -f ../debug/stm32wbx.cfg -c "init"
 endif
 
-BOOT_CFLAGS		= -DBOOT_ADDRESS=$(BOOT_ADDRESS) -DFW_ADDRESS=$(FW_ADDRESS) -DOS_OFFSET=$(OS_OFFSET)
 MCU_FLAGS		= -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
 
-CFLAGS			+= $(MCU_FLAGS) $(BOOT_CFLAGS) -DSTM32WB55xx -Wall -fdata-sections -ffunction-sections
-LDFLAGS			+= $(MCU_FLAGS) -specs=nosys.specs -specs=nano.specs -u _printf_float
+CFLAGS			+= $(MCU_FLAGS) -DSTM32WB55xx -Wall -fdata-sections -ffunction-sections
+LDFLAGS			+= $(MCU_FLAGS) -specs=nosys.specs -specs=nano.specs
 
 CPPFLAGS		+= -fno-rtti -fno-use-cxa-atexit -fno-exceptions
 LDFLAGS			+= -Wl,--start-group -lstdc++ -lsupc++ -Wl,--end-group
@@ -41,32 +35,15 @@ ASM_SOURCES += $(MXPROJECT_DIR)/startup_stm32wb55xx_cm4.s
 CUBE_DIR = ../lib/STM32CubeWB
 CFLAGS += \
 	-DUSE_FULL_LL_DRIVER \
-	-DUSE_HAL_DRIVER \
 	-DHAVE_FREERTOS
 CFLAGS += \
 	-I$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Inc \
-	-I$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Inc/Legacy \
 	-I$(CUBE_DIR)/Drivers/CMSIS/Device/ST \
 	-I$(CUBE_DIR)/Drivers/CMSIS/Device/ST/STM32WBxx/Include \
 	-I$(CUBE_DIR)/Drivers/CMSIS/Include
 C_SOURCES += \
-	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal.c \
-	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_comp.c \
-	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_cortex.c \
-	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_cryp.c \
-	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_exti.c \
-	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_gpio.c \
-	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_hsem.c \
-	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_ipcc.c \
-	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_pcd.c \
-	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_pcd_ex.c \
-	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_pwr.c \
-	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_pwr_ex.c \
-	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_rcc.c \
-	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_rtc_ex.c \
-	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_tim.c \
-	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_tim_ex.c \
 	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_ll_adc.c \
+	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_ll_comp.c \
 	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_ll_dma.c \
 	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_ll_gpio.c \
 	$(CUBE_DIR)/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_ll_i2c.c \
@@ -163,11 +140,11 @@ C_SOURCES += \
 	$(wildcard $(MXPROJECT_DIR)/Src/*.c) \
 	$(wildcard $(MXPROJECT_DIR)/fatfs/*.c)
 
+ifeq ($(RAM_EXEC), 1)
+LDFLAGS += -T$(MXPROJECT_DIR)/stm32wb55xx_ram_fw.ld
+else # RAM_EXEC
 # Linker options
-ifeq ($(NO_BOOTLOADER), 1)
-LDFLAGS += -T$(MXPROJECT_DIR)/stm32wb55xx_flash_cm4_no_bootloader.ld
-else
-LDFLAGS += -T$(MXPROJECT_DIR)/stm32wb55xx_flash_cm4_with_bootloader.ld
-endif
+LDFLAGS += -T$(MXPROJECT_DIR)/stm32wb55xx_flash.ld
+endif # RAM_EXEC
 
 SVD_FILE = ../debug/STM32WB55_CM4.svd

@@ -43,7 +43,7 @@ const char* const volume_text[VOLUME_COUNT] = {
     "75%",
     "100%",
 };
-const float volume_value[VOLUME_COUNT] = {0.0f, 0.04f, 0.1f, 0.2f, 1.0f};
+const float volume_value[VOLUME_COUNT] = {0.0f, 0.25f, 0.5f, 0.75f, 1.0f};
 
 #define DELAY_COUNT 6
 const char* const delay_text[DELAY_COUNT] = {
@@ -163,21 +163,21 @@ static NotificationAppSettings* alloc_settings() {
     uint8_t value_index;
 
     item = variable_item_list_add(
-        app->variable_item_list, "LCD backlight", BACKLIGHT_COUNT, backlight_changed, app);
+        app->variable_item_list, "LCD Backlight", BACKLIGHT_COUNT, backlight_changed, app);
     value_index = float_value_index(
         app->notification->settings.display_brightness, backlight_value, BACKLIGHT_COUNT);
     variable_item_set_current_value_index(item, value_index);
     variable_item_set_current_value_text(item, backlight_text[value_index]);
 
     item = variable_item_list_add(
-        app->variable_item_list, "Backlight time", DELAY_COUNT, screen_changed, app);
+        app->variable_item_list, "Backlight Time", DELAY_COUNT, screen_changed, app);
     value_index = uint32_value_index(
         app->notification->settings.display_off_delay_ms, delay_value, DELAY_COUNT);
     variable_item_set_current_value_index(item, value_index);
     variable_item_set_current_value_text(item, delay_text[value_index]);
 
     item = variable_item_list_add(
-        app->variable_item_list, "LED brightness", BACKLIGHT_COUNT, led_changed, app);
+        app->variable_item_list, "LED Brightness", BACKLIGHT_COUNT, led_changed, app);
     value_index = float_value_index(
         app->notification->settings.led_brightness, backlight_value, BACKLIGHT_COUNT);
     variable_item_set_current_value_index(item, value_index);
