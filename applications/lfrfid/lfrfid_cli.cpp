@@ -113,7 +113,7 @@ static void lfrfid_cli_t5577_clear_password_and_config_to_EM(Cli* cli, string_t 
     ProtocolEMMarin em_card;
     const uint32_t em_config_block_data = 0b00000000000101001000000001000000; //no pwd&aor config block
 
-    printf("Clearing T5577 password (use default password 0x51243648) and config to default (em-marine)...");
+    printf("Clearing T5577 password (use default password 0x51243648) and configuring the tag to default (em-marine)...\r\n");
     FURI_CRITICAL_ENTER();
     writer.start();
     writer.write_block(0, 0, false, em_config_block_data, true, blue_gun_def_password);
