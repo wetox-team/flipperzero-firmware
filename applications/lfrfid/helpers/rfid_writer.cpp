@@ -67,8 +67,13 @@ void RfidWriter::write_byte(uint8_t value) {
     }
 }
 
-void RfidWriter::write_block(uint8_t page, uint8_t block, bool lock_bit, uint32_t data) {
+void RfidWriter::write_block(uint8_t page, uint8_t block, bool lock_bit, uint32_t data, bool password_enable, uint32_t password) {
     furi_hal_delay_us(T55xxTiming::wait_time * 8);
+
+
+    //client: https://github.com/Proxmark/proxmark3/blob/6116334485ca77343eda51c557cdc81032afcf38/client/cmdlft55xx.c#L944
+    //hardware: https://github.com/Proxmark/proxmark3/blob/555fa197730c061bbf0ab01334e99bc47fb3dc06/armsrc/lfops.c#L1465
+    //hardware: https://github.com/Proxmark/proxmark3/blob/555fa197730c061bbf0ab01334e99bc47fb3dc06/armsrc/lfops.c#L1396
 
     // start gap
     write_gap(T55xxTiming::start_gap);
@@ -86,6 +91,13 @@ void RfidWriter::write_block(uint8_t page, uint8_t block, bool lock_bit, uint32_
     default:
         furi_check(false);
         break;
+    }
+
+    // password
+    if (password_enable) {
+        for(uint8_t i = 0; i < 32; i++) {
+            write_bit((password >> (31 - i)) & 1);
+        }
     }
 
     // lock bit
@@ -120,9 +132,9 @@ void RfidWriter::write_em(const uint8_t em_data[5]) {
     const uint32_t em_config_block_data = 0b00000000000101001000000001000000;
 
     FURI_CRITICAL_ENTER();
-    write_block(0, 0, false, em_config_block_data);
-    write_block(0, 1, false, em_encoded_data);
-    write_block(0, 2, false, em_encoded_data >> 32);
+    write_block(0, 0, false, em_config_block_data, false, 0x0); // если конфиг блок запишется с PWR битом 0, то следующие записи блока не пройдут, если в них будет пароль? Нужен какой-то механизм для ситуации снятия пароля. Или отдельную функцию, которая читает нулевой блок с паролем, меняет в нем биты AOR/PWD на 0, и записывает обратно?
+    write_block(0, 1, false, em_encoded_data, false, 0x0);
+    write_block(0, 2, false, em_encoded_data >> 32, false, 0x0);
     write_reset();
     FURI_CRITICAL_EXIT();
 }
@@ -135,10 +147,10 @@ void RfidWriter::write_hid(const uint8_t hid_data[3]) {
     const uint32_t hid_config_block_data = 0b00000000000100000111000001100000;
 
     FURI_CRITICAL_ENTER();
-    write_block(0, 0, false, hid_config_block_data);
-    write_block(0, 1, false, card_data[0]);
-    write_block(0, 2, false, card_data[1]);
-    write_block(0, 3, false, card_data[2]);
+    write_block(0, 0, false, hid_config_block_data, false, 0x0);
+    write_block(0, 1, false, card_data[0], false, 0x0);
+    write_block(0, 2, false, card_data[1], false, 0x0);
+    write_block(0, 3, false, card_data[2], false, 0x0);
     write_reset();
     FURI_CRITICAL_EXIT();
 }
@@ -152,9 +164,9 @@ void RfidWriter::write_indala(const uint8_t indala_data[3]) {
     const uint32_t indala_config_block_data = 0b00000000000010000001000001000000;
 
     FURI_CRITICAL_ENTER();
-    write_block(0, 0, false, indala_config_block_data);
-    write_block(0, 1, false, card_data[0]);
-    write_block(0, 2, false, card_data[1]);
+    write_block(0, 0, false, indala_config_block_data, false, 0x0);
+    write_block(0, 1, false, card_data[0], false, 0x0);
+    write_block(0, 2, false, card_data[1], false, 0x0);
     write_reset();
     FURI_CRITICAL_EXIT();
 }
