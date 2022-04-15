@@ -115,8 +115,10 @@ static void lfrfid_cli_t5577_clear_password_and_config_to_EM(Cli* cli, string_t 
 
     printf("Clearing T5577 password (use default password 0x51243648) and config to default (em-marine)...");
     FURI_CRITICAL_ENTER();
+    writer.start();
     writer.write_block(0, 0, false, em_config_block_data, true, blue_gun_def_password);
     writer.write_reset();
+    writer.stop();
     FURI_CRITICAL_EXIT();
     printf("Done\r\n");
 }
