@@ -44,7 +44,7 @@ bool LfRfidAppSceneWrite::on_event(LfRfidApp* app, LfRfidApp::Event* event) {
                 popup->set_icon(0, 0, NULL);
                 popup->set_header("Still trying to write", 64, 7, AlignCenter, AlignTop);
                 popup->set_text(
-                    "This card may be protected\nor does not support this\ntype of writing",
+                    "This card may be protected.\nTrying default passwords...",
                     64,
                     23,
                     AlignCenter,
