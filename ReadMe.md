@@ -1,15 +1,16 @@
 # Flipper Zero Firmware (Wetox fork, unofficial!)
 
-[![Discord](https://img.shields.io/discord/740930220399525928.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](http://flipperzero.one/discord)
-
 ![Show me the code](https://habrastorage.org/webt/eo/m0/e4/eom0e4btudte7nrhnyic-laiog0.png)
 
-Welcome to [Flipper Zero](https://flipperzero.one/)'s Firmware repo!
-Our goal is to create nice and clean code with good documentation, to make it a pleasure for everyone to work with.
+Welcome to the [Wetox Flipper Zero](https://wetox.team/)'s Firmware repo!
+This is a modified unofficial version of the Flipper Zero firmware with some additional features.
+
+# Feature list
+
+* Flashing the firmware using the blackmagic board with `make blackmagic_load`
+* Removing T5577 passwords via the cli command `rfid clear_pass_t5577` using a dictionary attack
 
 # Update firmware
-
-[Get Latest Firmware from Update Server](https://update.flipperzero.one/)
 
 Flipper Zero's firmware consists of two components:
 
@@ -29,7 +30,7 @@ Prerequisites:
 - [arm-gcc-none-eabi](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads)
 - openocd
 
-One liner: `make flash`
+One-liner: `make flash`
 
 ### Core2 flashing procedures
 
@@ -39,11 +40,11 @@ Prerequisites:
 - Terminal
 - STM32_Programmer_CLI (v2.5.0) added to $PATH
 
-One liner: `make flash_radio`
+One-liner: `make flash_radio`
 
 ## With USB DFU 
 
-1. Download latest [Firmware](https://update.flipperzero.one)
+1. Download latest [Firmware](https://github.com/wetox-team/flipperzero-firmware/releases)
 
 2. Reboot Flipper to Bootloader
  - Press and hold `← Left` + `↩ Back` for reset 
@@ -131,13 +132,14 @@ Connect your device via ST-Link and run:
 ```sh
 make whole
 ```
+Or connect via the blackmagic board and run:
+```sh
+BLACKMAGIC=<board's IP>:2345 make blackmagic_load
+```
 
 # Links
 
-* Discord: [flipp.dev/discord](https://flipp.dev/discord)
-* Website: [flipperzero.one](https://flipperzero.one)
-* Kickstarter page: [kickstarter.com](https://www.kickstarter.com/projects/flipper-devices/flipper-zero-tamagochi-for-hackers)
-* Forum: [forum.flipperzero.one](https://forum.flipperzero.one/)
+* Telegram: [@wetox_flipper](https://t.me/wetox_flipper)
 
 # Project structure
 
