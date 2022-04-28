@@ -18,7 +18,7 @@ extern uint32_t SystemCoreClock;
 #define configUSE_IDLE_HOOK 0
 #define configUSE_TICK_HOOK 0
 #define configCPU_CLOCK_HZ (SystemCoreClock)
-#define configTICK_RATE_HZ ((TickType_t)1024)
+#define configTICK_RATE_HZ ((TickType_t)1000)
 #define configMAX_PRIORITIES (56)
 #define configMINIMAL_STACK_SIZE ((uint16_t)128)
 
@@ -30,7 +30,7 @@ extern uint32_t SystemCoreClock;
 #define configUSE_16_BIT_TICKS 0
 #define configUSE_MUTEXES 1
 #define configQUEUE_REGISTRY_SIZE 8
-#define configCHECK_FOR_STACK_OVERFLOW 1
+#define configCHECK_FOR_STACK_OVERFLOW 2
 #define configUSE_RECURSIVE_MUTEXES 1
 #define configUSE_COUNTING_SEMAPHORES 1
 #define configENABLE_BACKWARD_COMPATIBILITY 0
@@ -59,6 +59,7 @@ extern uint32_t SystemCoreClock;
 
 /* Set the following definitions to 1 to include the API function, or zero
 to exclude the API function. */
+#define INCLUDE_xTaskGetHandle 1
 #define INCLUDE_eTaskGetState 1
 #define INCLUDE_uxTaskGetStackHighWaterMark 1
 #define INCLUDE_uxTaskPriorityGet 1
@@ -76,10 +77,12 @@ to exclude the API function. */
 /* CMSIS-RTOS V2 flags */
 #define configUSE_OS2_THREAD_SUSPEND_RESUME 1
 #define configUSE_OS2_THREAD_ENUMERATE 1
-#define configUSE_OS2_EVENTFLAGS_FROM_ISR 1
 #define configUSE_OS2_THREAD_FLAGS 1
 #define configUSE_OS2_TIMER 1
 #define configUSE_OS2_MUTEX 1
+
+// NEVER TO BE USED, because of their hard realtime nature
+// #define configUSE_OS2_EVENTFLAGS_FROM_ISR 1
 
 /* CMSIS-RTOS */
 #define configTASK_NOTIFICATION_ARRAY_ENTRIES 2
@@ -121,11 +124,13 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 
 /* Normal assert() semantics without relying on the provision of an assert.h
 header file. */
+#ifdef DEBUG
 #include <furi/check.h>
 #define configASSERT(x)                \
     if((x) == 0) {                     \
         furi_crash("FreeRTOS Assert"); \
     }
+#endif
 
 /* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS
 standard names. */

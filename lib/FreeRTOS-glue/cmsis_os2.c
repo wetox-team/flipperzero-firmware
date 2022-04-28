@@ -578,8 +578,10 @@ const char *osThreadGetName (osThreadId_t thread_id) {
 
   if ((IRQ_Context() != 0U) || (hTask == NULL)) {
     name = NULL;
-  } else {
+  } else if(osKernelGetState() == osKernelRunning) {
     name = pcTaskGetName (hTask);
+  } else {
+    name = NULL;
   }
 
   /* Return name as null-terminated string */
@@ -1223,7 +1225,7 @@ osStatus_t osTimerStart (osTimerId_t timer_id, uint32_t ticks) {
     stat = osErrorParameter;
   }
   else {
-    if (xTimerChangePeriod (hTimer, ticks, 0) == pdPASS) {
+    if (xTimerChangePeriod (hTimer, ticks, portMAX_DELAY) == pdPASS) {
       stat = osOK;
     } else {
       stat = osErrorResource;
@@ -1252,7 +1254,7 @@ osStatus_t osTimerStop (osTimerId_t timer_id) {
       stat = osErrorResource;
     }
     else {
-      if (xTimerStop (hTimer, 0) == pdPASS) {
+      if (xTimerStop (hTimer, portMAX_DELAY) == pdPASS) {
         stat = osOK;
       } else {
         stat = osError;
@@ -1303,7 +1305,7 @@ osStatus_t osTimerDelete (osTimerId_t timer_id) {
     callb = (TimerCallback_t *)pvTimerGetTimerID (hTimer);
     #endif
 
-    if (xTimerDelete (hTimer, 0) == pdPASS) {
+    if (xTimerDelete (hTimer, portMAX_DELAY) == pdPASS) {
       #if (configSUPPORT_DYNAMIC_ALLOCATION == 1)
         if ((uint32_t)callb & 1U) {
           /* Callback memory was allocated from dynamic pool, clear flag */

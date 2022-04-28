@@ -18,6 +18,9 @@
 #include <gui/modules/popup.h>
 #include <gui/scene_manager.h>
 
+#include <loader/loader.h>
+#include <notification/notification_app.h>
+
 #define STATUS_BAR_Y_SHIFT 13
 
 typedef enum {
@@ -57,10 +60,18 @@ struct Desktop {
     ViewPort* lock_viewport;
 
     AnimationManager* animation_manager;
-    osSemaphoreId_t unload_animation_semaphore;
+
+    Loader* loader;
+    NotificationApp* notification;
+
     FuriPubSubSubscription* app_start_stop_subscription;
+    FuriPubSub* input_events_pubsub;
+    FuriPubSubSubscription* input_events_subscription;
+    osTimerId_t auto_lock_timer;
 };
 
 Desktop* desktop_alloc();
 
 void desktop_free(Desktop* desktop);
+void desktop_lock(Desktop* desktop);
+void desktop_unlock(Desktop* desktop);

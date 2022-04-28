@@ -52,7 +52,7 @@ static bool gui_widget_view_input_callback(InputEvent* event, void* context) {
 }
 
 Widget* widget_alloc() {
-    Widget* widget = furi_alloc(sizeof(Widget));
+    Widget* widget = malloc(sizeof(Widget));
     widget->view = view_alloc();
     view_set_context(widget->view, widget);
     view_allocate_model(widget->view, ViewModelTypeLocking, sizeof(GuiWidgetModel));
@@ -154,10 +154,11 @@ void widget_add_text_box_element(
     uint8_t height,
     Align horizontal,
     Align vertical,
-    const char* text) {
+    const char* text,
+    bool strip_to_dots) {
     furi_assert(widget);
-    WidgetElement* text_box_element =
-        widget_element_text_box_create(x, y, width, height, horizontal, vertical, text);
+    WidgetElement* text_box_element = widget_element_text_box_create(
+        x, y, width, height, horizontal, vertical, text, strip_to_dots);
     widget_add_element(widget, text_box_element);
 }
 

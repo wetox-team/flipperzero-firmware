@@ -11,10 +11,10 @@ extern int32_t gui_srv(void* p);
 extern int32_t input_srv(void* p);
 extern int32_t loader_srv(void* p);
 extern int32_t notification_srv(void* p);
-extern int32_t power_observer_srv(void* p);
 extern int32_t power_srv(void* p);
 extern int32_t storage_srv(void* p);
 extern int32_t desktop_srv(void* p);
+extern int32_t updater_srv(void* p);
 
 // Apps
 extern int32_t accessor_app(void* p);
@@ -28,8 +28,8 @@ extern int32_t delay_test_app(void* p);
 extern int32_t display_test_app(void* p);
 extern int32_t gpio_app(void* p);
 extern int32_t ibutton_app(void* p);
-extern int32_t irda_app(void* p);
-extern int32_t irda_monitor_app(void* p);
+extern int32_t infrared_app(void* p);
+extern int32_t infrared_monitor_app(void* p);
 extern int32_t keypad_test_app(void* p);
 extern int32_t lfrfid_app(void* p);
 extern int32_t lfrfid_debug_app(void* p);
@@ -43,6 +43,7 @@ extern int32_t usb_test_app(void* p);
 extern int32_t vibro_test_app(void* p);
 extern int32_t bt_hid_app(void* p);
 extern int32_t battery_test_app(void* p);
+extern int32_t text_box_test_app(void* p);
 
 // Plugins
 extern int32_t music_player_app(void* p);
@@ -52,13 +53,14 @@ extern int32_t snake_game_app(void* p);
 extern void bt_on_system_start();
 extern void crypto_on_system_start();
 extern void ibutton_on_system_start();
-extern void irda_on_system_start();
+extern void infrared_on_system_start();
 extern void lfrfid_on_system_start();
 extern void nfc_on_system_start();
 extern void storage_on_system_start();
 extern void subghz_on_system_start();
 extern void power_on_system_start();
 extern void unit_tests_on_system_start();
+extern void updater_on_system_start();
 
 // Settings
 extern int32_t notification_settings_app(void* p);
@@ -92,6 +94,9 @@ const FlipperApplication FLIPPER_SERVICES[] = {
 #endif
 
 #ifdef SRV_DESKTOP
+#ifdef SRV_UPDATER
+#error SRV_UPDATER and SRV_DESKTOP are mutually exclusive!
+#endif
     {.app = desktop_srv, .name = "DesktopSrv", .stack_size = 2048, .icon = NULL},
 #endif
 
@@ -115,16 +120,30 @@ const FlipperApplication FLIPPER_SERVICES[] = {
     {.app = power_srv, .name = "PowerSrv", .stack_size = 1024, .icon = NULL},
 #endif
 
-#ifdef SRV_POWER_OBSERVER
-    {.app = power_observer_srv, .name = "PowerAuditSrv", .stack_size = 1024, .icon = NULL},
-#endif
-
 #ifdef SRV_STORAGE
     {.app = storage_srv, .name = "StorageSrv", .stack_size = 3072, .icon = NULL},
 #endif
+
+#ifdef SRV_UPDATER
+#ifdef SRV_DESKTOP
+#error SRV_UPDATER and SRV_DESKTOP are mutually exclusive!
+#endif
+    {.app = updater_srv, .name = "UpdaterSrv", .stack_size = 2048, .icon = NULL},
+#endif
 };
 
-const size_t FLIPPER_SERVICES_COUNT = sizeof(FLIPPER_SERVICES) / sizeof(FlipperApplication);
+const size_t FLIPPER_SERVICES_COUNT = COUNT_OF(FLIPPER_SERVICES);
+
+const FlipperApplication FLIPPER_SYSTEM_APPS[] = {
+#ifdef APP_UPDATER
+#ifdef SRV_UPDATER
+#error APP_UPDATER and SRV_UPDATER are mutually exclusive!
+#endif
+    {.app = updater_srv, .name = "UpdaterApp", .stack_size = 2048, .icon = NULL},
+#endif
+};
+
+const size_t FLIPPER_SYSTEM_APPS_COUNT = COUNT_OF(FLIPPER_SYSTEM_APPS);
 
 // Main menu APP
 const FlipperApplication FLIPPER_APPS[] = {
@@ -141,8 +160,8 @@ const FlipperApplication FLIPPER_APPS[] = {
     {.app = nfc_app, .name = "NFC", .stack_size = 4096, .icon = &A_NFC_14},
 #endif
 
-#ifdef APP_IRDA
-    {.app = irda_app, .name = "Infrared", .stack_size = 1024 * 3, .icon = &A_Infrared_14},
+#ifdef APP_INFRARED
+    {.app = infrared_app, .name = "Infrared", .stack_size = 1024 * 3, .icon = &A_Infrared_14},
 #endif
 
 #ifdef APP_GPIO
@@ -163,14 +182,14 @@ const FlipperApplication FLIPPER_APPS[] = {
 
 };
 
-const size_t FLIPPER_APPS_COUNT = sizeof(FLIPPER_APPS) / sizeof(FlipperApplication);
+const size_t FLIPPER_APPS_COUNT = COUNT_OF(FLIPPER_APPS);
 
 // On system start hooks
 const FlipperOnStartHook FLIPPER_ON_SYSTEM_START[] = {
     crypto_on_system_start,
 
-#ifdef APP_IRDA
-    irda_on_system_start,
+#ifdef APP_INFRARED
+    infrared_on_system_start,
 #endif
 
 #ifdef APP_NFC
@@ -204,15 +223,18 @@ const FlipperOnStartHook FLIPPER_ON_SYSTEM_START[] = {
 #ifdef APP_UNIT_TESTS
     unit_tests_on_system_start,
 #endif
+
+#ifdef APP_UPDATER
+    updater_on_system_start,
+#endif
 };
 
-const size_t FLIPPER_ON_SYSTEM_START_COUNT =
-    sizeof(FLIPPER_ON_SYSTEM_START) / sizeof(FlipperOnStartHook);
+const size_t FLIPPER_ON_SYSTEM_START_COUNT = COUNT_OF(FLIPPER_ON_SYSTEM_START);
 
 // Plugin menu
 const FlipperApplication FLIPPER_PLUGINS[] = {
 #ifdef APP_BLE_HID
-    {.app = bt_hid_app, .name = "Bluetooth remote", .stack_size = 1024, .icon = NULL},
+    {.app = bt_hid_app, .name = "Bluetooth Remote", .stack_size = 1024, .icon = NULL},
 #endif
 
 #ifdef APP_MUSIC_PLAYER
@@ -224,7 +246,7 @@ const FlipperApplication FLIPPER_PLUGINS[] = {
 #endif
 };
 
-const size_t FLIPPER_PLUGINS_COUNT = sizeof(FLIPPER_PLUGINS) / sizeof(FlipperApplication);
+const size_t FLIPPER_PLUGINS_COUNT = COUNT_OF(FLIPPER_PLUGINS);
 
 // Plugin menu
 const FlipperApplication FLIPPER_DEBUG_APPS[] = {
@@ -249,15 +271,15 @@ const FlipperApplication FLIPPER_DEBUG_APPS[] = {
 #endif
 
 #ifdef APP_USB_MOUSE
-    {.app = usb_mouse_app, .name = "USB Mouse demo", .stack_size = 1024, .icon = NULL},
+    {.app = usb_mouse_app, .name = "USB Mouse Demo", .stack_size = 1024, .icon = NULL},
 #endif
 
 #ifdef APP_UART_ECHO
     {.app = uart_echo_app, .name = "Uart Echo", .stack_size = 2048, .icon = NULL},
 #endif
 
-#ifdef APP_IRDA_MONITOR
-    {.app = irda_monitor_app, .name = "Irda Monitor", .stack_size = 1024, .icon = NULL},
+#ifdef APP_INFRARED_MONITOR
+    {.app = infrared_monitor_app, .name = "Infrared Monitor", .stack_size = 1024, .icon = NULL},
 #endif
 
 #ifdef APP_SCENED
@@ -283,9 +305,13 @@ const FlipperApplication FLIPPER_DEBUG_APPS[] = {
 #ifdef APP_BATTERY_TEST
     {.app = battery_test_app, .name = "Battery Test", .stack_size = 1024, .icon = NULL},
 #endif
+
+#ifdef APP_TEXT_BOX_TEST
+    {.app = text_box_test_app, .name = "Text Box Test", .stack_size = 1024, .icon = NULL},
+#endif
 };
 
-const size_t FLIPPER_DEBUG_APPS_COUNT = sizeof(FLIPPER_DEBUG_APPS) / sizeof(FlipperApplication);
+const size_t FLIPPER_DEBUG_APPS_COUNT = COUNT_OF(FLIPPER_DEBUG_APPS);
 
 #ifdef APP_ARCHIVE
 const FlipperApplication FLIPPER_ARCHIVE =
@@ -300,7 +326,7 @@ const FlipperApplication FLIPPER_SETTINGS_APPS[] = {
 
 #ifdef SRV_NOTIFICATION
     {.app = notification_settings_app,
-     .name = "LCD and notifications",
+     .name = "LCD and Notifications",
      .stack_size = 1024,
      .icon = NULL},
 #endif
@@ -330,5 +356,4 @@ const FlipperApplication FLIPPER_SETTINGS_APPS[] = {
 #endif
 };
 
-const size_t FLIPPER_SETTINGS_APPS_COUNT =
-    sizeof(FLIPPER_SETTINGS_APPS) / sizeof(FlipperApplication);
+const size_t FLIPPER_SETTINGS_APPS_COUNT = COUNT_OF(FLIPPER_SETTINGS_APPS);

@@ -99,8 +99,6 @@ static void button_menu_view_draw_callback(Canvas* canvas, void* _model) {
     furi_assert(_model);
 
     ButtonMenuModel* model = (ButtonMenuModel*)_model;
-
-    canvas_clear(canvas);
     canvas_set_font(canvas, FontSecondary);
 
     uint8_t item_position = 0;
@@ -110,18 +108,21 @@ static void button_menu_view_draw_callback(Canvas* canvas, void* _model) {
     ButtonMenuItemArray_it_t it;
 
     if(active_screen > 0) {
-        canvas_draw_icon(canvas, 28, 1, &I_IrdaArrowUp_4x8);
+        canvas_draw_icon(canvas, 28, 1, &I_InfraredArrowUp_4x8);
     }
 
     if(max_screen > active_screen) {
-        canvas_draw_icon(canvas, 28, 123, &I_IrdaArrowDown_4x8);
+        canvas_draw_icon(canvas, 28, 123, &I_InfraredArrowDown_4x8);
     }
 
-    string_t disp_str;
-    string_init_set_str(disp_str, model->header);
-    elements_string_fit_width(canvas, disp_str, ITEM_WIDTH - 6);
-    canvas_draw_str_aligned(canvas, 32, 10, AlignCenter, AlignCenter, string_get_cstr(disp_str));
-    string_clear(disp_str);
+    if(model->header) {
+        string_t disp_str;
+        string_init_set_str(disp_str, model->header);
+        elements_string_fit_width(canvas, disp_str, ITEM_WIDTH - 6);
+        canvas_draw_str_aligned(
+            canvas, 32, 10, AlignCenter, AlignCenter, string_get_cstr(disp_str));
+        string_clear(disp_str);
+    }
 
     for(ButtonMenuItemArray_it(it, model->items); !ButtonMenuItemArray_end_p(it);
         ButtonMenuItemArray_next(it), ++item_position) {
@@ -248,6 +249,7 @@ void button_menu_reset(ButtonMenu* button_menu) {
         button_menu->view, (ButtonMenuModel * model) {
             ButtonMenuItemArray_reset(model->items);
             model->position = 0;
+            model->header = NULL;
             return true;
         });
 }
@@ -288,7 +290,7 @@ ButtonMenuItem* button_menu_add_item(
 }
 
 ButtonMenu* button_menu_alloc(void) {
-    ButtonMenu* button_menu = furi_alloc(sizeof(ButtonMenu));
+    ButtonMenu* button_menu = malloc(sizeof(ButtonMenu));
     button_menu->view = view_alloc();
     view_set_orientation(button_menu->view, ViewOrientationVertical);
     view_set_context(button_menu->view, button_menu);

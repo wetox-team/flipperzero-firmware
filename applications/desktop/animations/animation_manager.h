@@ -130,8 +130,15 @@ void animation_manager_set_interact_callback(
  * set_new_idle_callback's call.
  *
  * @animation_manager   instance
+ * @return              true if event was consumed
  */
-void animation_manager_interact_process(AnimationManager* animation_manager);
+bool animation_manager_interact_process(AnimationManager* animation_manager);
+
+/** Check if animation loaded
+ *
+ * @animation_manager   instance
+ */
+bool animation_manager_is_animation_loaded(AnimationManager* animation_manager);
 
 /**
  * Unload and Stall animation actions. Draw callback in view

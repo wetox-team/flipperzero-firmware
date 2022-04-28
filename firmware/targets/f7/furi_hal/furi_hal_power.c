@@ -1,6 +1,7 @@
 #include <furi_hal_power.h>
 #include <furi_hal_clock.h>
 #include <furi_hal_bt.h>
+#include <furi_hal_resources.h>
 
 #include <stm32wbxx_ll_rcc.h>
 #include <stm32wbxx_ll_pwr.h>
@@ -8,7 +9,6 @@
 #include <stm32wbxx_ll_cortex.h>
 #include <stm32wbxx_ll_gpio.h>
 
-#include <main.h>
 #include <hw_conf.h>
 #include <bq27220.h>
 #include <bq25896.h>
@@ -21,6 +21,9 @@ typedef struct {
     volatile uint8_t insomnia;
     volatile uint8_t deep_insomnia;
     volatile uint8_t suppress_charge;
+
+    uint8_t gauge_initialized;
+    uint8_t charger_initialized;
 } FuriHalPower;
 
 static volatile FuriHalPower furi_hal_power = {
@@ -82,6 +85,29 @@ void furi_hal_power_init() {
     furi_hal_i2c_release(&furi_hal_i2c_handle_power);
 
     FURI_LOG_I(TAG, "Init OK");
+}
+
+bool furi_hal_power_gauge_is_ok() {
+    bool ret = true;
+
+    BatteryStatus battery_status;
+    OperationStatus operation_status;
+
+    furi_hal_i2c_acquire(&furi_hal_i2c_handle_power);
+
+    if(bq27220_get_battery_status(&furi_hal_i2c_handle_power, &battery_status) == BQ27220_ERROR ||
+       bq27220_get_operation_status(&furi_hal_i2c_handle_power, &operation_status) ==
+           BQ27220_ERROR) {
+        ret = false;
+    } else {
+        ret &= battery_status.BATTPRES;
+        ret &= operation_status.INITCOMP;
+        ret &= (cedv.design_cap == bq27220_get_design_capacity(&furi_hal_i2c_handle_power));
+    }
+
+    furi_hal_i2c_release(&furi_hal_i2c_handle_power);
+
+    return ret;
 }
 
 uint16_t furi_hal_power_insomnia_level() {
@@ -239,6 +265,13 @@ uint32_t furi_hal_power_get_battery_full_capacity() {
     return ret;
 }
 
+uint32_t furi_hal_power_get_battery_design_capacity() {
+    furi_hal_i2c_acquire(&furi_hal_i2c_handle_power);
+    uint32_t ret = bq27220_get_design_capacity(&furi_hal_i2c_handle_power);
+    furi_hal_i2c_release(&furi_hal_i2c_handle_power);
+    return ret;
+}
+
 float furi_hal_power_get_battery_voltage(FuriHalPowerIC ic) {
     float ret = 0.0f;
 
@@ -308,10 +341,9 @@ void furi_hal_power_dump_state() {
     } else {
         // Operation status register
         printf(
-            "bq27220: CALMD: %d, SEC0: %d, SEC1: %d, EDV2: %d, VDQ: %d, INITCOMP: %d, SMTH: %d, BTPINT: %d, CFGUPDATE: %d\r\n",
+            "bq27220: CALMD: %d, SEC: %d, EDV2: %d, VDQ: %d, INITCOMP: %d, SMTH: %d, BTPINT: %d, CFGUPDATE: %d\r\n",
             operation_status.CALMD,
-            operation_status.SEC0,
-            operation_status.SEC1,
+            operation_status.SEC,
             operation_status.EDV2,
             operation_status.VDQ,
             operation_status.INITCOMP,
@@ -398,4 +430,59 @@ void furi_hal_power_suppress_charge_exit() {
         bq25896_enable_charging(&furi_hal_i2c_handle_power);
         furi_hal_i2c_release(&furi_hal_i2c_handle_power);
     }
+}
+
+void furi_hal_power_info_get(FuriHalPowerInfoCallback out, void* context) {
+    furi_assert(out);
+
+    string_t value;
+    string_init(value);
+
+    // Power Info version
+    out("power_info_major", "1", false, context);
+    out("power_info_minor", "0", false, context);
+
+    uint8_t charge = furi_hal_power_get_pct();
+
+    string_printf(value, "%u", charge);
+    out("charge_level", string_get_cstr(value), false, context);
+
+    if(furi_hal_power_is_charging()) {
+        if(charge < 100) {
+            string_printf(value, "charging");
+        } else {
+            string_printf(value, "charged");
+        }
+    } else {
+        string_printf(value, "discharging");
+    }
+    out("charge_state", string_get_cstr(value), false, context);
+
+    uint16_t voltage =
+        (uint16_t)(furi_hal_power_get_battery_voltage(FuriHalPowerICFuelGauge) * 1000.f);
+    string_printf(value, "%u", voltage);
+    out("battery_voltage", string_get_cstr(value), false, context);
+
+    int16_t current =
+        (int16_t)(furi_hal_power_get_battery_current(FuriHalPowerICFuelGauge) * 1000.f);
+    string_printf(value, "%d", current);
+    out("battery_current", string_get_cstr(value), false, context);
+
+    int16_t temperature = (int16_t)furi_hal_power_get_battery_temperature(FuriHalPowerICFuelGauge);
+    string_printf(value, "%d", temperature);
+    out("gauge_temp", string_get_cstr(value), false, context);
+
+    string_printf(value, "%u", furi_hal_power_get_bat_health_pct());
+    out("battery_health", string_get_cstr(value), false, context);
+
+    string_printf(value, "%u", furi_hal_power_get_battery_remaining_capacity());
+    out("capacity_remain", string_get_cstr(value), false, context);
+
+    string_printf(value, "%u", furi_hal_power_get_battery_full_capacity());
+    out("capacity_full", string_get_cstr(value), false, context);
+
+    string_printf(value, "%u", furi_hal_power_get_battery_design_capacity());
+    out("capacity_design", string_get_cstr(value), true, context);
+
+    string_clear(value);
 }

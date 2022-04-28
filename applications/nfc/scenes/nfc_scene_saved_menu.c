@@ -9,21 +9,34 @@ enum SubmenuIndex {
 };
 
 void nfc_scene_saved_menu_submenu_callback(void* context, uint32_t index) {
-    Nfc* nfc = (Nfc*)context;
+    Nfc* nfc = context;
 
     view_dispatcher_send_custom_event(nfc->view_dispatcher, index);
 }
 
 void nfc_scene_saved_menu_on_enter(void* context) {
-    Nfc* nfc = (Nfc*)context;
+    Nfc* nfc = context;
     Submenu* submenu = nfc->submenu;
 
-    if(nfc->dev->format != NfcDeviceSaveFormatBankCard) {
+    if(nfc->dev->format == NfcDeviceSaveFormatUid ||
+       nfc->dev->format == NfcDeviceSaveFormatMifareDesfire ||
+       nfc->dev->format == NfcDeviceSaveFormatBankCard) {
         submenu_add_item(
-            submenu, "Emulate", SubmenuIndexEmulate, nfc_scene_saved_menu_submenu_callback, nfc);
+            submenu,
+            "Emulate UID",
+            SubmenuIndexEmulate,
+            nfc_scene_saved_menu_submenu_callback,
+            nfc);
+    } else if(nfc->dev->format == NfcDeviceSaveFormatMifareUl) {
+        submenu_add_item(
+            submenu,
+            "Emulate Ultralight",
+            SubmenuIndexEmulate,
+            nfc_scene_saved_menu_submenu_callback,
+            nfc);
     }
     submenu_add_item(
-        submenu, "Edit UID and name", SubmenuIndexEdit, nfc_scene_saved_menu_submenu_callback, nfc);
+        submenu, "Edit UID and Name", SubmenuIndexEdit, nfc_scene_saved_menu_submenu_callback, nfc);
     submenu_add_item(
         submenu, "Delete", SubmenuIndexDelete, nfc_scene_saved_menu_submenu_callback, nfc);
     submenu_add_item(
@@ -43,7 +56,7 @@ void nfc_scene_saved_menu_on_enter(void* context) {
 }
 
 bool nfc_scene_saved_menu_on_event(void* context, SceneManagerEvent event) {
-    Nfc* nfc = (Nfc*)context;
+    Nfc* nfc = context;
     bool consumed = false;
 
     if(event.type == SceneManagerEventTypeCustom) {
@@ -79,7 +92,7 @@ bool nfc_scene_saved_menu_on_event(void* context, SceneManagerEvent event) {
 }
 
 void nfc_scene_saved_menu_on_exit(void* context) {
-    Nfc* nfc = (Nfc*)context;
+    Nfc* nfc = context;
 
     submenu_reset(nfc->submenu);
 }

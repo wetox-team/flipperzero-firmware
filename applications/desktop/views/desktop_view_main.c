@@ -46,7 +46,7 @@ bool desktop_main_input(InputEvent* event, void* context) {
         } else if(event->key == InputKeyLeft) {
             main_view->callback(DesktopMainEventOpenFavorite, main_view->context);
         } else if(event->key == InputKeyRight) {
-            main_view->callback(DesktopMainEventRightShort, main_view->context);
+            main_view->callback(DesktopMainEventOpenPassport, main_view->context);
         }
     } else if(event->type == InputTypeLong) {
         if(event->key == InputKeyDown) {
@@ -58,7 +58,7 @@ bool desktop_main_input(InputEvent* event, void* context) {
 }
 
 DesktopMainView* desktop_main_alloc() {
-    DesktopMainView* main_view = furi_alloc(sizeof(DesktopMainView));
+    DesktopMainView* main_view = malloc(sizeof(DesktopMainView));
 
     main_view->view = view_alloc();
     view_allocate_model(main_view->view, ViewModelTypeLockFree, 1);

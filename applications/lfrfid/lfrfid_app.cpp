@@ -2,7 +2,9 @@
 #include "scene/lfrfid_app_scene_start.h"
 #include "scene/lfrfid_app_scene_read.h"
 #include "scene/lfrfid_app_scene_read_success.h"
-#include "scene/lfrfid_app_scene_readed_menu.h"
+#include "scene/lfrfid_app_scene_retry_confirm.h"
+#include "scene/lfrfid_app_scene_exit_confirm.h"
+#include "scene/lfrfid_app_scene_read_menu.h"
 #include "scene/lfrfid_app_scene_write.h"
 #include "scene/lfrfid_app_scene_write_success.h"
 #include "scene/lfrfid_app_scene_emulate.h"
@@ -17,7 +19,7 @@
 #include "scene/lfrfid_app_scene_delete_success.h"
 
 #include <toolbox/path.h>
-#include <flipper_file/flipper_file.h>
+#include <flipper_format/flipper_format.h>
 
 const char* LfRfidApp::app_folder = "/any/lfrfid";
 const char* LfRfidApp::app_extension = ".rfid";
@@ -48,8 +50,10 @@ void LfRfidApp::run(void* _args) {
     } else {
         scene_controller.add_scene(SceneType::Start, new LfRfidAppSceneStart());
         scene_controller.add_scene(SceneType::Read, new LfRfidAppSceneRead());
+        scene_controller.add_scene(SceneType::RetryConfirm, new LfRfidAppSceneRetryConfirm());
+        scene_controller.add_scene(SceneType::ExitConfirm, new LfRfidAppSceneExitConfirm());
         scene_controller.add_scene(SceneType::ReadSuccess, new LfRfidAppSceneReadSuccess());
-        scene_controller.add_scene(SceneType::ReadedMenu, new LfRfidAppSceneReadedMenu());
+        scene_controller.add_scene(SceneType::ReadKeyMenu, new LfRfidAppSceneReadKeyMenu());
         scene_controller.add_scene(SceneType::Write, new LfRfidAppSceneWrite());
         scene_controller.add_scene(SceneType::WriteSuccess, new LfRfidAppSceneWriteSuccess());
         scene_controller.add_scene(SceneType::Emulate, new LfRfidAppSceneEmulate());
@@ -119,17 +123,17 @@ bool LfRfidApp::delete_key(RfidKey* key) {
 }
 
 bool LfRfidApp::load_key_data(const char* path, RfidKey* key) {
-    FlipperFile* file = flipper_file_alloc(storage);
+    FlipperFormat* file = flipper_format_file_alloc(storage);
     bool result = false;
     string_t str_result;
     string_init(str_result);
 
     do {
-        if(!flipper_file_open_existing(file, path)) break;
+        if(!flipper_format_file_open_existing(file, path)) break;
 
         // header
         uint32_t version;
-        if(!flipper_file_read_header(file, str_result, &version)) break;
+        if(!flipper_format_read_header(file, str_result, &version)) break;
         if(string_cmp_str(str_result, app_filetype) != 0) break;
         if(version != 1) break;
 
@@ -137,13 +141,14 @@ bool LfRfidApp::load_key_data(const char* path, RfidKey* key) {
         LfrfidKeyType type;
         RfidKey loaded_key;
 
-        if(!flipper_file_read_string(file, "Key type", str_result)) break;
+        if(!flipper_format_read_string(file, "Key type", str_result)) break;
         if(!lfrfid_key_get_string_type(string_get_cstr(str_result), &type)) break;
         loaded_key.set_type(type);
 
         // key data
         uint8_t key_data[loaded_key.get_type_data_count()] = {};
-        if(!flipper_file_read_hex(file, "Data", key_data, loaded_key.get_type_data_count())) break;
+        if(!flipper_format_read_hex(file, "Data", key_data, loaded_key.get_type_data_count()))
+            break;
         loaded_key.set_data(key_data, loaded_key.get_type_data_count());
 
         path_extract_filename_no_ext(path, str_result);
@@ -153,8 +158,7 @@ bool LfRfidApp::load_key_data(const char* path, RfidKey* key) {
         result = true;
     } while(0);
 
-    flipper_file_close(file);
-    flipper_file_free(file);
+    flipper_format_free(file);
     string_clear(str_result);
 
     if(!result) {
@@ -165,27 +169,26 @@ bool LfRfidApp::load_key_data(const char* path, RfidKey* key) {
 }
 
 bool LfRfidApp::save_key_data(const char* path, RfidKey* key) {
-    FlipperFile* file = flipper_file_alloc(storage);
+    FlipperFormat* file = flipper_format_file_alloc(storage);
     bool result = false;
 
     do {
-        if(!flipper_file_open_always(file, path)) break;
-        if(!flipper_file_write_header_cstr(file, app_filetype, 1)) break;
-        if(!flipper_file_write_comment_cstr(file, "Key type can be EM4100, H10301 or I40134"))
+        if(!flipper_format_file_open_always(file, path)) break;
+        if(!flipper_format_write_header_cstr(file, app_filetype, 1)) break;
+        if(!flipper_format_write_comment_cstr(file, "Key type can be EM4100, H10301 or I40134"))
             break;
-        if(!flipper_file_write_string_cstr(
+        if(!flipper_format_write_string_cstr(
                file, "Key type", lfrfid_key_get_type_string(key->get_type())))
             break;
-        if(!flipper_file_write_comment_cstr(
+        if(!flipper_format_write_comment_cstr(
                file, "Data size for EM4100 is 5, for H10301 is 3, for I40134 is 3"))
             break;
-        if(!flipper_file_write_hex(file, "Data", key->get_data(), key->get_type_data_count()))
+        if(!flipper_format_write_hex(file, "Data", key->get_data(), key->get_type_data_count()))
             break;
         result = true;
     } while(0);
 
-    flipper_file_close(file);
-    flipper_file_free(file);
+    flipper_format_free(file);
 
     if(!result) {
         dialog_message_show_storage_error(dialogs, "Cannot save\nkey file");

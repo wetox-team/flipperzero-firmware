@@ -30,7 +30,7 @@ void furi_thread_set_state(FuriThread* thread, FuriThreadState state) {
     }
 }
 
-void furi_thread_body(void* context) {
+static void furi_thread_body(void* context) {
     furi_assert(context);
     FuriThread* thread = context;
 
@@ -45,6 +45,7 @@ void furi_thread_body(void* context) {
     thread->ret = thread->callback(thread->context);
 
     if(thread->heap_trace_enabled == true) {
+        osDelay(33);
         thread->heap_size = memmgr_heap_get_thread_memory(thread_id);
         memmgr_heap_disable_thread_trace(thread_id);
     }
@@ -56,7 +57,7 @@ void furi_thread_body(void* context) {
 }
 
 FuriThread* furi_thread_alloc() {
-    FuriThread* thread = furi_alloc(sizeof(FuriThread));
+    FuriThread* thread = malloc(sizeof(FuriThread));
 
     return thread;
 }
@@ -166,4 +167,10 @@ size_t furi_thread_get_heap_size(FuriThread* thread) {
     furi_assert(thread);
     furi_assert(thread->heap_trace_enabled == true);
     return thread->heap_size;
+}
+
+int32_t furi_thread_get_return_code(FuriThread* thread) {
+    furi_assert(thread);
+    furi_assert(thread->state == FuriThreadStateStopped);
+    return thread->ret;
 }

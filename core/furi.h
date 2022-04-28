@@ -18,7 +18,6 @@
 #include <furi/log.h>
 
 #include <furi_hal_gpio.h>
-#include <furi_hal/api_interrupt_mgr.h>
 
 #include <stdlib.h>
 
@@ -27,6 +26,8 @@ extern "C" {
 #endif
 
 void furi_init();
+
+void furi_run();
 
 #ifdef __cplusplus
 }

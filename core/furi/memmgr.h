@@ -23,21 +23,17 @@ extern "C" {
  */
 size_t memmgr_get_free_heap(void);
 
+/** Get total heap size
+ *
+ * @return     total heap size in bytes
+ */
+size_t memmgr_get_total_heap(void);
+
 /** Get heap watermark
  *
  * @return     minimum heap in bytes
  */
 size_t memmgr_get_minimum_free_heap(void);
-
-/** Allocate memory from heap
- *
- * @note       performs memset with 0, will crash system if not enough memory
- *
- * @param[in]  size  bytes to allocate
- *
- * @return     pointer to allocated memory
- */
-void* furi_alloc(size_t size);
 
 #ifdef __cplusplus
 }

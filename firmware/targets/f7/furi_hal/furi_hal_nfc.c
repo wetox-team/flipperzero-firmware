@@ -48,13 +48,12 @@ void furi_hal_nfc_exit_sleep() {
     rfalLowPowerModeStop();
 }
 
-bool furi_hal_nfc_detect(
-    rfalNfcDevice** dev_list,
-    uint8_t* dev_cnt,
-    uint32_t timeout,
-    bool deactivate) {
-    furi_assert(dev_list);
-    furi_assert(dev_cnt);
+bool furi_hal_nfc_detect(FuriHalNfcDevData* nfc_data, uint32_t timeout) {
+    furi_assert(nfc_data);
+
+    rfalNfcDevice* dev_list = NULL;
+    uint8_t dev_cnt = 0;
+    bool detected = false;
 
     rfalLowPowerModeStop();
     rfalNfcState state = rfalNfcGetState();
@@ -77,6 +76,85 @@ bool furi_hal_nfc_detect(
 
     uint32_t start = DWT->CYCCNT;
     rfalNfcDiscover(&params);
+    while(true) {
+        rfalNfcWorker();
+        state = rfalNfcGetState();
+        if(state == RFAL_NFC_STATE_ACTIVATED) {
+            detected = true;
+            break;
+        }
+        FURI_LOG_T(TAG, "Current state %d", state);
+        if(state == RFAL_NFC_STATE_POLL_ACTIVATION) {
+            start = DWT->CYCCNT;
+            continue;
+        }
+        if(state == RFAL_NFC_STATE_POLL_SELECT) {
+            rfalNfcSelect(0);
+        }
+        if(DWT->CYCCNT - start > timeout * clocks_in_ms) {
+            rfalNfcDeactivate(true);
+            FURI_LOG_T(TAG, "Timeout");
+            break;
+        }
+        osDelay(1);
+    }
+    rfalNfcGetDevicesFound(&dev_list, &dev_cnt);
+    if(detected) {
+        if(dev_list[0].type == RFAL_NFC_LISTEN_TYPE_NFCA) {
+            nfc_data->type = FuriHalNfcTypeA;
+            nfc_data->atqa[0] = dev_list[0].dev.nfca.sensRes.anticollisionInfo;
+            nfc_data->atqa[1] = dev_list[0].dev.nfca.sensRes.platformInfo;
+            nfc_data->sak = dev_list[0].dev.nfca.selRes.sak;
+            uint8_t* cuid_start = dev_list[0].nfcid;
+            if(dev_list[0].nfcidLen == 7) {
+                cuid_start = &dev_list[0].nfcid[3];
+            }
+            nfc_data->cuid = (cuid_start[0] << 24) | (cuid_start[1] << 16) | (cuid_start[2] << 8) |
+                             (cuid_start[3]);
+        } else if(dev_list[0].type == RFAL_NFC_LISTEN_TYPE_NFCB) {
+            nfc_data->type = FuriHalNfcTypeB;
+        } else if(dev_list[0].type == RFAL_NFC_LISTEN_TYPE_NFCF) {
+            nfc_data->type = FuriHalNfcTypeF;
+        } else if(dev_list[0].type == RFAL_NFC_LISTEN_TYPE_NFCV) {
+            nfc_data->type = FuriHalNfcTypeV;
+        }
+        if(dev_list[0].rfInterface == RFAL_NFC_INTERFACE_RF) {
+            nfc_data->interface = FuriHalNfcInterfaceRf;
+        } else if(dev_list[0].rfInterface == RFAL_NFC_INTERFACE_ISODEP) {
+            nfc_data->interface = FuriHalNfcInterfaceIsoDep;
+        } else if(dev_list[0].rfInterface == RFAL_NFC_INTERFACE_NFCDEP) {
+            nfc_data->interface = FuriHalNfcInterfaceNfcDep;
+        }
+        nfc_data->uid_len = dev_list[0].nfcidLen;
+        memcpy(nfc_data->uid, dev_list[0].nfcid, nfc_data->uid_len);
+    }
+
+    return detected;
+}
+
+bool furi_hal_nfc_activate_nfca(uint32_t timeout, uint32_t* cuid) {
+    rfalNfcDevice* dev_list;
+    uint8_t dev_cnt = 0;
+    rfalLowPowerModeStop();
+    rfalNfcState state = rfalNfcGetState();
+    if(state == RFAL_NFC_STATE_NOTINIT) {
+        rfalNfcInitialize();
+    }
+    rfalNfcDiscoverParam params = {
+        .compMode = RFAL_COMPLIANCE_MODE_NFC,
+        .techs2Find = RFAL_NFC_POLL_TECH_A,
+        .totalDuration = 1000,
+        .devLimit = 3,
+        .wakeupEnabled = false,
+        .wakeupConfigDefault = true,
+        .nfcfBR = RFAL_BR_212,
+        .ap2pBR = RFAL_BR_424,
+        .maxBR = RFAL_BR_KEEP,
+        .GBLen = RFAL_NFCDEP_GB_MAX_LEN,
+        .notifyCb = NULL,
+    };
+    uint32_t start = DWT->CYCCNT;
+    rfalNfcDiscover(&params);
     while(state != RFAL_NFC_STATE_ACTIVATED) {
         rfalNfcWorker();
         state = rfalNfcGetState();
@@ -95,10 +173,16 @@ bool furi_hal_nfc_detect(
         }
         osThreadYield();
     }
-    rfalNfcGetDevicesFound(dev_list, dev_cnt);
-    if(deactivate) {
-        rfalNfcDeactivate(false);
-        rfalLowPowerModeStart();
+    rfalNfcGetDevicesFound(&dev_list, &dev_cnt);
+    // Take first device and set cuid
+    if(cuid) {
+        uint8_t* cuid_start = dev_list[0].nfcid;
+        if(dev_list[0].nfcidLen == 7) {
+            cuid_start = &dev_list[0].nfcid[3];
+        }
+        *cuid = (cuid_start[0] << 24) | (cuid_start[1] << 16) | (cuid_start[2] << 8) |
+                (cuid_start[3]);
+        FURI_LOG_T(TAG, "Activated tag with cuid: %lX", *cuid);
     }
     return true;
 }
@@ -146,7 +230,7 @@ bool furi_hal_nfc_listen(
             rfalNfcDeactivate(true);
             return false;
         }
-        osThreadYield();
+        osDelay(1);
     }
     return true;
 }
@@ -271,12 +355,6 @@ bool furi_hal_nfc_emulate_nfca(
     return true;
 }
 
-bool furi_hal_nfc_get_first_frame(uint8_t** rx_buff, uint16_t** rx_len) {
-    ReturnCode ret =
-        rfalNfcDataExchangeStart(NULL, 0, rx_buff, rx_len, 0, RFAL_TXRX_FLAGS_DEFAULT);
-    return ret == ERR_NONE;
-}
-
 ReturnCode furi_hal_nfc_data_exchange(
     uint8_t* tx_buff,
     uint16_t tx_len,
@@ -297,12 +375,10 @@ ReturnCode furi_hal_nfc_data_exchange(
         rfalNfcWorker();
         state = rfalNfcGetState();
         ret = rfalNfcDataExchangeGetStatus();
-        if(ret > ERR_SLEEP_REQ) {
-            return ret;
-        }
         if(ret == ERR_BUSY) {
             if(DWT->CYCCNT - start > 1000 * clocks_in_ms) {
-                return ERR_TIMEOUT;
+                ret = ERR_TIMEOUT;
+                break;
             }
             continue;
         } else {
@@ -314,51 +390,164 @@ ReturnCode furi_hal_nfc_data_exchange(
         rfalNfcDeactivate(false);
         rfalLowPowerModeStart();
     }
-    return ERR_NONE;
+    return ret;
 }
 
-ReturnCode furi_hal_nfc_raw_bitstream_exchange(
-    uint8_t* tx_buff,
-    uint16_t tx_bit_len,
-    uint8_t** rx_buff,
-    uint16_t** rx_bit_len,
-    bool deactivate) {
-    furi_assert(rx_buff);
-    furi_assert(rx_bit_len);
+static uint32_t furi_hal_nfc_tx_rx_get_flag(FuriHalNfcTxRxType type) {
+    uint32_t flags = 0;
+
+    if(type == FuriHalNfcTxRxTypeRxNoCrc) {
+        flags = RFAL_TXRX_FLAGS_CRC_RX_KEEP;
+    } else if(type == FuriHalNfcTxRxTypeRxKeepPar) {
+        flags = RFAL_TXRX_FLAGS_CRC_TX_MANUAL | RFAL_TXRX_FLAGS_CRC_RX_KEEP |
+                RFAL_TXRX_FLAGS_PAR_RX_KEEP;
+    } else if(type == FuriHalNfcTxRxTypeRaw) {
+        flags = RFAL_TXRX_FLAGS_CRC_TX_MANUAL | RFAL_TXRX_FLAGS_CRC_RX_KEEP |
+                RFAL_TXRX_FLAGS_PAR_RX_KEEP | RFAL_TXRX_FLAGS_PAR_TX_NONE;
+    }
+
+    return flags;
+}
+
+static uint16_t furi_hal_nfc_data_and_parity_to_bitstream(
+    uint8_t* data,
+    uint16_t len,
+    uint8_t* parity,
+    uint8_t* out) {
+    furi_assert(data);
+    furi_assert(out);
+
+    uint8_t next_par_bit = 0;
+    uint16_t curr_bit_pos = 0;
+    for(uint16_t i = 0; i < len; i++) {
+        next_par_bit = FURI_BIT(parity[i / 8], 7 - (i % 8));
+        if(curr_bit_pos % 8 == 0) {
+            out[curr_bit_pos / 8] = data[i];
+            curr_bit_pos += 8;
+            out[curr_bit_pos / 8] = next_par_bit;
+            curr_bit_pos++;
+        } else {
+            out[curr_bit_pos / 8] |= data[i] << curr_bit_pos % 8;
+            out[curr_bit_pos / 8 + 1] = data[i] >> (8 - curr_bit_pos % 8);
+            out[curr_bit_pos / 8 + 1] |= next_par_bit << curr_bit_pos % 8;
+            curr_bit_pos += 9;
+        }
+    }
+    return curr_bit_pos;
+}
+
+uint16_t furi_hal_nfc_bitstream_to_data_and_parity(
+    uint8_t* in_buff,
+    uint16_t in_buff_bits,
+    uint8_t* out_data,
+    uint8_t* out_parity) {
+    if(in_buff_bits % 9 != 0) {
+        return 0;
+    }
+
+    uint8_t curr_byte = 0;
+    uint16_t bit_processed = 0;
+    memset(out_parity, 0, in_buff_bits / 9);
+    while(bit_processed < in_buff_bits) {
+        out_data[curr_byte] = in_buff[bit_processed / 8] >> bit_processed % 8;
+        out_data[curr_byte] |= in_buff[bit_processed / 8 + 1] << (8 - bit_processed % 8);
+        out_parity[curr_byte / 8] |= FURI_BIT(in_buff[bit_processed / 8 + 1], bit_processed % 8)
+                                     << (7 - curr_byte % 8);
+        bit_processed += 9;
+        curr_byte++;
+    }
+    return curr_byte;
+}
+
+bool furi_hal_nfc_tx_rx(FuriHalNfcTxRxContext* tx_rx, uint16_t timeout_ms) {
+    furi_assert(tx_rx);
 
     ReturnCode ret;
     rfalNfcState state = RFAL_NFC_STATE_ACTIVATED;
-    ret =
-        rfalNfcDataExchangeStart(tx_buff, tx_bit_len, rx_buff, rx_bit_len, 0, RFAL_TXRX_FLAGS_RAW);
+    uint8_t temp_tx_buff[FURI_HAL_NFC_DATA_BUFF_SIZE] = {};
+    uint16_t temp_tx_bits = 0;
+    uint8_t* temp_rx_buff = NULL;
+    uint16_t* temp_rx_bits = NULL;
+
+    // Prepare data for FIFO if necessary
+    uint32_t flags = furi_hal_nfc_tx_rx_get_flag(tx_rx->tx_rx_type);
+    if(tx_rx->tx_rx_type == FuriHalNfcTxRxTypeRaw) {
+        temp_tx_bits = furi_hal_nfc_data_and_parity_to_bitstream(
+            tx_rx->tx_data, tx_rx->tx_bits / 8, tx_rx->tx_parity, temp_tx_buff);
+        ret = rfalNfcDataExchangeCustomStart(
+            temp_tx_buff, temp_tx_bits, &temp_rx_buff, &temp_rx_bits, RFAL_FWT_NONE, flags);
+    } else {
+        ret = rfalNfcDataExchangeCustomStart(
+            tx_rx->tx_data, tx_rx->tx_bits, &temp_rx_buff, &temp_rx_bits, RFAL_FWT_NONE, flags);
+    }
     if(ret != ERR_NONE) {
-        return ret;
+        FURI_LOG_E(TAG, "Failed to start data exchange");
+        return false;
     }
     uint32_t start = DWT->CYCCNT;
     while(state != RFAL_NFC_STATE_DATAEXCHANGE_DONE) {
         rfalNfcWorker();
         state = rfalNfcGetState();
         ret = rfalNfcDataExchangeGetStatus();
-        if(ret > ERR_SLEEP_REQ) {
-            return ret;
-        }
         if(ret == ERR_BUSY) {
-            if(DWT->CYCCNT - start > 1000 * clocks_in_ms) {
-                return ERR_TIMEOUT;
+            if(DWT->CYCCNT - start > timeout_ms * clocks_in_ms) {
+                FURI_LOG_D(TAG, "Timeout during data exchange");
+                return false;
             }
             continue;
         } else {
             start = DWT->CYCCNT;
         }
-        taskYIELD();
+        osDelay(1);
     }
-    if(deactivate) {
-        rfalNfcDeactivate(false);
-        rfalLowPowerModeStart();
+
+    if(tx_rx->tx_rx_type == FuriHalNfcTxRxTypeRaw) {
+        tx_rx->rx_bits = 8 * furi_hal_nfc_bitstream_to_data_and_parity(
+                                 temp_rx_buff, *temp_rx_bits, tx_rx->rx_data, tx_rx->rx_parity);
+    } else {
+        memcpy(tx_rx->rx_data, temp_rx_buff, MIN(*temp_rx_bits / 8, FURI_HAL_NFC_DATA_BUFF_SIZE));
+        tx_rx->rx_bits = *temp_rx_bits;
     }
-    return ERR_NONE;
+
+    return true;
 }
 
-void furi_hal_nfc_deactivate() {
+ReturnCode furi_hal_nfc_exchange_full(
+    uint8_t* tx_buff,
+    uint16_t tx_len,
+    uint8_t* rx_buff,
+    uint16_t rx_cap,
+    uint16_t* rx_len) {
+    ReturnCode err;
+    uint8_t* part_buff;
+    uint16_t* part_len_bits;
+    uint16_t part_len_bytes;
+
+    err = furi_hal_nfc_data_exchange(tx_buff, tx_len, &part_buff, &part_len_bits, false);
+    part_len_bytes = *part_len_bits / 8;
+    if(part_len_bytes > rx_cap) {
+        return ERR_OVERRUN;
+    }
+    memcpy(rx_buff, part_buff, part_len_bytes);
+    *rx_len = part_len_bytes;
+    while(err == ERR_NONE && rx_buff[0] == 0xAF) {
+        err = furi_hal_nfc_data_exchange(rx_buff, 1, &part_buff, &part_len_bits, false);
+        part_len_bytes = *part_len_bits / 8;
+        if(part_len_bytes > rx_cap - *rx_len) {
+            return ERR_OVERRUN;
+        }
+        if(part_len_bytes == 0) {
+            return ERR_PROTO;
+        }
+        memcpy(rx_buff + *rx_len, part_buff + 1, part_len_bytes - 1);
+        *rx_buff = *part_buff;
+        *rx_len += part_len_bytes - 1;
+    }
+
+    return err;
+}
+
+void furi_hal_nfc_sleep() {
     rfalNfcDeactivate(false);
     rfalLowPowerModeStart();
 }

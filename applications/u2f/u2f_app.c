@@ -22,7 +22,7 @@ static void u2f_app_tick_event_callback(void* context) {
 }
 
 U2fApp* u2f_app_alloc() {
-    U2fApp* app = furi_alloc(sizeof(U2fApp));
+    U2fApp* app = malloc(sizeof(U2fApp));
 
     app->gui = furi_record_open("gui");
     app->notifications = furi_record_open("notification");
@@ -48,10 +48,16 @@ U2fApp* u2f_app_alloc() {
     view_dispatcher_add_view(
         app->view_dispatcher, U2fAppViewMain, u2f_view_get_view(app->u2f_view));
 
-    if(u2f_data_check(true)) {
-        scene_manager_next_scene(app->scene_manager, U2fSceneMain);
-    } else {
+    if(furi_hal_usb_is_locked()) {
+        app->error = U2fAppErrorCloseRpc;
         scene_manager_next_scene(app->scene_manager, U2fSceneError);
+    } else {
+        if(u2f_data_check(true)) {
+            scene_manager_next_scene(app->scene_manager, U2fSceneMain);
+        } else {
+            app->error = U2fAppErrorNoFiles;
+            scene_manager_next_scene(app->scene_manager, U2fSceneError);
+        }
     }
 
     return app;

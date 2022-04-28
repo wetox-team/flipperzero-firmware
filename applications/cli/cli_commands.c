@@ -5,6 +5,8 @@
 #include <task_control_block.h>
 #include <time.h>
 #include <notification/notification_messages.h>
+#include <loader/loader.h>
+#include <stream_buffer.h>
 
 // Close to ISO, `date +'%Y-%m-%d %H:%M:%S %u'`
 #define CLI_DATE_FORMAT "%.4d-%.2d-%.2d %.2d:%.2d:%.2d %d"
@@ -125,11 +127,28 @@ void cli_command_date(Cli* cli, string_t args, void* context) {
     }
 }
 
+#define CLI_COMMAND_LOG_RING_SIZE 2048
+#define CLI_COMMAND_LOG_BUFFER_SIZE 64
+
+void cli_command_log_tx_callback(const uint8_t* buffer, size_t size, void* context) {
+    xStreamBufferSend(context, buffer, size, 0);
+}
+
 void cli_command_log(Cli* cli, string_t args, void* context) {
-    furi_stdglue_set_global_stdout_callback(cli_stdout_callback);
-    printf("Press any key to stop...\r\n");
-    cli_getc(cli);
-    furi_stdglue_set_global_stdout_callback(NULL);
+    StreamBufferHandle_t ring = xStreamBufferCreate(CLI_COMMAND_LOG_RING_SIZE, 1);
+    uint8_t buffer[CLI_COMMAND_LOG_BUFFER_SIZE];
+
+    furi_hal_console_set_tx_callback(cli_command_log_tx_callback, ring);
+
+    printf("Press CTRL+C to stop...\r\n");
+    while(!cli_cmd_interrupt_received(cli)) {
+        size_t ret = xStreamBufferReceive(ring, buffer, CLI_COMMAND_LOG_BUFFER_SIZE, 50);
+        cli_write(cli, buffer, ret);
+    }
+
+    furi_hal_console_set_tx_callback(NULL, NULL);
+
+    vStreamBufferDelete(ring);
 }
 
 void cli_command_vibro(Cli* cli, string_t args, void* context) {
@@ -143,6 +162,20 @@ void cli_command_vibro(Cli* cli, string_t args, void* context) {
         furi_record_close("notification");
     } else {
         cli_print_usage("vibro", "<1|0>", string_get_cstr(args));
+    }
+}
+
+void cli_command_debug(Cli* cli, string_t args, void* context) {
+    if(!string_cmp(args, "0")) {
+        furi_hal_rtc_reset_flag(FuriHalRtcFlagDebug);
+        loader_update_menu();
+        printf("Debug disabled.");
+    } else if(!string_cmp(args, "1")) {
+        furi_hal_rtc_set_flag(FuriHalRtcFlagDebug);
+        loader_update_menu();
+        printf("Debug enabled.");
+    } else {
+        cli_print_usage("debug", "<1|0>", string_get_cstr(args));
     }
 }
 
@@ -312,6 +345,7 @@ void cli_command_ps(Cli* cli, string_t args, void* context) {
 
 void cli_command_free(Cli* cli, string_t args, void* context) {
     printf("Free heap size: %d\r\n", memmgr_get_free_heap());
+    printf("Total heap size: %d\r\n", memmgr_get_total_heap());
     printf("Minimum heap size: %d\r\n", memmgr_get_minimum_free_heap());
     printf("Maximum heap block: %d\r\n", memmgr_heap_get_max_free_block());
 }
@@ -348,6 +382,7 @@ void cli_commands_init(Cli* cli) {
 
     cli_add_command(cli, "date", CliCommandFlagParallelSafe, cli_command_date, NULL);
     cli_add_command(cli, "log", CliCommandFlagParallelSafe, cli_command_log, NULL);
+    cli_add_command(cli, "debug", CliCommandFlagDefault, cli_command_debug, NULL);
     cli_add_command(cli, "ps", CliCommandFlagParallelSafe, cli_command_ps, NULL);
     cli_add_command(cli, "free", CliCommandFlagParallelSafe, cli_command_free, NULL);
     cli_add_command(cli, "free_blocks", CliCommandFlagParallelSafe, cli_command_free_blocks, NULL);

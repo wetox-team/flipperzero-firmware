@@ -1,5 +1,5 @@
 #pragma once
-#include <furi.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -9,6 +9,7 @@ extern "C" {
 typedef enum {
     FSAM_READ = (1 << 0), /**< Read access */
     FSAM_WRITE = (1 << 1), /**< Write access */
+    FSAM_READ_WRITE = FSAM_READ | FSAM_WRITE, /**< Read and write access */
 } FS_AccessMode;
 
 /** Open mode flags */

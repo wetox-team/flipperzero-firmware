@@ -191,7 +191,7 @@ static int32_t u2f_hid_worker(void* context) {
     FURI_LOG_D(WORKER_TAG, "Init");
 
     FuriHalUsbInterface* usb_mode_prev = furi_hal_usb_get_config();
-    furi_hal_usb_set_config(&usb_hid_u2f);
+    furi_check(furi_hal_usb_set_config(&usb_hid_u2f, NULL) == true);
 
     u2f_hid->lock_timer = osTimerNew(u2f_hid_lock_timeout_callback, osTimerOnce, u2f_hid, NULL);
 
@@ -270,14 +270,14 @@ static int32_t u2f_hid_worker(void* context) {
     osTimerDelete(u2f_hid->lock_timer);
 
     furi_hal_hid_u2f_set_callback(NULL, NULL);
-    furi_hal_usb_set_config(usb_mode_prev);
+    furi_hal_usb_set_config(usb_mode_prev, NULL);
     FURI_LOG_D(WORKER_TAG, "End");
 
     return 0;
 }
 
 U2fHid* u2f_hid_start(U2fData* u2f_inst) {
-    U2fHid* u2f_hid = furi_alloc(sizeof(U2fHid));
+    U2fHid* u2f_hid = malloc(sizeof(U2fHid));
 
     u2f_hid->u2f_instance = u2f_inst;
 

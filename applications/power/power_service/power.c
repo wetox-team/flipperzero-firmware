@@ -12,14 +12,19 @@ void power_draw_battery_callback(Canvas* canvas, void* context) {
     furi_assert(context);
     Power* power = context;
     canvas_draw_icon(canvas, 0, 1, &I_Battery_26x8);
-    canvas_draw_box(canvas, 2, 3, (power->info.charge + 4) / 5, 4);
-    if(power->state == PowerStateCharging) {
-        canvas_set_bitmap_mode(canvas, 1);
-        canvas_set_color(canvas, ColorWhite);
-        canvas_draw_icon(canvas, 8, 0, &I_Charging_lightning_mask_9x10);
-        canvas_set_color(canvas, ColorBlack);
-        canvas_draw_icon(canvas, 8, 0, &I_Charging_lightning_9x10);
-        canvas_set_bitmap_mode(canvas, 0);
+
+    if(power->info.gauge_is_ok) {
+        canvas_draw_box(canvas, 2, 3, (power->info.charge + 4) / 5, 4);
+        if(power->state == PowerStateCharging) {
+            canvas_set_bitmap_mode(canvas, 1);
+            canvas_set_color(canvas, ColorWhite);
+            canvas_draw_icon(canvas, 8, 0, &I_Charging_lightning_mask_9x10);
+            canvas_set_color(canvas, ColorBlack);
+            canvas_draw_icon(canvas, 8, 0, &I_Charging_lightning_9x10);
+            canvas_set_bitmap_mode(canvas, 0);
+        }
+    } else {
+        canvas_draw_box(canvas, 8, 4, 8, 2);
     }
 }
 
@@ -32,7 +37,7 @@ static ViewPort* power_battery_view_port_alloc(Power* power) {
 }
 
 Power* power_alloc() {
-    Power* power = furi_alloc(sizeof(Power));
+    Power* power = malloc(sizeof(Power));
 
     // Records
     power->notification = furi_record_open("notification");
@@ -119,6 +124,7 @@ static void power_check_charging_state(Power* power) {
 static bool power_update_info(Power* power) {
     PowerInfo info;
 
+    info.gauge_is_ok = furi_hal_power_gauge_is_ok();
     info.charge = furi_hal_power_get_pct();
     info.health = furi_hal_power_get_bat_health_pct();
     info.capacity_remaining = furi_hal_power_get_battery_remaining_capacity();
@@ -140,6 +146,10 @@ static bool power_update_info(Power* power) {
 }
 
 static void power_check_low_battery(Power* power) {
+    if(!power->info.gauge_is_ok) {
+        return;
+    }
+
     // Check battery charge and vbus voltage
     if((power->info.charge == 0) && (power->info.voltage_vbus < 4.0f) &&
        power->show_low_bat_level_message) {
@@ -195,6 +205,11 @@ int32_t power_srv(void* p) {
 
         // Update battery view port
         if(need_refresh) view_port_update(power->battery_view_port);
+
+        // Check OTG status and disable it in case of fault
+        if(furi_hal_power_is_otg_enabled()) {
+            furi_hal_power_check_otg_status();
+        }
 
         osDelay(1000);
     }

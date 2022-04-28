@@ -94,10 +94,21 @@ void animation_manager_set_interact_callback(
 }
 
 static void animation_manager_check_blocking_callback(const void* message, void* context) {
-    furi_assert(context);
-    AnimationManager* animation_manager = context;
-    if(animation_manager->check_blocking_callback) {
-        animation_manager->check_blocking_callback(animation_manager->context);
+    const StorageEvent* storage_event = message;
+
+    switch(storage_event->type) {
+    case StorageEventTypeCardMount:
+    case StorageEventTypeCardUnmount:
+    case StorageEventTypeCardMountError:
+        furi_assert(context);
+        AnimationManager* animation_manager = context;
+        if(animation_manager->check_blocking_callback) {
+            animation_manager->check_blocking_callback(animation_manager->context);
+        }
+        break;
+
+    default:
+        break;
     }
 }
 
@@ -150,8 +161,9 @@ void animation_manager_new_idle_process(AnimationManager* animation_manager) {
 }
 
 /* reaction to animation_manager->interact_callback() */
-void animation_manager_interact_process(AnimationManager* animation_manager) {
+bool animation_manager_interact_process(AnimationManager* animation_manager) {
     furi_assert(animation_manager);
+    bool consumed = true;
 
     if(animation_manager->levelup_pending) {
         animation_manager->levelup_pending = false;
@@ -170,7 +182,11 @@ void animation_manager_interact_process(AnimationManager* animation_manager) {
         if(!blocked) {
             animation_manager_start_new_idle(animation_manager);
         }
+    } else {
+        consumed = false;
     }
+
+    return consumed;
 }
 
 static void animation_manager_start_new_idle(AnimationManager* animation_manager) {
@@ -258,7 +274,7 @@ static void animation_manager_replace_current_animation(
 }
 
 AnimationManager* animation_manager_alloc(void) {
-    AnimationManager* animation_manager = furi_alloc(sizeof(AnimationManager));
+    AnimationManager* animation_manager = malloc(sizeof(AnimationManager));
     animation_manager->animation_view = bubble_animation_view_alloc();
     animation_manager->view_stack = view_stack_alloc();
     View* animation_view = bubble_animation_get_view(animation_manager->animation_view);
@@ -406,6 +422,11 @@ static StorageAnimation*
 
     furi_assert(selected);
     return selected;
+}
+
+bool animation_manager_is_animation_loaded(AnimationManager* animation_manager) {
+    furi_assert(animation_manager);
+    return animation_manager->current_animation;
 }
 
 void animation_manager_unload_and_stall_animation(AnimationManager* animation_manager) {

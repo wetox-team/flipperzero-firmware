@@ -185,7 +185,7 @@ static void desktop_view_pin_input_exit(void* context) {
 }
 
 DesktopViewPinInput* desktop_view_pin_input_alloc(void) {
-    DesktopViewPinInput* pin_input = furi_alloc(sizeof(DesktopViewPinInput));
+    DesktopViewPinInput* pin_input = malloc(sizeof(DesktopViewPinInput));
     pin_input->view = view_alloc();
     view_allocate_model(pin_input->view, ViewModelTypeLocking, sizeof(DesktopViewPinInputModel));
     view_set_context(pin_input->view, pin_input);
@@ -214,7 +214,7 @@ void desktop_view_pin_input_free(DesktopViewPinInput* pin_input) {
 
     xTimerStop(pin_input->timer, portMAX_DELAY);
     while(xTimerIsTimerActive(pin_input->timer)) {
-        delay(1);
+        furi_hal_delay_ms(1);
     }
     xTimerDelete(pin_input->timer, portMAX_DELAY);
 

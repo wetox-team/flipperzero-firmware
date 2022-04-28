@@ -1,5 +1,6 @@
 #include "../gpio_app_i.h"
 #include "furi_hal_power.h"
+#include "furi_hal_usb.h"
 
 enum GpioItem {
     GpioItemUsbUart,
@@ -48,9 +49,9 @@ void gpio_scene_start_on_enter(void* context) {
     variable_item_list_set_enter_callback(
         var_item_list, gpio_scene_start_var_list_enter_callback, app);
 
-    variable_item_list_add(var_item_list, "USB-UART bridge", 0, NULL, NULL);
+    variable_item_list_add(var_item_list, "USB-UART Bridge", 0, NULL, NULL);
 
-    variable_item_list_add(var_item_list, "GPIO manual control", 0, NULL, NULL);
+    variable_item_list_add(var_item_list, "GPIO Manual Control", 0, NULL, NULL);
 
     item = variable_item_list_add(
         var_item_list,
@@ -86,7 +87,11 @@ bool gpio_scene_start_on_event(void* context, SceneManagerEvent event) {
             scene_manager_next_scene(app->scene_manager, GpioSceneTest);
         } else if(event.event == GpioStartEventUsbUart) {
             scene_manager_set_scene_state(app->scene_manager, GpioSceneStart, GpioItemUsbUart);
-            scene_manager_next_scene(app->scene_manager, GpioSceneUsbUart);
+            if(!furi_hal_usb_is_locked()) {
+                scene_manager_next_scene(app->scene_manager, GpioSceneUsbUart);
+            } else {
+                scene_manager_next_scene(app->scene_manager, GpioSceneUsbUartCloseRpc);
+            }
         }
         consumed = true;
     }

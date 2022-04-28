@@ -9,7 +9,9 @@
 #include "scene/ibutton_scene_read_crc_error.h"
 #include "scene/ibutton_scene_read_not_key_error.h"
 #include "scene/ibutton_scene_read_success.h"
-#include "scene/ibutton_scene_readed_key_menu.h"
+#include "scene/ibutton_scene_retry_confirm.h"
+#include "scene/ibutton_scene_exit_confirm.h"
+#include "scene/ibutton_scene_read_key_menu.h"
 #include "scene/ibutton_scene_write.h"
 #include "scene/ibutton_scene_write_success.h"
 #include "scene/ibutton_scene_saved_key_menu.h"
@@ -22,17 +24,10 @@
 #include "scene/ibutton_scene_select_key.h"
 #include "scene/ibutton_scene_add_type.h"
 #include "scene/ibutton_scene_add_value.h"
-
-#include "helpers/key_worker.h"
-
-#include "one_wire_master.h"
-#include "maxim_crc.h"
-#include "ibutton_key.h"
-
+#include <one_wire/ibutton/ibutton_worker.h>
 #include <notification/notification_messages.h>
 #include <storage/storage.h>
 #include <dialogs/dialogs.h>
-
 #include <record_controller.hpp>
 
 class iButtonApp {
@@ -49,7 +44,9 @@ public:
         SceneReadNotKeyError,
         SceneReadCRCError,
         SceneReadSuccess,
-        SceneReadedKeyMenu,
+        SceneRetryConfirm,
+        SceneExitConfirm,
+        SceneReadKeyMenu,
         SceneWrite,
         SceneWriteSuccess,
         SceneEmulate,
@@ -75,7 +72,7 @@ public:
     Scene get_previous_scene();
 
     const GpioPin* get_ibutton_pin();
-    KeyWorker* get_key_worker();
+    iButtonWorker* get_key_worker();
     iButtonKey* get_key();
 
     void notify_green_blink();
@@ -112,7 +109,9 @@ private:
         {Scene::SceneReadCRCError, new iButtonSceneReadCRCError()},
         {Scene::SceneReadNotKeyError, new iButtonSceneReadNotKeyError()},
         {Scene::SceneReadSuccess, new iButtonSceneReadSuccess()},
-        {Scene::SceneReadedKeyMenu, new iButtonSceneReadedKeyMenu()},
+        {Scene::SceneRetryConfirm, new iButtonSceneRetryConfirm()},
+        {Scene::SceneExitConfirm, new iButtonSceneExitConfirm()},
+        {Scene::SceneReadKeyMenu, new iButtonSceneReadKeyMenu()},
         {Scene::SceneWrite, new iButtonSceneWrite()},
         {Scene::SceneWriteSuccess, new iButtonSceneWriteSuccess()},
         {Scene::SceneEmulate, new iButtonSceneEmulate()},
@@ -127,9 +126,8 @@ private:
         {Scene::SceneAddValue, new iButtonSceneAddValue()},
     };
 
-    KeyWorker* key_worker;
-
-    iButtonKey key;
+    iButtonWorker* key_worker;
+    iButtonKey* key;
 
     RecordController<NotificationApp> notification;
     RecordController<Storage> storage;

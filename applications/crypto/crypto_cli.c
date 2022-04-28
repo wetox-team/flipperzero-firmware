@@ -67,7 +67,7 @@ void crypto_cli_encrypt(Cli* cli, string_t args) {
                 size = size - remain + 16;
             }
             string_reserve(input, size);
-            uint8_t* output = furi_alloc(size);
+            uint8_t* output = malloc(size);
             if(!furi_hal_crypto_encrypt((const uint8_t*)string_get_cstr(input), output, size)) {
                 printf("Failed to encrypt input");
             } else {
@@ -135,8 +135,8 @@ void crypto_cli_decrypt(Cli* cli, string_t args) {
         size_t hex_size = string_size(hex_input);
         if(hex_size > 0 && hex_size % 2 == 0) {
             size_t size = hex_size / 2;
-            uint8_t* input = furi_alloc(size);
-            uint8_t* output = furi_alloc(size);
+            uint8_t* input = malloc(size);
+            uint8_t* output = malloc(size);
 
             if(args_read_hex_bytes(hex_input, input, size)) {
                 if(furi_hal_crypto_decrypt(input, output, size)) {
@@ -276,7 +276,7 @@ void crypto_cli_store_key(Cli* cli, string_t args) {
     string_clear(key_type);
 }
 
-void crypto_cli(Cli* cli, string_t args, void* context) {
+static void crypto_cli(Cli* cli, string_t args, void* context) {
     string_t cmd;
     string_init(cmd);
 
@@ -317,5 +317,7 @@ void crypto_on_system_start() {
     Cli* cli = furi_record_open("cli");
     cli_add_command(cli, "crypto", CliCommandFlagDefault, crypto_cli, NULL);
     furi_record_close("cli");
+#else
+    UNUSED(crypto_cli);
 #endif
 }

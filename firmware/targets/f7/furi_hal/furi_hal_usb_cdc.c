@@ -385,7 +385,7 @@ static const struct CdcConfigDescriptorDual
 static struct usb_cdc_line_coding cdc_config[IF_NUM_MAX] = {};
 static uint8_t cdc_ctrl_line_state[IF_NUM_MAX];
 
-static void cdc_init(usbd_device* dev, FuriHalUsbInterface* intf);
+static void cdc_init(usbd_device* dev, FuriHalUsbInterface* intf, void* ctx);
 static void cdc_deinit(usbd_device* dev);
 static void cdc_on_wakeup(usbd_device* dev);
 static void cdc_on_suspend(usbd_device* dev);
@@ -428,20 +428,20 @@ FuriHalUsbInterface usb_cdc_dual = {
     .cfg_descr = (void*)&cdc_cfg_desc_dual,
 };
 
-static void cdc_init(usbd_device* dev, FuriHalUsbInterface* intf) {
+static void cdc_init(usbd_device* dev, FuriHalUsbInterface* intf, void* ctx) {
     usb_dev = dev;
     cdc_if_cur = intf;
 
     char* name = (char*)furi_hal_version_get_device_name_ptr();
     uint8_t len = (name == NULL) ? (0) : (strlen(name));
-    struct usb_string_descriptor* dev_prod_desc = furi_alloc(len * 2 + 2);
+    struct usb_string_descriptor* dev_prod_desc = malloc(len * 2 + 2);
     dev_prod_desc->bLength = len * 2 + 2;
     dev_prod_desc->bDescriptorType = USB_DTYPE_STRING;
     for(uint8_t i = 0; i < len; i++) dev_prod_desc->wString[i] = name[i];
 
     name = (char*)furi_hal_version_get_name_ptr();
     len = (name == NULL) ? (0) : (strlen(name));
-    struct usb_string_descriptor* dev_serial_desc = furi_alloc((len + 5) * 2 + 2);
+    struct usb_string_descriptor* dev_serial_desc = malloc((len + 5) * 2 + 2);
     dev_serial_desc->bLength = (len + 5) * 2 + 2;
     dev_serial_desc->bDescriptorType = USB_DTYPE_STRING;
     memcpy(dev_serial_desc->wString, "f\0l\0i\0p\0_\0", 5 * 2);

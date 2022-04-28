@@ -27,16 +27,9 @@ extern "C" {
  * @param   x           progress bar position on X axis
  * @param   y           progress bar position on Y axis
  * @param   width       progress bar width
- * @param   progress    progress in unnamed metric
- * @param   total       total amount in unnamed metric
+ * @param   progress    progress (0.0 - 1.0)
  */
-void elements_progress_bar(
-    Canvas* canvas,
-    uint8_t x,
-    uint8_t y,
-    uint8_t width,
-    uint8_t progress,
-    uint8_t total);
+void elements_progress_bar(Canvas* canvas, uint8_t x, uint8_t y, uint8_t width, float progress);
 
 /** Draw scrollbar on canvas at specific position.
  *
@@ -201,17 +194,18 @@ void elements_string_fit_width(Canvas* canvas, string_t string, uint8_t width);
 
 /** Draw text box element
  *
- * @param       canvas      Canvas instance
- * @param       x           x coordinate
- * @param       y           y coordinate
- * @param       width       width to fit text
- * @param       height      height to fit text
- * @param       horizontal  Align instance
- * @param       vertical    Align instance
- * @param[in]   text        Formatted text. The following formats are available:
- *                          "\e#Bold text\e#" - bold font is used
- *                          "\e*Monospaced text\e*" - monospaced font is used
- *                          "\e#Inversed text\e#" - white text on black background
+ * @param       canvas          Canvas instance
+ * @param       x               x coordinate
+ * @param       y               y coordinate
+ * @param       width           width to fit text
+ * @param       height          height to fit text
+ * @param       horizontal      Align instance
+ * @param       vertical        Align instance
+ * @param[in]   text            Formatted text. The following formats are available:
+ *                              "\e#Bold text\e#" - bold font is used
+ *                              "\e*Monospaced text\e*" - monospaced font is used
+ *                              "\e#Inversed text\e#" - white text on black background
+ * @param      strip_to_dots    Strip text to ... if does not fit to width
  */
 void elements_text_box(
     Canvas* canvas,
@@ -221,7 +215,8 @@ void elements_text_box(
     uint8_t height,
     Align horizontal,
     Align vertical,
-    const char* text);
+    const char* text,
+    bool strip_to_dots);
 
 #ifdef __cplusplus
 }
