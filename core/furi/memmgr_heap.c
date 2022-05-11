@@ -37,6 +37,7 @@
 #include "memmgr_heap.h"
 #include "check.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <cmsis_os2.h>
 #include <stm32wbxx.h>
 #include <furi_hal_console.h>
@@ -171,7 +172,16 @@ size_t memmgr_heap_get_thread_memory(osThreadId_t thread_id) {
                 !MemmgrHeapAllocDict_end_p(alloc_dict_it);
                 MemmgrHeapAllocDict_next(alloc_dict_it)) {
                 MemmgrHeapAllocDict_itref_t* data = MemmgrHeapAllocDict_ref(alloc_dict_it);
-                leftovers += data->value;
+                if(data->key != 0) {
+                    uint8_t* puc = (uint8_t*)data->key;
+                    puc -= xHeapStructSize;
+                    BlockLink_t* pxLink = (void*)puc;
+
+                    if((pxLink->xBlockSize & xBlockAllocatedBit) != 0 &&
+                       pxLink->pxNextFreeBlock == NULL) {
+                        leftovers += data->value;
+                    }
+                }
             }
         }
         memmgr_heap_thread_trace_depth--;
@@ -196,6 +206,7 @@ static inline void traceMALLOC(void* pointer, size_t size) {
 
 #undef traceFREE
 static inline void traceFREE(void* pointer, size_t size) {
+    UNUSED(size);
     osThreadId_t thread_id = osThreadGetId();
     if(thread_id && memmgr_heap_thread_trace_depth == 0) {
         memmgr_heap_thread_trace_depth++;

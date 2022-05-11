@@ -9,6 +9,7 @@
 #include "hid_usage_desktop.h"
 #include "hid_usage_button.h"
 #include "hid_usage_keyboard.h"
+#include "hid_usage_consumer.h"
 #include "hid_usage_led.h"
 
 #define HID_EP_IN 0x81
@@ -18,8 +19,7 @@
 #define HID_KB_MAX_KEYS 6
 #define HID_CONSUMER_MAX_KEYS 2
 
-#define HID_PAGE_CONSUMER 0x0C
-#define HID_CONSUMER_CONTROL 0x01
+#define HID_INTERVAL 2
 
 #define HID_VID_DEFAULT 0x046D
 #define HID_PID_DEFAULT 0xC529
@@ -190,7 +190,7 @@ static const struct HidConfigDescriptor hid_cfg_desc = {
                     .bEndpointAddress = HID_EP_IN,
                     .bmAttributes = USB_EPTYPE_INTERRUPT,
                     .wMaxPacketSize = HID_EP_SZ,
-                    .bInterval = 10,
+                    .bInterval = HID_INTERVAL,
                 },
             .hid_ep_out =
                 {
@@ -199,7 +199,7 @@ static const struct HidConfigDescriptor hid_cfg_desc = {
                     .bEndpointAddress = HID_EP_OUT,
                     .bmAttributes = USB_EPTYPE_INTERRUPT,
                     .wMaxPacketSize = HID_EP_SZ,
-                    .bInterval = 10,
+                    .bInterval = HID_INTERVAL,
                 },
         },
 };
@@ -375,6 +375,7 @@ static void* hid_set_string_descr(char* str) {
 }
 
 static void hid_init(usbd_device* dev, FuriHalUsbInterface* intf, void* ctx) {
+    UNUSED(intf);
     FuriHalUsbHidConfig* cfg = (FuriHalUsbHidConfig*)ctx;
     if(hid_semaphore == NULL) hid_semaphore = osSemaphoreNew(1, 1, NULL);
     usb_dev = dev;
@@ -419,17 +420,23 @@ static void hid_deinit(usbd_device* dev) {
 }
 
 static void hid_on_wakeup(usbd_device* dev) {
-    if(hid_connected == false) {
+    UNUSED(dev);
+    if(!hid_connected) {
         hid_connected = true;
-        if(callback != NULL) callback(true, cb_ctx);
+        if(callback != NULL) {
+            callback(true, cb_ctx);
+        }
     }
 }
 
 static void hid_on_suspend(usbd_device* dev) {
-    if(hid_connected == true) {
+    UNUSED(dev);
+    if(hid_connected) {
         hid_connected = false;
         osSemaphoreRelease(hid_semaphore);
-        if(callback != NULL) callback(false, cb_ctx);
+        if(callback != NULL) {
+            callback(false, cb_ctx);
+        }
     }
 }
 
@@ -450,6 +457,7 @@ static bool hid_send_report(uint8_t report_id) {
 }
 
 static void hid_txrx_ep_callback(usbd_device* dev, uint8_t event, uint8_t ep) {
+    UNUSED(dev);
     if(event == usbd_evt_eptx) {
         osSemaphoreRelease(hid_semaphore);
     } else {
@@ -484,6 +492,7 @@ static usbd_respond hid_ep_config(usbd_device* dev, uint8_t cfg) {
 
 /* Control requests handler */
 static usbd_respond hid_control(usbd_device* dev, usbd_ctlreq* req, usbd_rqc_callback* callback) {
+    UNUSED(callback);
     /* HID control requests */
     if(((USB_REQ_RECIPIENT | USB_REQ_TYPE) & req->bmRequestType) ==
            (USB_REQ_INTERFACE | USB_REQ_CLASS) &&

@@ -4,7 +4,6 @@
 
 #define TAB_RIGHT InputKeyRight //default tab swith direction
 #define FILE_LIST_BUF_LEN 100
-#define BROWSER_DEPTH_MAX 8
 
 static const char* tab_default_paths[] = {
     [ArchiveTabFavorites] = "/any/favorites",
@@ -43,7 +42,7 @@ static const ArchiveFileTypeEnum known_type[] = {
     [ArchiveTabBrowser] = ArchiveFileTypeUnknown,
 };
 
-static inline const ArchiveFileTypeEnum archive_get_tab_filetype(ArchiveTabEnum tab) {
+static inline ArchiveFileTypeEnum archive_get_tab_filetype(ArchiveTabEnum tab) {
     return known_type[tab];
 }
 

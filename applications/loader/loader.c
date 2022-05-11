@@ -39,6 +39,7 @@ static bool
 }
 
 static void loader_menu_callback(void* _ctx, uint32_t index) {
+    UNUSED(index);
     const FlipperApplication* application = _ctx;
 
     furi_assert(application->app);
@@ -53,6 +54,7 @@ static void loader_menu_callback(void* _ctx, uint32_t index) {
 }
 
 static void loader_submenu_callback(void* context, uint32_t index) {
+    UNUSED(index);
     uint32_t view_id = (uint32_t)context;
     view_dispatcher_switch_to_view(loader_instance->view_dispatcher, view_id);
 }
@@ -92,7 +94,7 @@ const FlipperApplication* loader_find_application_by_name(const char* name) {
         application = loader_find_application_by_name_in_list(
             name, FLIPPER_SYSTEM_APPS, FLIPPER_SYSTEM_APPS_COUNT);
     }
-    if(furi_hal_rtc_is_flag_set(FuriHalRtcFlagDebug) && !application) {
+    if(!application) {
         application = loader_find_application_by_name_in_list(
             name, FLIPPER_DEBUG_APPS, FLIPPER_DEBUG_APPS_COUNT);
     }
@@ -101,6 +103,12 @@ const FlipperApplication* loader_find_application_by_name(const char* name) {
 }
 
 void loader_cli_open(Cli* cli, string_t args, Loader* instance) {
+    UNUSED(cli);
+    if(loader_is_locked(instance)) {
+        printf("Can't start, furi application is running");
+        return;
+    }
+
     string_t application_name;
     string_init(application_name);
 
@@ -134,6 +142,9 @@ void loader_cli_open(Cli* cli, string_t args, Loader* instance) {
 }
 
 void loader_cli_list(Cli* cli, string_t args, Loader* instance) {
+    UNUSED(cli);
+    UNUSED(args);
+    UNUSED(instance);
     printf("Applications:\r\n");
     for(size_t i = 0; i < FLIPPER_APPS_COUNT; i++) {
         printf("\t%s\r\n", FLIPPER_APPS[i].name);
@@ -182,6 +193,7 @@ static void loader_cli(Cli* cli, string_t args, void* _ctx) {
 }
 
 LoaderStatus loader_start(Loader* instance, const char* name, const char* args) {
+    UNUSED(instance);
     furi_assert(name);
 
     const FlipperApplication* application = loader_find_application_by_name(name);
@@ -233,27 +245,15 @@ static void loader_thread_state_callback(FuriThreadState thread_state, void* con
     if(thread_state == FuriThreadStateRunning) {
         event.type = LoaderEventTypeApplicationStarted;
         furi_pubsub_publish(loader_instance->pubsub, &event);
-        furi_hal_power_insomnia_enter();
 
-        // Snapshot current memory usage
-        instance->free_heap_size = memmgr_get_free_heap();
+        if(!loader_instance->application->flags & FlipperApplicationFlagInsomniaSafe) {
+            furi_hal_power_insomnia_enter();
+        }
     } else if(thread_state == FuriThreadStateStopped) {
-        /*
-         * Current Leak Sanitizer assumes that memory is allocated and freed
-         * inside one thread. Timers are allocated in one task, but freed in
-         * Timer-Task thread, and xTimerDelete() just put command to queue.
-         * To avoid some bad cases there are few fixes:
-         * 1) delay for Timer to process commands
-         * 2) there are 'heap diff' which shows difference in heap before task
-         * started and after task completed. In process of leakage monitoring
-         * both values should be taken into account.
-         */
-        furi_hal_delay_ms(20);
-        int heap_diff = instance->free_heap_size - memmgr_get_free_heap();
         FURI_LOG_I(
             TAG,
-            "Application thread stopped. Heap allocation balance: %d. Thread allocation balance: %d.",
-            heap_diff,
+            "Application thread stopped. Free heap: %d. Thread allocation balance: %d.",
+            memmgr_get_free_heap(),
             furi_thread_get_heap_size(instance->application_thread));
 
         if(loader_instance->application_arguments) {
@@ -261,7 +261,9 @@ static void loader_thread_state_callback(FuriThreadState thread_state, void* con
             loader_instance->application_arguments = NULL;
         }
 
-        furi_hal_power_insomnia_exit();
+        if(!loader_instance->application->flags & FlipperApplicationFlagInsomniaSafe) {
+            furi_hal_power_insomnia_exit();
+        }
         loader_unlock(instance);
 
         event.type = LoaderEventTypeApplicationStopped;
@@ -270,6 +272,7 @@ static void loader_thread_state_callback(FuriThreadState thread_state, void* con
 }
 
 static uint32_t loader_hide_menu(void* context) {
+    UNUSED(context);
     return VIEW_NONE;
 }
 
@@ -292,7 +295,7 @@ static Loader* loader_alloc() {
 
 #ifdef SRV_CLI
     instance->cli = furi_record_open("cli");
-    cli_add_command(instance->cli, "loader", CliCommandFlagDefault, loader_cli, instance);
+    cli_add_command(instance->cli, "loader", CliCommandFlagParallelSafe, loader_cli, instance);
 #else
     UNUSED(loader_cli);
 #endif
@@ -450,17 +453,17 @@ void loader_update_menu() {
 }
 
 int32_t loader_srv(void* p) {
-    FURI_LOG_I(TAG, "Starting");
+    UNUSED(p);
+    FURI_LOG_I(TAG, "Executing system start hooks");
+    for(size_t i = 0; i < FLIPPER_ON_SYSTEM_START_COUNT; i++) {
+        FLIPPER_ON_SYSTEM_START[i]();
+    }
 
+    FURI_LOG_I(TAG, "Starting");
     loader_instance = loader_alloc();
 
     loader_build_menu();
     loader_build_submenu();
-
-    // Call on start hooks
-    for(size_t i = 0; i < FLIPPER_ON_SYSTEM_START_COUNT; i++) {
-        FLIPPER_ON_SYSTEM_START[i]();
-    }
 
     FURI_LOG_I(TAG, "Started");
 

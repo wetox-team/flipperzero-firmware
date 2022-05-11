@@ -3,35 +3,35 @@
 #include <flipper.h>
 #include <alt_boot.h>
 #include <semphr.h>
+#include <update_util/update_operation.h>
 
 #define TAG "Main"
 
-#ifdef FURI_RAM_EXEC
-int main() {
-    // Initialize FURI layer
-    furi_init();
+static const osThreadAttr_t init_thread_attr = {
+    .name = "Init",
+    .stack_size = 4096,
+};
 
-    // Flipper critical FURI HAL
-    furi_hal_init_early();
-
+void init_task() {
     // Flipper FURI HAL
     furi_hal_init();
 
     // Init flipper
     flipper_init();
 
-    furi_run();
-
-    while(1) {
-    }
+    osThreadExit();
 }
-#else
+
 int main() {
     // Initialize FURI layer
     furi_init();
 
     // Flipper critical FURI HAL
     furi_hal_init_early();
+
+#ifdef FURI_RAM_EXEC
+    osThreadNew(init_task, NULL, &init_thread_attr);
+#else
     furi_hal_light_sequence("RGB");
 
     // Delay is for button sampling
@@ -52,34 +52,20 @@ int main() {
         furi_hal_power_reset();
     } else {
         furi_hal_light_sequence("rgb G");
-
-        // Flipper FURI HAL
-        furi_hal_init();
-
-        // Init flipper
-        flipper_init();
-
-        furi_run();
+        osThreadNew(init_task, NULL, &init_thread_attr);
     }
-
-    while(1) {
-    }
-}
 #endif
+
+    // Run Kernel
+    furi_run();
+
+    furi_crash("Kernel is Dead");
+}
 
 void Error_Handler(void) {
     furi_crash("ErrorHandler");
 }
 
-#ifdef USE_FULL_ASSERT
-/**
-    * @brief  Reports the name of the source file and the source line number
-    *         where the assert_param error has occurred.
-    * @param  file: pointer to the source file name
-    * @param  line: assert_param error line source number
-    * @retval None
-    */
-void assert_failed(uint8_t* file, uint32_t line) {
-    furi_crash("HAL assert failed");
+void abort() {
+    furi_crash("AbortHandler");
 }
-#endif /* USE_FULL_ASSERT */

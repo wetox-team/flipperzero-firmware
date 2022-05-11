@@ -12,8 +12,20 @@
 /* Enum definitions */
 typedef enum _PB_System_RebootRequest_RebootMode { 
     PB_System_RebootRequest_RebootMode_OS = 0, 
-    PB_System_RebootRequest_RebootMode_DFU = 1 
+    PB_System_RebootRequest_RebootMode_DFU = 1, 
+    PB_System_RebootRequest_RebootMode_UPDATE = 2 
 } PB_System_RebootRequest_RebootMode;
+
+typedef enum _PB_System_UpdateResponse_UpdateResultCode { 
+    PB_System_UpdateResponse_UpdateResultCode_OK = 0, 
+    PB_System_UpdateResponse_UpdateResultCode_ManifestPathInvalid = 1, 
+    PB_System_UpdateResponse_UpdateResultCode_ManifestFolderNotFound = 2, 
+    PB_System_UpdateResponse_UpdateResultCode_ManifestInvalid = 3, 
+    PB_System_UpdateResponse_UpdateResultCode_StageMissing = 4, 
+    PB_System_UpdateResponse_UpdateResultCode_StageIntegrityError = 5, 
+    PB_System_UpdateResponse_UpdateResultCode_ManifestPointerError = 6, 
+    PB_System_UpdateResponse_UpdateResultCode_TargetMismatch = 7 
+} PB_System_UpdateResponse_UpdateResultCode;
 
 /* Struct definitions */
 typedef struct _PB_System_DeviceInfoRequest { 
@@ -59,7 +71,7 @@ typedef struct _PB_System_ProtobufVersionRequest {
 } PB_System_ProtobufVersionRequest;
 
 typedef struct _PB_System_UpdateRequest { 
-    char *update_folder; 
+    char *update_manifest; 
 } PB_System_UpdateRequest;
 
 typedef struct _PB_System_DateTime { 
@@ -83,6 +95,10 @@ typedef struct _PB_System_RebootRequest {
     PB_System_RebootRequest_RebootMode mode; 
 } PB_System_RebootRequest;
 
+typedef struct _PB_System_UpdateResponse { 
+    PB_System_UpdateResponse_UpdateResultCode code; 
+} PB_System_UpdateResponse;
+
 typedef struct _PB_System_GetDateTimeResponse { 
     bool has_datetime;
     PB_System_DateTime datetime; 
@@ -96,8 +112,12 @@ typedef struct _PB_System_SetDateTimeRequest {
 
 /* Helper constants for enums */
 #define _PB_System_RebootRequest_RebootMode_MIN PB_System_RebootRequest_RebootMode_OS
-#define _PB_System_RebootRequest_RebootMode_MAX PB_System_RebootRequest_RebootMode_DFU
-#define _PB_System_RebootRequest_RebootMode_ARRAYSIZE ((PB_System_RebootRequest_RebootMode)(PB_System_RebootRequest_RebootMode_DFU+1))
+#define _PB_System_RebootRequest_RebootMode_MAX PB_System_RebootRequest_RebootMode_UPDATE
+#define _PB_System_RebootRequest_RebootMode_ARRAYSIZE ((PB_System_RebootRequest_RebootMode)(PB_System_RebootRequest_RebootMode_UPDATE+1))
+
+#define _PB_System_UpdateResponse_UpdateResultCode_MIN PB_System_UpdateResponse_UpdateResultCode_OK
+#define _PB_System_UpdateResponse_UpdateResultCode_MAX PB_System_UpdateResponse_UpdateResultCode_TargetMismatch
+#define _PB_System_UpdateResponse_UpdateResultCode_ARRAYSIZE ((PB_System_UpdateResponse_UpdateResultCode)(PB_System_UpdateResponse_UpdateResultCode_TargetMismatch+1))
 
 
 #ifdef __cplusplus
@@ -119,6 +139,7 @@ extern "C" {
 #define PB_System_ProtobufVersionRequest_init_default {0}
 #define PB_System_ProtobufVersionResponse_init_default {0, 0}
 #define PB_System_UpdateRequest_init_default     {NULL}
+#define PB_System_UpdateResponse_init_default    {_PB_System_UpdateResponse_UpdateResultCode_MIN}
 #define PB_System_PowerInfoRequest_init_default  {0}
 #define PB_System_PowerInfoResponse_init_default {NULL, NULL}
 #define PB_System_PingRequest_init_zero          {NULL}
@@ -135,6 +156,7 @@ extern "C" {
 #define PB_System_ProtobufVersionRequest_init_zero {0}
 #define PB_System_ProtobufVersionResponse_init_zero {0, 0}
 #define PB_System_UpdateRequest_init_zero        {NULL}
+#define PB_System_UpdateResponse_init_zero       {_PB_System_UpdateResponse_UpdateResultCode_MIN}
 #define PB_System_PowerInfoRequest_init_zero     {0}
 #define PB_System_PowerInfoResponse_init_zero    {NULL, NULL}
 
@@ -145,7 +167,7 @@ extern "C" {
 #define PB_System_PingResponse_data_tag          1
 #define PB_System_PowerInfoResponse_key_tag      1
 #define PB_System_PowerInfoResponse_value_tag    2
-#define PB_System_UpdateRequest_update_folder_tag 1
+#define PB_System_UpdateRequest_update_manifest_tag 1
 #define PB_System_DateTime_hour_tag              1
 #define PB_System_DateTime_minute_tag            2
 #define PB_System_DateTime_second_tag            3
@@ -156,6 +178,7 @@ extern "C" {
 #define PB_System_ProtobufVersionResponse_major_tag 1
 #define PB_System_ProtobufVersionResponse_minor_tag 2
 #define PB_System_RebootRequest_mode_tag         1
+#define PB_System_UpdateResponse_code_tag        1
 #define PB_System_GetDateTimeResponse_datetime_tag 1
 #define PB_System_SetDateTimeRequest_datetime_tag 1
 
@@ -236,9 +259,14 @@ X(a, STATIC,   SINGULAR, UINT32,   minor,             2)
 #define PB_System_ProtobufVersionResponse_DEFAULT NULL
 
 #define PB_System_UpdateRequest_FIELDLIST(X, a) \
-X(a, POINTER,  SINGULAR, STRING,   update_folder,     1)
+X(a, POINTER,  SINGULAR, STRING,   update_manifest,   1)
 #define PB_System_UpdateRequest_CALLBACK NULL
 #define PB_System_UpdateRequest_DEFAULT NULL
+
+#define PB_System_UpdateResponse_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, UENUM,    code,              1)
+#define PB_System_UpdateResponse_CALLBACK NULL
+#define PB_System_UpdateResponse_DEFAULT NULL
 
 #define PB_System_PowerInfoRequest_FIELDLIST(X, a) \
 
@@ -265,6 +293,7 @@ extern const pb_msgdesc_t PB_System_PlayAudiovisualAlertRequest_msg;
 extern const pb_msgdesc_t PB_System_ProtobufVersionRequest_msg;
 extern const pb_msgdesc_t PB_System_ProtobufVersionResponse_msg;
 extern const pb_msgdesc_t PB_System_UpdateRequest_msg;
+extern const pb_msgdesc_t PB_System_UpdateResponse_msg;
 extern const pb_msgdesc_t PB_System_PowerInfoRequest_msg;
 extern const pb_msgdesc_t PB_System_PowerInfoResponse_msg;
 
@@ -283,6 +312,7 @@ extern const pb_msgdesc_t PB_System_PowerInfoResponse_msg;
 #define PB_System_ProtobufVersionRequest_fields &PB_System_ProtobufVersionRequest_msg
 #define PB_System_ProtobufVersionResponse_fields &PB_System_ProtobufVersionResponse_msg
 #define PB_System_UpdateRequest_fields &PB_System_UpdateRequest_msg
+#define PB_System_UpdateResponse_fields &PB_System_UpdateResponse_msg
 #define PB_System_PowerInfoRequest_fields &PB_System_PowerInfoRequest_msg
 #define PB_System_PowerInfoResponse_fields &PB_System_PowerInfoResponse_msg
 
@@ -303,6 +333,7 @@ extern const pb_msgdesc_t PB_System_PowerInfoResponse_msg;
 #define PB_System_ProtobufVersionResponse_size   12
 #define PB_System_RebootRequest_size             2
 #define PB_System_SetDateTimeRequest_size        24
+#define PB_System_UpdateResponse_size            2
 
 #ifdef __cplusplus
 } /* extern "C" */

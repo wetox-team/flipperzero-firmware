@@ -192,6 +192,7 @@ size_t subghz_protocol_raw_get_sample_write(SubGhzProtocolDecoderRAW* instance) 
 }
 
 void* subghz_protocol_decoder_raw_alloc(SubGhzEnvironment* environment) {
+    UNUSED(environment);
     SubGhzProtocolDecoderRAW* instance = malloc(sizeof(SubGhzProtocolDecoderRAW));
     instance->base.protocol = &subghz_protocol_raw;
     instance->upload_raw = NULL;
@@ -243,6 +244,7 @@ void subghz_protocol_decoder_raw_get_string(void* context, string_t output) {
 }
 
 void* subghz_protocol_encoder_raw_alloc(SubGhzEnvironment* environment) {
+    UNUSED(environment);
     SubGhzProtocolEncoderRAW* instance = malloc(sizeof(SubGhzProtocolEncoderRAW));
 
     instance->base.protocol = &subghz_protocol_raw;
@@ -293,24 +295,19 @@ static bool subghz_protocol_encoder_raw_worker_init(SubGhzProtocolEncoderRAW* in
     return instance->is_runing;
 }
 
-void subghz_protocol_raw_gen_fff_data(FlipperFormat* flipper_format, const char* file_name) {
-    string_t temp_str;
-    string_init(temp_str);
+void subghz_protocol_raw_gen_fff_data(FlipperFormat* flipper_format, const char* file_path) {
     do {
         stream_clean(flipper_format_get_raw_stream(flipper_format));
         if(!flipper_format_write_string_cstr(flipper_format, "Protocol", "RAW")) {
             FURI_LOG_E(TAG, "Unable to add Protocol");
             break;
         }
-        string_printf(temp_str, "%s/%s%s", SUBGHZ_APP_FOLDER, file_name, SUBGHZ_APP_EXTENSION);
 
-        if(!flipper_format_write_string_cstr(
-               flipper_format, "File_name", string_get_cstr(temp_str))) {
+        if(!flipper_format_write_string_cstr(flipper_format, "File_name", file_path)) {
             FURI_LOG_E(TAG, "Unable to add File_name");
             break;
         }
     } while(false);
-    string_clear(temp_str);
 }
 
 bool subghz_protocol_encoder_raw_deserialize(void* context, FlipperFormat* flipper_format) {

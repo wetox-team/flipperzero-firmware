@@ -4,7 +4,7 @@ LIB_DIR			= $(PROJECT_ROOT)/lib
 CFLAGS			+= -I$(LIB_DIR)
 
 # Mlib containers
-CFLAGS			+= -I$(LIB_DIR)/mlib
+CFLAGS			+= -I$(LIB_DIR)/mlib -D'M_MEMORY_FULL(x)=abort()'
 
 # U8G2 display library
 U8G2_DIR		= $(LIB_DIR)/u8g2
@@ -97,7 +97,8 @@ CPP_SOURCES		+= $(wildcard $(LIB_DIR)/toolbox/*/*.cpp)
 
 # USB Stack
 CFLAGS			+= -I$(LIB_DIR)/libusb_stm32/inc
-C_SOURCES		+= $(wildcard $(LIB_DIR)/libusb_stm32/src/*.c)
+C_SOURCES		+= $(LIB_DIR)/libusb_stm32/src/usbd_stm32wb55_devfs.c
+C_SOURCES		+= $(LIB_DIR)/libusb_stm32/src/usbd_core.c
 
 # protobuf
 CFLAGS			+= -I$(LIB_DIR)/nanopb

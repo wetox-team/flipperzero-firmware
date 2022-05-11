@@ -236,7 +236,15 @@ void subghz_read_raw_draw(Canvas* canvas, SubGhzReadRAWModel* model) {
         elements_button_center(canvas, "Send");
         elements_button_right(canvas, "More");
         elements_text_box(
-            canvas, 4, 12, 110, 44, AlignCenter, AlignCenter, string_get_cstr(model->file_name));
+            canvas,
+            4,
+            20,
+            110,
+            30,
+            AlignCenter,
+            AlignCenter,
+            string_get_cstr(model->file_name),
+            true);
         break;
 
     case SubGhzReadRAWStatusTX:
@@ -285,7 +293,6 @@ bool subghz_read_raw_input(InputEvent* event, void* context) {
                 case SubGhzReadRAWStatusIDLE:
                     // Start TX
                     instance->callback(SubGhzCustomEventViewReadRAWSendStart, instance->context);
-                    instance->callback(SubGhzCustomEventViewReadRAWVibro, instance->context);
                     model->satus = SubGhzReadRAWStatusTXRepeat;
                     ret = true;
                     break;
@@ -296,7 +303,6 @@ bool subghz_read_raw_input(InputEvent* event, void* context) {
                 case SubGhzReadRAWStatusLoadKeyIDLE:
                     // Start Load Key TX
                     instance->callback(SubGhzCustomEventViewReadRAWSendStart, instance->context);
-                    instance->callback(SubGhzCustomEventViewReadRAWVibro, instance->context);
                     model->satus = SubGhzReadRAWStatusLoadKeyTXRepeat;
                     ret = true;
                     break;

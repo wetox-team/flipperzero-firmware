@@ -1,6 +1,7 @@
 #include <gui/view_stack.h>
 #include <stdint.h>
 #include <furi.h>
+#include <furi_hal.h>
 #include <m-string.h>
 #include <portmacro.h>
 #include <dolphin/dolphin.h>
@@ -161,8 +162,9 @@ void animation_manager_new_idle_process(AnimationManager* animation_manager) {
 }
 
 /* reaction to animation_manager->interact_callback() */
-void animation_manager_interact_process(AnimationManager* animation_manager) {
+bool animation_manager_interact_process(AnimationManager* animation_manager) {
     furi_assert(animation_manager);
+    bool consumed = true;
 
     if(animation_manager->levelup_pending) {
         animation_manager->levelup_pending = false;
@@ -181,7 +183,11 @@ void animation_manager_interact_process(AnimationManager* animation_manager) {
         if(!blocked) {
             animation_manager_start_new_idle(animation_manager);
         }
+    } else {
+        consumed = false;
     }
+
+    return consumed;
 }
 
 static void animation_manager_start_new_idle(AnimationManager* animation_manager) {
@@ -359,6 +365,7 @@ static bool animation_manager_is_valid_idle_animation(
 
 static StorageAnimation*
     animation_manager_select_idle_animation(AnimationManager* animation_manager) {
+    UNUSED(animation_manager);
     StorageAnimationList_t animation_list;
     StorageAnimationList_init(animation_list);
     animation_storage_fill_animation_list(&animation_list);
@@ -385,7 +392,7 @@ static StorageAnimation*
         }
     }
 
-    uint32_t lucky_number = random() % whole_weight;
+    uint32_t lucky_number = furi_hal_random_get() % whole_weight;
     uint32_t weight = 0;
 
     StorageAnimation* selected = NULL;

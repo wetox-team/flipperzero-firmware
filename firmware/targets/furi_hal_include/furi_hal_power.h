@@ -19,9 +19,19 @@ typedef enum {
     FuriHalPowerICFuelGauge,
 } FuriHalPowerIC;
 
-/** Initialize drivers
- */
+/** Initialize drivers */
 void furi_hal_power_init();
+
+/** Check if gauge is ok
+ * 
+ * Verifies that:
+ * - gauge is alive
+ * - correct profile loaded
+ * - self diagnostic status is good
+ * 
+ * @return true if gauge is ok
+ */
+bool furi_hal_power_gauge_is_ok();
 
 /** Get current insomnia level
  *
@@ -74,6 +84,9 @@ uint8_t furi_hal_power_get_bat_health_pct();
  * @return     true if charging
  */
 bool furi_hal_power_is_charging();
+
+/** Switch MCU to SHUTDOWN */
+void furi_hal_power_shutdown();
 
 /** Poweroff device
  */

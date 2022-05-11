@@ -20,7 +20,7 @@ void InfraredAppSceneLearnEnterName::on_enter(InfraredApp* app) {
         app->set_text_store(0, "RAW_%d", raw_signal.timings_cnt);
     }
 
-    text_input_set_header_text(text_input, "Name the key");
+    text_input_set_header_text(text_input, "Name the button");
     text_input_set_result_callback(
         text_input,
         InfraredApp::text_input_callback,
@@ -56,5 +56,5 @@ bool InfraredAppSceneLearnEnterName::on_event(InfraredApp* app, InfraredAppEvent
     return consumed;
 }
 
-void InfraredAppSceneLearnEnterName::on_exit(InfraredApp* app) {
+void InfraredAppSceneLearnEnterName::on_exit(InfraredApp*) {
 }

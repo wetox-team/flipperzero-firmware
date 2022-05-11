@@ -1,6 +1,19 @@
 #include "../subghz_i.h"
 #include "../views/receiver.h"
 
+static const NotificationSequence subghs_sequence_rx = {
+    &message_green_255,
+
+    &message_vibro_on,
+    &message_note_c6,
+    &message_delay_50,
+    &message_sound_off,
+    &message_vibro_off,
+
+    &message_delay_50,
+    NULL,
+};
+
 static void subghz_scene_receiver_update_statusbar(void* context) {
     SubGhz* subghz = context;
     string_t history_stat_str;
@@ -47,8 +60,9 @@ static void subghz_scene_add_to_history_callback(
 
     if(subghz_history_add_to_history(
            subghz->txrx->history, decoder_base, subghz->txrx->frequency, subghz->txrx->preset)) {
-        subghz_receiver_reset(receiver);
         string_reset(str_buff);
+
+        subghz->state_notifications = SubGhzNotificationStateRxDone;
 
         subghz_history_get_text_item_menu(
             subghz->txrx->history, str_buff, subghz_history_get_item(subghz->txrx->history) - 1);
@@ -60,6 +74,7 @@ static void subghz_scene_add_to_history_callback(
 
         subghz_scene_receiver_update_statusbar(subghz);
     }
+    subghz_receiver_reset(receiver);
     string_clear(str_buff);
     subghz->txrx->rx_key_state = SubGhzRxKeyStateAddKey;
 }
@@ -71,7 +86,10 @@ void subghz_scene_receiver_on_enter(void* context) {
     string_init(str_buff);
 
     if(subghz->txrx->rx_key_state == SubGhzRxKeyStateIDLE) {
+        subghz->txrx->frequency = subghz_setting_get_default_frequency(subghz->setting);
+        subghz->txrx->preset = FuriHalSubGhzPresetOok650Async;
         subghz_history_reset(subghz->txrx->history);
+        subghz->txrx->rx_key_state = SubGhzRxKeyStateStart;
     }
 
     //Load history to receiver
@@ -92,7 +110,7 @@ void subghz_scene_receiver_on_enter(void* context) {
     subghz_receiver_set_rx_callback(
         subghz->txrx->receiver, subghz_scene_add_to_history_callback, subghz);
 
-    subghz->state_notifications = SubGhzNotificationStateRX;
+    subghz->state_notifications = SubGhzNotificationStateRx;
     if(subghz->txrx->txrx_state == SubGhzTxRxStateRx) {
         subghz_rx_end(subghz);
     };
@@ -120,9 +138,6 @@ bool subghz_scene_receiver_on_event(void* context, SceneManagerEvent event) {
                 subghz_sleep(subghz);
             };
             subghz->txrx->hopper_state = SubGhzHopperStateOFF;
-            subghz->txrx->frequency = subghz_setting_get_frequency(
-                subghz->setting, subghz_setting_get_frequency_default_index(subghz->setting));
-            subghz->txrx->preset = FuriHalSubGhzPresetOok650Async;
             subghz->txrx->idx_menu_chosen = 0;
             subghz_receiver_set_rx_callback(subghz->txrx->receiver, NULL, subghz);
 
@@ -130,6 +145,9 @@ bool subghz_scene_receiver_on_event(void* context, SceneManagerEvent event) {
                 subghz->txrx->rx_key_state = SubGhzRxKeyStateExit;
                 scene_manager_next_scene(subghz->scene_manager, SubGhzSceneNeedSaving);
             } else {
+                subghz->txrx->rx_key_state = SubGhzRxKeyStateIDLE;
+                subghz->txrx->frequency = subghz_setting_get_default_frequency(subghz->setting);
+                subghz->txrx->preset = FuriHalSubGhzPresetOok650Async;
                 scene_manager_search_and_switch_to_previous_scene(
                     subghz->scene_manager, SubGhzSceneStart);
             }
@@ -158,8 +176,12 @@ bool subghz_scene_receiver_on_event(void* context, SceneManagerEvent event) {
         }
 
         switch(subghz->state_notifications) {
-        case SubGhzNotificationStateRX:
-            notification_message(subghz->notifications, &sequence_blink_blue_10);
+        case SubGhzNotificationStateRx:
+            notification_message(subghz->notifications, &sequence_blink_cyan_10);
+            break;
+        case SubGhzNotificationStateRxDone:
+            notification_message(subghz->notifications, &subghs_sequence_rx);
+            subghz->state_notifications = SubGhzNotificationStateRx;
             break;
         default:
             break;
@@ -169,5 +191,5 @@ bool subghz_scene_receiver_on_event(void* context, SceneManagerEvent event) {
 }
 
 void subghz_scene_receiver_on_exit(void* context) {
-    // SubGhz* subghz = context;
+    UNUSED(context);
 }

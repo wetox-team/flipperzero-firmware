@@ -130,8 +130,7 @@ SubGhz* subghz_alloc() {
 
     //init Worker & Protocol & History
     subghz->txrx = malloc(sizeof(SubGhzTxRx));
-    subghz->txrx->frequency = subghz_setting_get_frequency(
-        subghz->setting, subghz_setting_get_frequency_default_index(subghz->setting));
+    subghz->txrx->frequency = subghz_setting_get_default_frequency(subghz->setting);
     subghz->txrx->preset = FuriHalSubGhzPresetOok650Async;
     subghz->txrx->txrx_state = SubGhzTxRxStateSleep;
     subghz->txrx->hopper_state = SubGhzHopperStateOFF;
@@ -243,8 +242,8 @@ void subghz_free(SubGhz* subghz) {
     subghz->notifications = NULL;
 
     // About birds
-    furi_assert(subghz->file_name[SUBGHZ_MAX_LEN_NAME] == 0);
-    furi_assert(subghz->file_name_tmp[SUBGHZ_MAX_LEN_NAME] == 0);
+    furi_assert(subghz->file_path[SUBGHZ_MAX_LEN_NAME] == 0);
+    furi_assert(subghz->file_path_tmp[SUBGHZ_MAX_LEN_NAME] == 0);
 
     // The rest
     free(subghz);
@@ -261,12 +260,8 @@ int32_t subghz_app(void* p) {
     // Check argument and run corresponding scene
     if(p) {
         if(subghz_key_load(subghz, p)) {
-            string_t filename;
-            string_init(filename);
+            strncpy(subghz->file_path, p, SUBGHZ_MAX_LEN_NAME);
 
-            path_extract_filename_no_ext(p, filename);
-            strncpy(subghz->file_name, string_get_cstr(filename), SUBGHZ_MAX_LEN_NAME);
-            string_clear(filename);
             if((!strcmp(subghz->txrx->decoder_result->protocol->name, "RAW"))) {
                 //Load Raw TX
                 subghz->txrx->rx_key_state = SubGhzRxKeyStateRAWLoad;

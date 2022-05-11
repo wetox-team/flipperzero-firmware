@@ -4,8 +4,11 @@
 #include "storage_i.h"
 #include "storage_message.h"
 #include <toolbox/stream/file_stream.h>
+#include <toolbox/dir_walk.h>
 
 #define MAX_NAME_LENGTH 256
+
+#define TAG "StorageAPI"
 
 #define S_API_PROLOGUE                                      \
     osSemaphoreId_t semaphore = osSemaphoreNew(1, 0, NULL); \
@@ -47,10 +50,6 @@
 #define S_RETURN_ERROR (return_data.error_value);
 #define S_RETURN_CSTRING (return_data.cstring_value);
 
-#define FILE_OPENED_FILE 1
-#define FILE_OPENED_DIR 2
-#define FILE_CLOSED 0
-
 typedef enum {
     StorageEventFlagFileClose = (1 << 0),
 } StorageEventFlag;
@@ -72,7 +71,7 @@ static bool storage_file_open_internal(
             .open_mode = open_mode,
         }};
 
-    file->file_id = FILE_OPENED_FILE;
+    file->type = FileTypeOpenFile;
 
     S_API_MESSAGE(StorageCommandFileOpen);
     S_API_EPILOGUE;
@@ -113,6 +112,10 @@ bool storage_file_open(
 
     furi_pubsub_unsubscribe(storage_get_pubsub(file->storage), subscription);
     osEventFlagsDelete(event);
+
+    FURI_LOG_T(
+        TAG, "File %p - %p open (%s)", (uint32_t)file - SRAM_BASE, file->file_id - SRAM_BASE, path);
+
     return result;
 }
 
@@ -124,7 +127,8 @@ bool storage_file_close(File* file) {
     S_API_MESSAGE(StorageCommandFileClose);
     S_API_EPILOGUE;
 
-    file->file_id = FILE_CLOSED;
+    FURI_LOG_T(TAG, "File %p - %p closed", (uint32_t)file - SRAM_BASE, file->file_id - SRAM_BASE);
+    file->type = FileTypeClosed;
 
     return S_RETURN_BOOL;
 }
@@ -234,7 +238,7 @@ static bool storage_dir_open_internal(File* file, const char* path) {
             .path = path,
         }};
 
-    file->file_id = FILE_OPENED_DIR;
+    file->type = FileTypeOpenDir;
 
     S_API_MESSAGE(StorageCommandDirOpen);
     S_API_EPILOGUE;
@@ -259,6 +263,10 @@ bool storage_dir_open(File* file, const char* path) {
 
     furi_pubsub_unsubscribe(storage_get_pubsub(file->storage), subscription);
     osEventFlagsDelete(event);
+
+    FURI_LOG_T(
+        TAG, "Dir %p - %p open (%s)", (uint32_t)file - SRAM_BASE, file->file_id - SRAM_BASE, path);
+
     return result;
 }
 
@@ -269,7 +277,9 @@ bool storage_dir_close(File* file) {
     S_API_MESSAGE(StorageCommandDirClose);
     S_API_EPILOGUE;
 
-    file->file_id = FILE_CLOSED;
+    FURI_LOG_T(TAG, "Dir %p - %p closed", (uint32_t)file - SRAM_BASE, file->file_id - SRAM_BASE);
+
+    file->type = FileTypeClosed;
 
     return S_RETURN_BOOL;
 }
@@ -323,9 +333,66 @@ FS_Error storage_common_remove(Storage* storage, const char* path) {
 FS_Error storage_common_rename(Storage* storage, const char* old_path, const char* new_path) {
     FS_Error error = storage_common_copy(storage, old_path, new_path);
     if(error == FSE_OK) {
-        error = storage_common_remove(storage, old_path);
+        if(storage_simply_remove_recursive(storage, old_path)) {
+            error = FSE_OK;
+        } else {
+            error = FSE_INTERNAL;
+        }
     }
 
+    return error;
+}
+
+static FS_Error
+    storage_copy_recursive(Storage* storage, const char* old_path, const char* new_path) {
+    FS_Error error = storage_common_mkdir(storage, new_path);
+    DirWalk* dir_walk = dir_walk_alloc(storage);
+    string_t path;
+    string_t tmp_new_path;
+    string_t tmp_old_path;
+    FileInfo fileinfo;
+    string_init(path);
+    string_init(tmp_new_path);
+    string_init(tmp_old_path);
+
+    do {
+        if(error != FSE_OK) break;
+
+        if(!dir_walk_open(dir_walk, old_path)) {
+            error = dir_walk_get_error(dir_walk);
+            break;
+        }
+
+        while(1) {
+            DirWalkResult res = dir_walk_read(dir_walk, path, &fileinfo);
+
+            if(res == DirWalkError) {
+                error = dir_walk_get_error(dir_walk);
+                break;
+            } else if(res == DirWalkLast) {
+                break;
+            } else {
+                string_set(tmp_old_path, path);
+                string_right(path, strlen(old_path));
+                string_printf(tmp_new_path, "%s%s", new_path, string_get_cstr(path));
+
+                if(fileinfo.flags & FSF_DIRECTORY) {
+                    error = storage_common_mkdir(storage, string_get_cstr(tmp_new_path));
+                } else {
+                    error = storage_common_copy(
+                        storage, string_get_cstr(tmp_old_path), string_get_cstr(tmp_new_path));
+                }
+
+                if(error != FSE_OK) break;
+            }
+        }
+
+    } while(false);
+
+    string_clear(tmp_new_path);
+    string_clear(tmp_old_path);
+    string_clear(path);
+    dir_walk_free(dir_walk);
     return error;
 }
 
@@ -337,7 +404,7 @@ FS_Error storage_common_copy(Storage* storage, const char* old_path, const char*
 
     if(error == FSE_OK) {
         if(fileinfo.flags & FSF_DIRECTORY) {
-            error = storage_common_mkdir(storage, new_path);
+            error = storage_copy_recursive(storage, old_path, new_path);
         } else {
             Stream* stream_from = file_stream_alloc(storage);
             Stream* stream_to = file_stream_alloc(storage);
@@ -448,18 +515,20 @@ FS_Error storage_sd_status(Storage* storage) {
 
 File* storage_file_alloc(Storage* storage) {
     File* file = malloc(sizeof(File));
-    file->file_id = FILE_CLOSED;
+    file->type = FileTypeClosed;
     file->storage = storage;
+
+    FURI_LOG_T(TAG, "File/Dir %p alloc", (uint32_t)file - SRAM_BASE);
 
     return file;
 }
 
 bool storage_file_is_open(File* file) {
-    return (file->file_id != FILE_CLOSED);
+    return (file->type != FileTypeClosed);
 }
 
 bool storage_file_is_dir(File* file) {
-    return (file->file_id == FILE_OPENED_DIR);
+    return (file->type == FileTypeOpenDir);
 }
 
 void storage_file_free(File* file) {
@@ -471,6 +540,7 @@ void storage_file_free(File* file) {
         }
     }
 
+    FURI_LOG_T(TAG, "File/Dir %p free", (uint32_t)file - SRAM_BASE);
     free(file);
 }
 
