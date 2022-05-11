@@ -1,3 +1,6 @@
+# DEPRECATED BRANCH | only for archival purposes
+---
+
 # Flipper Zero Firmware (Wetox fork)
 
 This repo contains the flipper zero firmware with additional features compared to the stock version. Pull requests are welcome.
