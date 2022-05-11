@@ -8,6 +8,7 @@
 #define U2F_SUCCESS_TIMEOUT 3000
 
 static void u2f_scene_main_ok_callback(InputType type, void* context) {
+    UNUSED(type);
     furi_assert(context);
     U2fApp* app = context;
     view_dispatcher_send_custom_event(app->view_dispatcher, U2fCustomEventConfirm);
@@ -59,7 +60,7 @@ bool u2f_scene_main_on_event(void* context, SceneManagerEvent event) {
                     u2f_view_set_state(app->u2f_view, U2fMsgRegister);
                 else if(event.event == U2fCustomEventAuth)
                     u2f_view_set_state(app->u2f_view, U2fMsgAuth);
-                notification_message(app->notifications, &sequence_display_on);
+                notification_message(app->notifications, &sequence_display_backlight_on);
                 notification_message(app->notifications, &sequence_single_vibro);
             }
             notification_message(app->notifications, &sequence_blink_magenta_10);
