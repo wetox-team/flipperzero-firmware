@@ -86,6 +86,7 @@ void nfc_worker_change_state(NfcWorker* nfc_worker, NfcWorkerState state) {
 int32_t nfc_worker_task(void* context) {
     NfcWorker* nfc_worker = context;
 
+    furi_hal_power_insomnia_enter();
     furi_hal_nfc_exit_sleep();
 
     if(nfc_worker->state == NfcWorkerStateDetect) {
@@ -109,6 +110,7 @@ int32_t nfc_worker_task(void* context) {
     }
     furi_hal_nfc_sleep();
     nfc_worker_change_state(nfc_worker, NfcWorkerStateReady);
+    furi_hal_power_insomnia_exit();
 
     return 0;
 }
@@ -365,8 +367,12 @@ void nfc_worker_mifare_classic_dict_attack(NfcWorker* nfc_worker) {
                 total_sectors = mf_classic_get_total_sectors_num(&reader);
                 if(reader.type == MfClassicType1k) {
                     event = NfcWorkerEventDetectedClassic1k;
-                } else {
+                } else if (reader.type == MfClassicType2k) {
+                    event = NfcWorkerEventDetectedClassic2k;
+                } else if (reader.type == MfClassicType4k) {
                     event = NfcWorkerEventDetectedClassic4k;
+                } else if (reader.type == MfClassicTypeMini) {
+                    event = NfcWorkerEventDetectedClassicMini;
                 }
                 nfc_worker->callback(event, nfc_worker->context);
                 break;
@@ -393,8 +399,12 @@ void nfc_worker_mifare_classic_dict_attack(NfcWorker* nfc_worker) {
                     if(!card_found_notified) {
                         if(reader.type == MfClassicType1k) {
                             event = NfcWorkerEventDetectedClassic1k;
-                        } else {
+                        } else if (reader.type == MfClassicType2k) {
+                            event = NfcWorkerEventDetectedClassic2k;
+                        } else if (reader.type == MfClassicType4k) {
                             event = NfcWorkerEventDetectedClassic4k;
+                        } else if (reader.type == MfClassicTypeMini) {
+                            event = NfcWorkerEventDetectedClassicMini;
                         }
                         nfc_worker->callback(event, nfc_worker->context);
                         card_found_notified = true;

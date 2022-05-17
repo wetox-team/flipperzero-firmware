@@ -49,8 +49,14 @@ bool nfc_scene_read_mifare_classic_on_event(void* context, SceneManagerEvent eve
         if(event.event == NfcCustomEventDictAttackDone) {
             scene_manager_next_scene(nfc->scene_manager, NfcSceneSaveName);
             consumed = true;
+        } else if(event.event == NfcWorkerEventDetectedClassicMini) {
+            dict_attack_card_detected(nfc->dict_attack, MfClassicTypeMini);
+            consumed = true;
         } else if(event.event == NfcWorkerEventDetectedClassic1k) {
             dict_attack_card_detected(nfc->dict_attack, MfClassicType1k);
+            consumed = true;
+        } else if(event.event == NfcWorkerEventDetectedClassic2k) {
+            dict_attack_card_detected(nfc->dict_attack, MfClassicType2k);
             consumed = true;
         } else if(event.event == NfcWorkerEventDetectedClassic4k) {
             dict_attack_card_detected(nfc->dict_attack, MfClassicType4k);

@@ -28,21 +28,37 @@ uint8_t mf_classic_get_total_sectors_num(MfClassicReader* reader) {
     furi_assert(reader);
     if(reader->type == MfClassicType1k) {
         return MF_CLASSIC_1K_TOTAL_SECTORS_NUM;
+    } else if(reader->type == MfClassicType2k) {
+        return MF_CLASSIC_2K_TOTAL_SECTORS_NUM;
     } else if(reader->type == MfClassicType4k) {
         return MF_CLASSIC_4K_TOTAL_SECTORS_NUM;
+    } else if(reader->type == MfClassicTypeMini) {
+        return MF_CLASSIC_MINI_TOTAL_SECTORS_NUM;
     } else {
         return 0;
     }
 }
 
 bool mf_classic_check_card_type(uint8_t ATQA0, uint8_t ATQA1, uint8_t SAK) {
+    UNUSED(ATQA0);
     UNUSED(ATQA1);
-    if((ATQA0 == 0x44 || ATQA0 == 0x04) && (SAK == 0x08)) {
-        return true;
-    } else if((ATQA0 == 0x42 || ATQA0 == 0x02) && (SAK == 0x18)) {
-        return true;
-    } else {
-        return false;
+    switch (SAK)
+    {
+        // MIFARE Classic 4K, MIFARE Plus S/X 4K in SL1, MIFARE Plus EV1 4K in SL1
+        case 0x18:
+        // SmartMX with MIFARE Classic 4K
+        case 0x38:
+        // MIFARE Classic 2K
+        case 0x19:
+        // MIFARE Plus EV1 2K in SL1
+        case 0x16:
+        // MIFARE Classic 1K, MIFARE Plus SE 1K, MIFARE Plus S/X 2K in SL1
+        case 0x08:
+        // SmartMX with MIFARE Classic 1K
+        case 0x28:
+            return true;
+        default:
+            return false;
     }
 }
 
@@ -53,17 +69,34 @@ bool mf_classic_get_type(
     uint8_t ATQA1,
     uint8_t SAK,
     MfClassicReader* reader) {
+    UNUSED(ATQA0);
     UNUSED(ATQA1);
     furi_assert(uid);
     furi_assert(reader);
     memset(reader, 0, sizeof(MfClassicReader));
 
-    if((ATQA0 == 0x44 || ATQA0 == 0x04) && (SAK == 0x08)) {
-        reader->type = MfClassicType1k;
-    } else if((ATQA0 == 0x42 || ATQA0 == 0x02) && (SAK == 0x18)) {
-        reader->type = MfClassicType4k;
-    } else {
-        return false;
+    switch (SAK)
+    {
+        // MIFARE Classic 4K, MIFARE Plus S/X 4K in SL1, MIFARE Plus EV1 4K in SL1
+        case 0x18:
+        // SmartMX with MIFARE Classic 4K
+        case 0x38:
+            reader->type = MfClassicType4k;
+            break;
+        // MIFARE Classic 2K
+        case 0x19:
+        // MIFARE Plus EV1 2K in SL1
+        case 0x16:
+            reader->type = MfClassicType2k;
+            break;
+        // MIFARE Classic 1K, MIFARE Plus SE 1K, MIFARE Plus S/X 2K in SL1
+        case 0x08:
+        // SmartMX with MIFARE Classic 1K
+        case 0x28:
+            reader->type = MfClassicType1k;
+            break;
+        default:
+            return false;
     }
 
     uint8_t* cuid_start = uid;
@@ -141,6 +174,7 @@ static bool mf_classic_auth(
                  << (7 - i));
         }
         tx_rx->tx_rx_type = FuriHalNfcTxRxTypeRaw;
+
         tx_rx->tx_bits = 8 * 8;
         if(!furi_hal_nfc_tx_rx(tx_rx, 5)) break;
         if(tx_rx->rx_bits == 32) {

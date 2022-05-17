@@ -135,10 +135,18 @@ void dict_attack_card_detected(DictAttack* dict_attack, MfClassicType type) {
                 model->total_sectors = 16;
                 model->keys_a_total = 16;
                 model->keys_b_total = 16;
+            } else if(type == MfClassicType2k) {
+                model->total_sectors = 32;
+                model->keys_a_total = 32;
+                model->keys_b_total = 32;
             } else if(type == MfClassicType4k) {
                 model->total_sectors = 40;
                 model->keys_a_total = 40;
                 model->keys_b_total = 40;
+            } else if(type == MfClassicTypeMini) {
+                model->total_sectors = 5;
+                model->keys_a_total = 5;
+                model->keys_b_total = 5;
             }
             return true;
         });

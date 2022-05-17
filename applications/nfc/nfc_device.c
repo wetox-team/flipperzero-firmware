@@ -627,9 +627,15 @@ static bool nfc_device_save_mifare_classic_data(FlipperFormat* file, NfcDevice* 
         if(data->type == MfClassicType1k) {
             if(!flipper_format_write_string_cstr(file, "Mifare Classic type", "1K")) break;
             blocks = 64;
+        } else if(data->type == MfClassicType2k) {
+            if(!flipper_format_write_string_cstr(file, "Mifare Classic type", "2K")) break;
+            blocks = 128;
         } else if(data->type == MfClassicType4k) {
             if(!flipper_format_write_string_cstr(file, "Mifare Classic type", "4K")) break;
             blocks = 256;
+        } else if(data->type == MfClassicTypeMini) {
+            if(!flipper_format_write_string_cstr(file, "Mifare Classic type", "4K")) break;
+            blocks = 20;
         }
         if(!flipper_format_write_comment_cstr(file, "Mifare Classic blocks")) break;
 
@@ -663,9 +669,15 @@ static bool nfc_device_load_mifare_classic_data(FlipperFormat* file, NfcDevice* 
         if(!string_cmp_str(temp_str, "1K")) {
             data->type = MfClassicType1k;
             data_blocks = 64;
+        } else if(!string_cmp_str(temp_str, "2K")) {
+            data->type = MfClassicType2k;
+            data_blocks = 128;
         } else if(!string_cmp_str(temp_str, "4K")) {
             data->type = MfClassicType4k;
             data_blocks = 256;
+        } else if(!string_cmp_str(temp_str, "Mini")) {
+            data->type = MfClassicTypeMini;
+            data_blocks = 20;
         } else {
             break;
         }

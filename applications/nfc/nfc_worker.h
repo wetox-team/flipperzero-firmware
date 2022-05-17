@@ -34,7 +34,9 @@ typedef enum {
     NfcWorkerEventNoCardDetected,
     // Mifare Classic events
     NfcWorkerEventNoDictFound,
+    NfcWorkerEventDetectedClassicMini,
     NfcWorkerEventDetectedClassic1k,
+    NfcWorkerEventDetectedClassic2k,
     NfcWorkerEventDetectedClassic4k,
     NfcWorkerEventNewSector,
     NfcWorkerEventFoundKeyA,

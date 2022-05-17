@@ -1492,6 +1492,7 @@ static ReturnCode rfalNfcPollActivation(uint8_t devIt) {
             break;
 
         case RFAL_NFCA_T2T:
+        case RFAL_NFCA_T4T: /* Device supports ISO-DEP */
 
             /* No further activation needed for a T2T */
 
@@ -1499,37 +1500,37 @@ static ReturnCode rfalNfcPollActivation(uint8_t devIt) {
             break;
 
         /*******************************************************************************/
-        case RFAL_NFCA_T4T: /* Device supports ISO-DEP */
-
-#if RFAL_FEATURE_ISO_DEP && RFAL_FEATURE_ISO_DEP_POLL
-            if(!gNfcDev.isOperOngoing) {
-                /* Perform ISO-DEP (ISO14443-4) activation: RATS and PPS if supported */
-                rfalIsoDepInitialize();
-                EXIT_ON_ERR(
-                    err,
-                    rfalIsoDepPollAStartActivation(
-                        (rfalIsoDepFSxI)RFAL_ISODEP_FSDI_DEFAULT,
-                        RFAL_ISODEP_NO_DID,
-                        gNfcDev.disc.maxBR,
-                        &gNfcDev.devList[devIt].proto.isoDep));
-
-                gNfcDev.isOperOngoing = true;
-                return ERR_BUSY;
-            }
-
-            err = rfalIsoDepPollAGetActivationStatus();
-            if(err != ERR_NONE) {
-                return err;
-            }
-
-            gNfcDev.devList[devIt].rfInterface =
-                RFAL_NFC_INTERFACE_ISODEP; /* NFC-A T4T device activated */
-#else
-            gNfcDev.devList[devIt].rfInterface =
-                RFAL_NFC_INTERFACE_RF; /* No ISO-DEP supported activate using RF interface */
-#endif /* RFAL_FEATURE_ISO_DEP_POLL */
-            break;
-
+//        case RFAL_NFCA_T4T: /* Device supports ISO-DEP */
+//
+//#if RFAL_FEATURE_ISO_DEP && RFAL_FEATURE_ISO_DEP_POLL
+//            if(!gNfcDev.isOperOngoing) {
+//                /* Perform ISO-DEP (ISO14443-4) activation: RATS and PPS if supported */
+//                rfalIsoDepInitialize();
+//                EXIT_ON_ERR(
+//                    err,
+//                    rfalIsoDepPollAStartActivation(
+//                        (rfalIsoDepFSxI)RFAL_ISODEP_FSDI_DEFAULT,
+//                        RFAL_ISODEP_NO_DID,
+//                        gNfcDev.disc.maxBR,
+//                        &gNfcDev.devList[devIt].proto.isoDep));
+//
+//                gNfcDev.isOperOngoing = true;
+//                return ERR_BUSY;
+//            }
+//
+//            err = rfalIsoDepPollAGetActivationStatus();
+//            if(err != ERR_NONE) {
+//                return err;
+//            }
+//
+//            gNfcDev.devList[devIt].rfInterface =
+//                RFAL_NFC_INTERFACE_ISODEP; /* NFC-A T4T device activated */
+//#else
+//            gNfcDev.devList[devIt].rfInterface =
+//                RFAL_NFC_INTERFACE_RF; /* No ISO-DEP supported activate using RF interface */
+//#endif /* RFAL_FEATURE_ISO_DEP_POLL */
+//            break;
+//
         /*******************************************************************************/
         case RFAL_NFCA_T4T_NFCDEP: /* Device supports both T4T and NFC-DEP */
         case RFAL_NFCA_NFCDEP: /* Device supports NFC-DEP */
