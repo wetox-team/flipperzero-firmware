@@ -10,6 +10,13 @@ This is a modified unofficial version of the Flipper Zero firmware with some add
 * Flashing the firmware using the blackmagic board with `make blackmagic_load`
 * Removing T5577 passwords via the cli command `rfid clear_pass_t5577` using a dictionary attack
 
+# Clone the Repository
+
+You should clone with 
+```shell
+$ git clone --recursive https://github.com/flipperdevices/flipperzero-firmware.git
+```
+
 # Update firmware
 
 Flipper Zero's firmware consists of two components:
@@ -74,6 +81,8 @@ docker-compose exec dev make
 Check `dist/` for build outputs.
 
 Use **`flipper-z-{target}-full-{suffix}.dfu`** to flash your device.
+
+If compilation fails, make sure all submodules are all initialized. Either clone with `--recursive` or use `git submodule update --init --recursive`.
 
 # Build on Linux/macOS
 
