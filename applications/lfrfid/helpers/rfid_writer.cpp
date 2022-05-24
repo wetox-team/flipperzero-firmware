@@ -171,9 +171,9 @@ void RfidWriter::write_ioprox(const uint8_t ioprox_data[4]) {
     const uint32_t ioprox_config_block_data = 0b00000000000101000111000001000000;
 
     FURI_CRITICAL_ENTER();
-    write_block(0, 0, false, ioprox_config_block_data);
-    write_block(0, 1, false, ioprox_encode_block(&encoded_data[0]));
-    write_block(0, 2, false, ioprox_encode_block(&encoded_data[4]));
+    write_block(0, 0, false, ioprox_config_block_data, false, 0x0);
+    write_block(0, 1, false, ioprox_encode_block(&encoded_data[0]), false, 0x0);
+    write_block(0, 2, false, ioprox_encode_block(&encoded_data[4]), false, 0x0);
     write_reset();
     FURI_CRITICAL_EXIT();
 }
