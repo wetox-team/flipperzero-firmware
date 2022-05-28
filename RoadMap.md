@@ -1,4 +1,4 @@
-# RoadMap
+# RoadMap (for the stock FW, not the wetox fork)
 
 # Where we are (0.x.x branch)
 
