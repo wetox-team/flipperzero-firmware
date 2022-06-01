@@ -208,7 +208,7 @@ const FlipperApplication FLIPPER_APPS[] = {
 
 #ifdef APP_SUBGHZ
     {.app = subghz_app,
-     .name = "Sub-GHz",
+     .name = "Sub-UwUHz",
      .stack_size = 2048,
      .icon = &A_Sub1ghz_14,
      .flags = FlipperApplicationFlagDefault},
@@ -216,7 +216,7 @@ const FlipperApplication FLIPPER_APPS[] = {
 
 #ifdef APP_LF_RFID
     {.app = lfrfid_app,
-     .name = "125 kHz RFID",
+     .name = "Swow Wadio",
      .stack_size = 2048,
      .icon = &A_125khz_14,
      .flags = FlipperApplicationFlagDefault},
@@ -224,7 +224,7 @@ const FlipperApplication FLIPPER_APPS[] = {
 
 #ifdef APP_NFC
     {.app = nfc_app,
-     .name = "NFC",
+     .name = "Faft Wadio",
      .stack_size = 4096,
      .icon = &A_NFC_14,
      .flags = FlipperApplicationFlagDefault},
@@ -232,7 +232,7 @@ const FlipperApplication FLIPPER_APPS[] = {
 
 #ifdef APP_INFRARED
     {.app = infrared_app,
-     .name = "Infrared",
+     .name = "Light go bwinky",
      .stack_size = 1024 * 3,
      .icon = &A_Infrared_14,
      .flags = FlipperApplicationFlagDefault},
@@ -240,7 +240,7 @@ const FlipperApplication FLIPPER_APPS[] = {
 
 #ifdef APP_GPIO
     {.app = gpio_app,
-     .name = "GPIO",
+     .name = "Ewectricity",
      .stack_size = 1024,
      .icon = &A_GPIO_14,
      .flags = FlipperApplicationFlagDefault},
@@ -248,7 +248,7 @@ const FlipperApplication FLIPPER_APPS[] = {
 
 #ifdef APP_IBUTTON
     {.app = ibutton_app,
-     .name = "iButton",
+     .name = "The Forbidden Pill",
      .stack_size = 2048,
      .icon = &A_iButton_14,
      .flags = FlipperApplicationFlagDefault},
@@ -256,7 +256,7 @@ const FlipperApplication FLIPPER_APPS[] = {
 
 #ifdef APP_BAD_USB
     {.app = bad_usb_app,
-     .name = "Bad USB",
+     .name = "Bad UwUSB",
      .stack_size = 2048,
      .icon = &A_BadUsb_14,
      .flags = FlipperApplicationFlagDefault},
@@ -264,7 +264,7 @@ const FlipperApplication FLIPPER_APPS[] = {
 
 #ifdef APP_U2F
     {.app = u2f_app,
-     .name = "U2F",
+     .name = "UwU2F",
      .stack_size = 2048,
      .icon = &A_U2F_14,
      .flags = FlipperApplicationFlagDefault},
@@ -329,7 +329,7 @@ const size_t FLIPPER_ON_SYSTEM_START_COUNT = COUNT_OF(FLIPPER_ON_SYSTEM_START);
 const FlipperApplication FLIPPER_PLUGINS[] = {
 #ifdef APP_BLE_HID
     {.app = bt_hid_app,
-     .name = "Bluetooth Remote",
+     .name = "Bwuetoof Wemote",
      .stack_size = 1024,
      .icon = NULL,
      .flags = FlipperApplicationFlagDefault},
@@ -337,7 +337,7 @@ const FlipperApplication FLIPPER_PLUGINS[] = {
 
 #ifdef APP_MUSIC_PLAYER
     {.app = music_player_app,
-     .name = "Music Player",
+     .name = "Music Pwayer",
      .stack_size = 2048,
      .icon = &A_Plugins_14,
      .flags = FlipperApplicationFlagDefault},
@@ -345,7 +345,7 @@ const FlipperApplication FLIPPER_PLUGINS[] = {
 
 #ifdef APP_SNAKE_GAME
     {.app = snake_game_app,
-     .name = "Snake Game",
+     .name = "Snek Game",
      .stack_size = 1024,
      .icon = &A_Plugins_14,
      .flags = FlipperApplicationFlagDefault},
@@ -358,7 +358,7 @@ const size_t FLIPPER_PLUGINS_COUNT = COUNT_OF(FLIPPER_PLUGINS);
 const FlipperApplication FLIPPER_DEBUG_APPS[] = {
 #ifdef APP_BLINK
     {.app = blink_test_app,
-     .name = "Blink Test",
+     .name = "Bwink Test",
      .stack_size = 1024,
      .icon = NULL,
      .flags = FlipperApplicationFlagDefault},
@@ -366,7 +366,7 @@ const FlipperApplication FLIPPER_DEBUG_APPS[] = {
 
 #ifdef APP_VIBRO_TEST
     {.app = vibro_test_app,
-     .name = "Vibro Test",
+     .name = "wwwwwawawaaaa",
      .stack_size = 1024,
      .icon = NULL,
      .flags = FlipperApplicationFlagDefault},
@@ -390,7 +390,7 @@ const FlipperApplication FLIPPER_DEBUG_APPS[] = {
 
 #ifdef APP_USB_TEST
     {.app = usb_test_app,
-     .name = "USB Test",
+     .name = "UwUSB Test",
      .stack_size = 1024,
      .icon = NULL,
      .flags = FlipperApplicationFlagDefault},
@@ -398,7 +398,7 @@ const FlipperApplication FLIPPER_DEBUG_APPS[] = {
 
 #ifdef APP_USB_MOUSE
     {.app = usb_mouse_app,
-     .name = "USB Mouse Demo",
+     .name = "UwUSB Mouse Demo",
      .stack_size = 1024,
      .icon = NULL,
      .flags = FlipperApplicationFlagDefault},
@@ -406,7 +406,7 @@ const FlipperApplication FLIPPER_DEBUG_APPS[] = {
 
 #ifdef APP_UART_ECHO
     {.app = uart_echo_app,
-     .name = "Uart Echo",
+     .name = "Uwart Echo",
      .stack_size = 2048,
      .icon = NULL,
      .flags = FlipperApplicationFlagDefault},
@@ -414,7 +414,7 @@ const FlipperApplication FLIPPER_DEBUG_APPS[] = {
 
 #ifdef APP_INFRARED_MONITOR
     {.app = infrared_monitor_app,
-     .name = "Infrared Monitor",
+     .name = "Infwawed Monitow",
      .stack_size = 1024,
      .icon = NULL,
      .flags = FlipperApplicationFlagDefault},
@@ -422,7 +422,7 @@ const FlipperApplication FLIPPER_DEBUG_APPS[] = {
 
 #ifdef APP_LF_RFID
     {.app = lfrfid_debug_app,
-     .name = "LF-RFID Debug",
+     .name = "LF-WFID Debug",
      .stack_size = 1024,
      .icon = NULL,
      .flags = FlipperApplicationFlagDefault},
@@ -430,7 +430,7 @@ const FlipperApplication FLIPPER_DEBUG_APPS[] = {
 
 #ifdef SRV_BT
     {.app = bt_debug_app,
-     .name = "Bluetooth Debug",
+     .name = "Bwuetoof Debug",
      .stack_size = 1024,
      .icon = NULL,
      .flags = FlipperApplicationFlagDefault},
@@ -438,7 +438,7 @@ const FlipperApplication FLIPPER_DEBUG_APPS[] = {
 
 #ifdef APP_UNIT_TESTS
     {.app = delay_test_app,
-     .name = "Delay Test",
+     .name = "Deway Test",
      .stack_size = 1024,
      .icon = NULL,
      .flags = FlipperApplicationFlagDefault},
@@ -446,7 +446,7 @@ const FlipperApplication FLIPPER_DEBUG_APPS[] = {
 
 #ifdef APP_DISPLAY_TEST
     {.app = display_test_app,
-     .name = "Display Test",
+     .name = "Dispway Test",
      .stack_size = 1024,
      .icon = NULL,
      .flags = FlipperApplicationFlagDefault},
@@ -454,7 +454,7 @@ const FlipperApplication FLIPPER_DEBUG_APPS[] = {
 
 #ifdef APP_FILE_BROWSER_TEST
     {.app = file_browser_app,
-     .name = "File Browser test",
+     .name = "File Bwowser test",
      .stack_size = 2048,
      .icon = &A_BadUsb_14,
      .flags = FlipperApplicationFlagDefault},
@@ -462,7 +462,7 @@ const FlipperApplication FLIPPER_DEBUG_APPS[] = {
 
 #ifdef APP_BATTERY_TEST
     {.app = battery_test_app,
-     .name = "Battery Test",
+     .name = "Battewy Test",
      .stack_size = 1024,
      .icon = NULL,
      .flags = FlipperApplicationFlagDefault},
@@ -482,7 +482,7 @@ const size_t FLIPPER_DEBUG_APPS_COUNT = COUNT_OF(FLIPPER_DEBUG_APPS);
 #ifdef APP_ARCHIVE
 const FlipperApplication FLIPPER_ARCHIVE = {
     .app = archive_app,
-    .name = "Archive",
+    .name = "Awchive",
     .stack_size = 4096,
     .icon = &A_FileManager_14,
     .flags = FlipperApplicationFlagDefault};
@@ -492,7 +492,7 @@ const FlipperApplication FLIPPER_ARCHIVE = {
 const FlipperApplication FLIPPER_SETTINGS_APPS[] = {
 #ifdef SRV_BT
     {.app = bt_settings_app,
-     .name = "Bluetooth",
+     .name = "Bwuetoof",
      .stack_size = 1024,
      .icon = NULL,
      .flags = FlipperApplicationFlagDefault},
@@ -500,7 +500,7 @@ const FlipperApplication FLIPPER_SETTINGS_APPS[] = {
 
 #ifdef SRV_NOTIFICATION
     {.app = notification_settings_app,
-     .name = "LCD and Notifications",
+     .name = "LCD and UwUfications",
      .stack_size = 1024,
      .icon = NULL,
      .flags = FlipperApplicationFlagDefault},
@@ -508,7 +508,7 @@ const FlipperApplication FLIPPER_SETTINGS_APPS[] = {
 
 #ifdef SRV_STORAGE
     {.app = storage_settings_app,
-     .name = "Storage",
+     .name = "Stowage",
      .stack_size = 2048,
      .icon = NULL,
      .flags = FlipperApplicationFlagDefault},
@@ -516,7 +516,7 @@ const FlipperApplication FLIPPER_SETTINGS_APPS[] = {
 
 #ifdef SRV_POWER
     {.app = power_settings_app,
-     .name = "Power",
+     .name = "POwOwer",
      .stack_size = 1024,
      .icon = NULL,
      .flags = FlipperApplicationFlagInsomniaSafe},
@@ -532,7 +532,7 @@ const FlipperApplication FLIPPER_SETTINGS_APPS[] = {
 
 #ifdef APP_PASSPORT
     {.app = passport_app,
-     .name = "Passport",
+     .name = "Passpowt",
      .stack_size = 1024,
      .icon = NULL,
      .flags = FlipperApplicationFlagDefault},

@@ -137,7 +137,7 @@ void subghz_view_receiver_draw(Canvas* canvas, SubGhzViewReceiverModel* model) {
     canvas_set_color(canvas, ColorBlack);
     canvas_set_font(canvas, FontSecondary);
 
-    elements_button_left(canvas, "Config");
+    elements_button_left(canvas, "UwU");
 
     canvas_draw_str(canvas, 44, 62, string_get_cstr(model->frequency_str));
     canvas_draw_str(canvas, 79, 62, string_get_cstr(model->preset_str));
@@ -145,7 +145,7 @@ void subghz_view_receiver_draw(Canvas* canvas, SubGhzViewReceiverModel* model) {
     if(model->history_item == 0) {
         canvas_draw_icon(canvas, 0, 0, &I_Scanning_123x52);
         canvas_set_font(canvas, FontPrimary);
-        canvas_draw_str(canvas, 63, 46, "Scanning...");
+        canvas_draw_str(canvas, 63, 46, "Wistening... OwO");
         canvas_draw_line(canvas, 46, 51, 125, 51);
         return;
     }
