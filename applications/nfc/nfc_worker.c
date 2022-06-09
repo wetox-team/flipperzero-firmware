@@ -8,6 +8,7 @@
 #include <lib/nfc_protocols/mifare_classic.h>
 #include <lib/nfc_protocols/mifare_desfire.h>
 #include <lib/nfc_protocols/nfca.h>
+#include <lib/nfc_protocols/techkom.h>
 
 #include "helpers/nfc_mf_classic_dict.h"
 
@@ -109,6 +110,8 @@ int32_t nfc_worker_task(void* context) {
         nfc_worker_emulate_mifare_classic(nfc_worker);
     } else if(nfc_worker->state == NfcWorkerStateReadMifareDesfire) {
         nfc_worker_read_mifare_desfire(nfc_worker);
+    } else if (nfc_worker->state == NfcWorkerStateEmulateTechkom){
+        nfc_worker_emulate_techkom(nfc_worker);
     }
     furi_hal_nfc_sleep();
     nfc_worker_change_state(nfc_worker, NfcWorkerStateReady);
@@ -708,3 +711,63 @@ void nfc_worker_read_mifare_desfire(NfcWorker* nfc_worker) {
         break;
     }
 }
+
+
+static void techkom_add_bit(DigitalSignal* signal, bool bit) {
+    if(bit) {
+        signal->start_level = false;
+        signal->edge_timings[0] = 244 * Techkom_T_SIG;
+        signal->edge_timings[1] = 461 * Techkom_T_SIG;
+        signal->edge_timings[2] = 244 * Techkom_T_SIG;
+        signal->edge_timings[3] = 1058 * Techkom_T_SIG;
+        signal->edge_cnt = 4;
+    } else {
+        signal->start_level = false;
+        signal->edge_timings[0] = 244 * Techkom_T_SIG;
+        signal->edge_timings[1] = 294 * Techkom_T_SIG;
+        signal->edge_timings[2] = 244 * Techkom_T_SIG;
+        signal->edge_timings[3] = 1193 * Techkom_T_SIG;
+        signal->edge_cnt = 4;
+    }
+}
+
+
+void techkom_signal_free(TechkomSignal* techkom_signal) {
+    furi_assert(techkom_signal);
+
+    digital_signal_free(techkom_signal->one);
+    digital_signal_free(techkom_signal->zero);
+    digital_signal_free(techkom_signal->tx_signal);
+    free(techkom_signal);
+}
+
+TechkomSignal* techkom_signal_alloc() {
+    TechkomSignal* techkom_signal = malloc(sizeof(TechkomSignal));
+    techkom_signal->one = digital_signal_alloc(10);
+    techkom_signal->zero = digital_signal_alloc(10);
+    techkom_add_bit(techkom_signal->one, true);
+    techkom_add_bit(techkom_signal->zero, false);
+    techkom_signal->tx_signal = digital_signal_alloc(1024);
+
+    return techkom_signal;
+}
+
+void nfc_worker_emulate_techkom(NfcWorker* nfc_worker) {
+    FURI_LOG_D(TAG, "Emulating Techkom card");
+    
+    // Emulating techkom is a bit like emulating Mifare Classic, but simpler and without NFC-A
+
+    FuriHalNfcTxRxContext tx_rx;
+    TechkomEmulator emulator = {
+        .cuid = {0x2C, 0x07, 0xE2, 0x0E, 0x8C, 0x63, 0xFF, 0xFF},
+    };
+    tx_rx.techkom_signal = techkom_signal_alloc();
+
+    while(nfc_worker->state == NfcWorkerStateEmulateTechkom) {
+        if(furi_hal_nfc_field_detect()) {
+            techkom_emulator(&emulator, &tx_rx);
+        }
+    }
+}
+
+

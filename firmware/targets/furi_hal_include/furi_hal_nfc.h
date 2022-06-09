@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 #include <lib/nfc_protocols/nfca.h>
+#include <techkom_structs.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,6 +48,7 @@ typedef enum {
     FuriHalNfcTxRxTypeRaw,
     FuriHalNfcTxRxTypeRxRaw,
     FuriHalNfcTxRxTransparent,
+    FuriHalNfcTxRxTechkom,
 } FuriHalNfcTxRxType;
 
 typedef bool (*FuriHalNfcEmulateCallback)(
@@ -80,6 +82,7 @@ typedef struct {
     uint8_t sak;
 } FuriHalNfcDevData;
 
+
 typedef struct {
     uint8_t tx_data[FURI_HAL_NFC_DATA_BUFF_SIZE];
     uint8_t tx_parity[FURI_HAL_NFC_PARITY_BUFF_SIZE];
@@ -89,6 +92,7 @@ typedef struct {
     uint16_t rx_bits;
     FuriHalNfcTxRxType tx_rx_type;
     NfcaSignal* nfca_signal;
+    TechkomSignal* techkom_signal;
 } FuriHalNfcTxRxContext;
 
 /** Init nfc
@@ -213,6 +217,9 @@ void furi_hal_nfc_sleep();
 
 void furi_hal_nfc_stop();
 
+bool furi_hal_nfc_field_detect();
+
+bool furi_hal_nfc_techkom_tx_rx(FuriHalNfcTxRxContext* tx_rx, uint16_t timeout_ms);
 #ifdef __cplusplus
 }
 #endif

@@ -113,6 +113,8 @@ static void lfrfid_cli_write(Cli* cli, string_t args) {
 
 
 static void lfrfid_cli_t5577_clear_password_and_config_to_EM(Cli* cli, string_t args) {
+    UNUSED(cli);
+    UNUSED(args);
     RfidWriter writer;
     const uint32_t default_passwords[] = {
         0x51243648,
