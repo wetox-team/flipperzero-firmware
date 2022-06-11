@@ -649,114 +649,74 @@ void techkom_signal_encode(TechkomSignal* techkom_signal, uint8_t* data) {
     furi_assert(techkom_signal);
     furi_assert(data);
     // Print data in hex
-    FURI_LOG_I(TAG, "Data: %02X %02X %02X %02X %02X %02X %02X %02X", data[0], data[1], data[2],
-               data[3], data[4], data[5], data[6], data[7]);
+    //FURI_LOG_I(TAG, "Data: %02X %02X %02X %02X %02X %02X %02X %02X", data[0], data[1], data[2],
+    //           data[3], data[4], data[5], data[6], data[7]);
 
     uint16_t bits = 64;
 
-    FURI_LOG_I("TECH", "Encoding signal");
-    techkom_signal->tx_signal->edge_cnt = 0;
-    FURI_LOG_I("TECH", "Encoding signal: edge_cnt = %d", techkom_signal->tx_signal->edge_cnt);
+    //FURI_LOG_I("TECH", "Encoding signal");
+    //FURI_LOG_I("TECH", "Encoding signal: edge_cnt = %d", techkom_signal->tx_signal->edge_cnt);
     techkom_signal->tx_signal->start_level = true;
-    FURI_LOG_I("TECH", "Encoding signal: start_level = %d", techkom_signal->tx_signal->start_level);
-    // Start of frame
-    digital_signal_append(techkom_signal->tx_signal, techkom_signal->one);
-
-    for(size_t i = 0; i < bits/8; i++) {
-        for (size_t j = 0; j < 8; j++){
-            if(FURI_BIT(data[i], j)) {
-                digital_signal_append(techkom_signal->tx_signal, techkom_signal->one);
-                FURI_LOG_I("TECH", "Encoding signal: 1");
-            } else {
-                digital_signal_append(techkom_signal->tx_signal, techkom_signal->zero);
-                FURI_LOG_I("TECH", "Encoding signal: 0");
+    //FURI_LOG_I("TECH", "Encoding signal: start_level = %d", techkom_signal->tx_signal->start_level);
+    for(size_t cycles = 0; cycles < 3; cycles++){
+        for(size_t i = 0; i < bits/8; i++) {
+            for (size_t j = 0; j < 8; j++){
+                if(FURI_BIT(data[i], j)) {
+                    if (j == 7){
+                        digital_signal_append(techkom_signal->tx_signal, techkom_signal->end_one);
+                    } else {
+                        digital_signal_append(techkom_signal->tx_signal, techkom_signal->one);
+                    }
+                } else {
+                    if (j == 7){
+                        digital_signal_append(techkom_signal->tx_signal, techkom_signal->end_zero);
+                    } else {
+                        digital_signal_append(techkom_signal->tx_signal, techkom_signal->zero);
+                    }
+                }
             }
         }
+        digital_signal_append(techkom_signal->tx_signal, techkom_signal->end);
     }
-    techkom_signal->tx_signal->edge_cnt *= 2;
-    FURI_LOG_I("TECH", "Edges count: %d", techkom_signal->tx_signal->edge_cnt);
 }
 
 
 bool furi_hal_nfc_techkom_tx_rx(FuriHalNfcTxRxContext* tx_rx, uint16_t timeout_ms){
-    FURI_LOG_I("TECH", "Entering techkom tx rx");
+    UNUSED(timeout_ms);
+    //FURI_LOG_I("TECH", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 
     platformDisableIrqCallback();
-
-    bool ret = false;
 
     // Start transparent mode
     st25r3916ExecuteCommand(ST25R3916_CMD_TRANSPARENT_MODE);
     // Reconfigure gpio
     furi_hal_spi_bus_handle_deinit(&furi_hal_spi_bus_handle_nfc);
     furi_hal_gpio_init(&gpio_spi_r_sck, GpioModeInput, GpioPullUp, GpioSpeedLow);
-    furi_hal_gpio_init(&gpio_spi_r_miso, GpioModeInput, GpioPullUp, GpioSpeedLow);
+    //furi_hal_gpio_init(&gpio_spi_r_miso, GpioModeInput, GpioPullUp, GpioSpeedLow);
     furi_hal_gpio_init(&gpio_nfc_cs, GpioModeInput, GpioPullUp, GpioSpeedLow);
     furi_hal_gpio_init(&gpio_spi_r_mosi, GpioModeOutputPushPull, GpioPullNo, GpioSpeedVeryHigh);
     furi_hal_gpio_write(&gpio_spi_r_mosi, false);
 
     // Send signal
-    FURI_LOG_I("TECH", "Started encoding signal");
+    //FURI_LOG_I("TECH", "Started encoding signal");
     techkom_signal_encode(tx_rx->techkom_signal, tx_rx->tx_data);
-    FURI_LOG_I("TECH", "Finished encoding signal");
-    FURI_LOG_I("TECH", "Starting send");
+    //FURI_LOG_I("TECH", "Finished encoding signal");
+    //FURI_LOG_I("TECH", "Starting send");
     digital_signal_send(tx_rx->techkom_signal->tx_signal, &gpio_spi_r_mosi);
-    FURI_LOG_I("TECH", "Finished send");
+    //FURI_LOG_I("TECH", "Finished send");
+    // OK
     furi_hal_gpio_write(&gpio_spi_r_mosi, false);
-    FURI_LOG_I("TECH", "Sent signal");
-
-
+    //FURI_LOG_I("TECH", "Sent signal");
 
     // Configure gpio back to SPI and exit transparent
     furi_hal_spi_bus_handle_init(&furi_hal_spi_bus_handle_nfc);
-    st25r3916ExecuteCommand(ST25R3916_CMD_UNMASK_RECEIVE_DATA);
+    //st25r3916ExecuteCommand(ST25R3916_CMD_UNMASK_RECEIVE_DATA);
 
-    // Manually wait for interrupt
-    furi_hal_gpio_init(&gpio_rfid_pull, GpioModeInput, GpioPullDown, GpioSpeedVeryHigh);
-    st25r3916ClearAndEnableInterrupts(ST25R3916_IRQ_MASK_RXE);
-
-    uint32_t irq = 0;
-    uint8_t rxe = 0;
-    uint32_t start = DWT->CYCCNT;
-    while(true) {
-        if(furi_hal_gpio_read(&gpio_rfid_pull) == true) {
-            st25r3916ReadRegister(ST25R3916_REG_IRQ_MAIN, &rxe);
-            if(rxe & (1 << 4)) {
-                irq = 1;
-                break;
-            }
-        }
-        uint32_t timeout = DWT->CYCCNT - start;
-        if(timeout / furi_hal_delay_instructions_per_microsecond() > timeout_ms * 1000) {
-            FURI_LOG_D(TAG, "Interrupt waiting timeout");
-            break;
-        }
-    }
-    if(irq) {
-        uint8_t fifo_stat[2];
-        st25r3916ReadMultipleRegisters(
-            ST25R3916_REG_FIFO_STATUS1, fifo_stat, ST25R3916_FIFO_STATUS_LEN);
-        uint16_t len =
-            ((((uint16_t)fifo_stat[1] & ST25R3916_REG_FIFO_STATUS2_fifo_b_mask) >>
-              ST25R3916_REG_FIFO_STATUS2_fifo_b_shift)
-             << RFAL_BITS_IN_BYTE);
-        len |= (((uint16_t)fifo_stat[0]) & 0x00FFU);
-        uint8_t rx[100];
-        st25r3916ReadFifo(rx, len);
-
-        tx_rx->rx_bits = len * 8;
-        memcpy(tx_rx->rx_data, rx, len);
-
-        ret = true;
-    } else {
-        FURI_LOG_E(TAG, "Timeout error");
-        ret = false;
-    }
-
-    st25r3916ClearInterrupts();
+    //st25r3916ClearInterrupts();
     platformEnableIrqCallback();
+    // \OK
 
-    return ret;
+    return true;
 }
 
 void furi_hal_nfc_sleep() {

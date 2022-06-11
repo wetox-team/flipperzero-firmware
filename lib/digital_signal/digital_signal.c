@@ -5,6 +5,8 @@
 #include <stm32wbxx_ll_tim.h>
 #include <math.h>
 
+#include <furi_hal.h>
+
 #define F_TIM (64000000.0)
 #define T_TIM (1.0 / F_TIM)
 
@@ -161,13 +163,15 @@ bool digital_signal_send(DigitalSignal* signal, const GpioPin* gpio) {
 
     while(!LL_DMA_IsActiveFlag_TC2(DMA1))
         ;
-
+    // OK
     LL_DMA_ClearFlag_TC1(DMA1);
     LL_DMA_ClearFlag_TC2(DMA1);
+    furi_hal_gpio_write(&gpio_spi_r_mosi, false);
     LL_TIM_DisableCounter(TIM2);
     LL_TIM_SetCounter(TIM2, 0);
     LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_1);
     LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_2);
+    // \OK
 
     return true;
 }

@@ -9,14 +9,13 @@
 
 void techkom_emulator(TechkomEmulator* emulator, FuriHalNfcTxRxContext* tx_rx) {
     tx_rx->tx_rx_type = FuriHalNfcTxRxTechkom;
-    tx_rx->tx_bits = 32;
+    tx_rx->tx_bits = 64;
 
     // Copy CUID to the TX buffer
-    memcpy(tx_rx->tx_data, emulator->cuid, 16);
+    memcpy(tx_rx->tx_data, emulator->cuid, 8);
 
     // Run the emulator
-    FURI_LOG_I("TECH", "Running TECHKOM emulator");
-    furi_hal_nfc_tx_rx(tx_rx, 65535);
+    furi_hal_nfc_tx_rx(tx_rx, 1);
 }
 
 
