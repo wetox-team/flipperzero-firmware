@@ -56,6 +56,8 @@ bool mf_classic_check_card_type(uint8_t ATQA0, uint8_t ATQA1, uint8_t SAK) {
         case 0x08:
         // SmartMX with MIFARE Classic 1K
         case 0x28:
+        // Mifare Mini
+        case 0x09:
             return true;
         default:
             return false;
