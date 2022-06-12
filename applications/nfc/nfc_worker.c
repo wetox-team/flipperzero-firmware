@@ -808,15 +808,8 @@ void nfc_worker_emulate_techkom(NfcWorker* nfc_worker) {
             rfalNfcDeactivate(false);
         }
         rfalLowPowerModeStop();
-        uint8_t uid[] = {0x01, 0x02, 0x03, 0x04};
-        unsigned char atqa[] = {0x00, 0x04};
-        uint8_t sak = 0x20;
-        
-        
-        if(furi_hal_nfc_listen(
-               uid, 4, atqa, sak, true, 300)) {
-            techkom_emulator(&emulator, &tx_rx);
-        }
+        furi_hal_nfc_listen_light(100);
+        techkom_emulator(&emulator, &tx_rx);
     }
     techkom_signal_free(tx_rx.techkom_signal);
 }

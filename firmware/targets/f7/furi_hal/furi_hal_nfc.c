@@ -244,6 +244,13 @@ bool furi_hal_nfc_listen(
     return true;
 }
 bool furi_hal_nfc_listen_light(int timeout) {
+    UNUSED(timeout);
+    uint8_t uid[] = {0x12 ,0x34 ,0x56 ,0x78};
+    uint8_t uid_len = sizeof(uid);
+    uint8_t atqa[2] = {0x00, 0x00};
+    uint8_t sak = 0x00;
+    bool activate_after_sak = false;
+
     rfalNfcState state = rfalNfcGetState();
     if(state == RFAL_NFC_STATE_NOTINIT) {
         rfalNfcInitialize();
@@ -253,7 +260,7 @@ bool furi_hal_nfc_listen_light(int timeout) {
     rfalLowPowerModeStop();
     rfalNfcDiscoverParam params = {
         .compMode = RFAL_COMPLIANCE_MODE_NFC,
-        .techs2Find = RFAL_NFC_TECH_NONE,
+        .techs2Find = RFAL_NFC_LISTEN_TECH_A,
         .totalDuration = 1000,
         .devLimit = 1,
         .wakeupEnabled = false,
@@ -263,8 +270,13 @@ bool furi_hal_nfc_listen_light(int timeout) {
         .maxBR = RFAL_BR_KEEP,
         .GBLen = RFAL_NFCDEP_GB_MAX_LEN,
         .notifyCb = NULL,
-        .activate_after_sak = false,
+        .activate_after_sak = activate_after_sak,
     };
+    params.lmConfigPA.nfcidLen = uid_len;
+    memcpy(params.lmConfigPA.nfcid, uid, uid_len);
+    params.lmConfigPA.SENS_RES[0] = atqa[0];
+    params.lmConfigPA.SENS_RES[1] = atqa[1];
+    params.lmConfigPA.SEL_RES = sak;
     rfalNfcDiscover(&params);
 
     uint32_t start = DWT->CYCCNT;
