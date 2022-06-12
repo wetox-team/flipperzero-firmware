@@ -220,6 +220,8 @@ void furi_hal_nfc_stop();
 bool furi_hal_nfc_field_detect();
 
 bool furi_hal_nfc_techkom_tx_rx(FuriHalNfcTxRxContext* tx_rx, uint16_t timeout_ms);
+
+bool furi_hal_nfc_listen_light(int timeout);
 #ifdef __cplusplus
 }
 #endif

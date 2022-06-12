@@ -15,7 +15,7 @@ void techkom_emulator(TechkomEmulator* emulator, FuriHalNfcTxRxContext* tx_rx) {
     memcpy(tx_rx->tx_data, emulator->cuid, 8);
 
     // Run the emulator
-    furi_hal_nfc_tx_rx(tx_rx, 1);
+    furi_hal_nfc_tx_rx(tx_rx, 100);
 }
 
 

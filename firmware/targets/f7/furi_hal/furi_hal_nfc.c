@@ -243,6 +243,42 @@ bool furi_hal_nfc_listen(
     }
     return true;
 }
+bool furi_hal_nfc_listen_light(int timeout) {
+    rfalNfcState state = rfalNfcGetState();
+    if(state == RFAL_NFC_STATE_NOTINIT) {
+        rfalNfcInitialize();
+    } else if(state >= RFAL_NFC_STATE_ACTIVATED) {
+        rfalNfcDeactivate(false);
+    }
+    rfalLowPowerModeStop();
+    rfalNfcDiscoverParam params = {
+        .compMode = RFAL_COMPLIANCE_MODE_NFC,
+        .techs2Find = RFAL_NFC_TECH_NONE,
+        .totalDuration = 1000,
+        .devLimit = 1,
+        .wakeupEnabled = false,
+        .wakeupConfigDefault = true,
+        .nfcfBR = RFAL_BR_212,
+        .ap2pBR = RFAL_BR_424,
+        .maxBR = RFAL_BR_KEEP,
+        .GBLen = RFAL_NFCDEP_GB_MAX_LEN,
+        .notifyCb = NULL,
+        .activate_after_sak = false,
+    };
+    rfalNfcDiscover(&params);
+
+    uint32_t start = DWT->CYCCNT;
+    while(state != RFAL_NFC_STATE_ACTIVATED) {
+        rfalNfcWorker();
+        state = rfalNfcGetState();
+        if(DWT->CYCCNT - start > timeout * clocks_in_ms) {
+            rfalNfcDeactivate(true);
+            return false;
+        }
+        osDelay(1);
+    }
+    return true;
+}
 
 void rfal_interrupt_callback_handler() {
     osEventFlagsSet(event, EVENT_FLAG_INTERRUPT);
@@ -656,7 +692,7 @@ void techkom_signal_encode(TechkomSignal* techkom_signal, uint8_t* data) {
 
     //FURI_LOG_I("TECH", "Encoding signal");
     //FURI_LOG_I("TECH", "Encoding signal: edge_cnt = %d", techkom_signal->tx_signal->edge_cnt);
-    techkom_signal->tx_signal->start_level = true;
+    techkom_signal->tx_signal->start_level = false;
     //FURI_LOG_I("TECH", "Encoding signal: start_level = %d", techkom_signal->tx_signal->start_level);
     for(size_t cycles = 0; cycles < 5; cycles++){
         for(size_t i = 0; i < bits/8; i++) {
@@ -683,7 +719,9 @@ void techkom_signal_encode(TechkomSignal* techkom_signal, uint8_t* data) {
 
 bool furi_hal_nfc_techkom_tx_rx(FuriHalNfcTxRxContext* tx_rx, uint16_t timeout_ms){
     UNUSED(timeout_ms);
-    //FURI_LOG_I("TECH", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+    furi_assert(tx_rx->techkom_signal);
+
+    rfalLowPowerModeStop();
 
     platformDisableIrqCallback();
 
@@ -692,29 +730,26 @@ bool furi_hal_nfc_techkom_tx_rx(FuriHalNfcTxRxContext* tx_rx, uint16_t timeout_m
     // Reconfigure gpio
     furi_hal_spi_bus_handle_deinit(&furi_hal_spi_bus_handle_nfc);
     furi_hal_gpio_init(&gpio_spi_r_sck, GpioModeInput, GpioPullUp, GpioSpeedLow);
-    //furi_hal_gpio_init(&gpio_spi_r_miso, GpioModeInput, GpioPullUp, GpioSpeedLow);
+    furi_hal_gpio_init(&gpio_spi_r_miso, GpioModeInput, GpioPullUp, GpioSpeedLow);
     furi_hal_gpio_init(&gpio_nfc_cs, GpioModeInput, GpioPullUp, GpioSpeedLow);
     furi_hal_gpio_init(&gpio_spi_r_mosi, GpioModeOutputPushPull, GpioPullNo, GpioSpeedVeryHigh);
     furi_hal_gpio_write(&gpio_spi_r_mosi, false);
 
     // Send signal
-    //FURI_LOG_I("TECH", "Started encoding signal");
     techkom_signal_encode(tx_rx->techkom_signal, tx_rx->tx_data);
-    //FURI_LOG_I("TECH", "Finished encoding signal");
-    //FURI_LOG_I("TECH", "Starting send");
     digital_signal_send(tx_rx->techkom_signal->tx_signal, &gpio_spi_r_mosi);
-    //FURI_LOG_I("TECH", "Finished send");
-    // OK
     furi_hal_gpio_write(&gpio_spi_r_mosi, false);
-    //FURI_LOG_I("TECH", "Sent signal");
 
     // Configure gpio back to SPI and exit transparent
     furi_hal_spi_bus_handle_init(&furi_hal_spi_bus_handle_nfc);
-    //st25r3916ExecuteCommand(ST25R3916_CMD_UNMASK_RECEIVE_DATA);
+    // st25r3916ExecuteCommand(ST25R3916_CMD_UNMASK_RECEIVE_DATA);
 
-    //st25r3916ClearInterrupts();
+    // Manually wait for interrupt
+    furi_hal_gpio_init(&gpio_rfid_pull, GpioModeInput, GpioPullDown, GpioSpeedVeryHigh);
+    // st25r3916ClearAndEnableInterrupts(ST25R3916_IRQ_MASK_RXE);
+
+    st25r3916ClearInterrupts();
     platformEnableIrqCallback();
-    // \OK
 
     return true;
 }
@@ -725,6 +760,6 @@ void furi_hal_nfc_sleep() {
 }
 
 bool furi_hal_nfc_field_detect(){
-    return rfalIsExtFieldOn();
-    //return true;
+    //return rfalIsExtFieldOn();
+    return true;
 }

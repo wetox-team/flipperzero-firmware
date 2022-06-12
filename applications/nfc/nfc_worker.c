@@ -727,35 +727,35 @@ void nfc_worker_read_mifare_desfire(NfcWorker* nfc_worker) {
 
 static void techkom_add_bit(DigitalSignal* signal, uint8_t bit) {
     if (bit == 1) {
-        signal->start_level = true;
+        signal->start_level = false;
         signal->edge_timings[0] = PAUSE * Techkom_T_SIG;
         signal->edge_timings[1] = ONE_FIRST * Techkom_T_SIG;
         signal->edge_timings[2] = PAUSE * Techkom_T_SIG;
         signal->edge_timings[3] = ONE_SECOND * Techkom_T_SIG;
         signal->edge_cnt = 4;
     } else if (bit == 0){
-        signal->start_level = true;
+        signal->start_level = false;
         signal->edge_timings[0] = PAUSE * Techkom_T_SIG;
         signal->edge_timings[1] = ZERO_FIRST * Techkom_T_SIG;
         signal->edge_timings[2] = PAUSE * Techkom_T_SIG;
         signal->edge_timings[3] = ZERO_SECOND * Techkom_T_SIG;
         signal->edge_cnt = 4;
     } else if (bit == ONE_END){
-        signal->start_level = true;
+        signal->start_level = false;
         signal->edge_timings[0] = PAUSE * Techkom_T_SIG;
         signal->edge_timings[1] = ONE_FIRST * Techkom_T_SIG;
         signal->edge_timings[2] = PAUSE * Techkom_T_SIG;
         signal->edge_timings[3] = ONE_SECOND_END * Techkom_T_SIG;
         signal->edge_cnt = 4;
     } else if (bit == ZERO_END){
-        signal->start_level = true;
+        signal->start_level = false;
         signal->edge_timings[0] = PAUSE * Techkom_T_SIG;
         signal->edge_timings[1] = ZERO_FIRST * Techkom_T_SIG;
         signal->edge_timings[2] = PAUSE * Techkom_T_SIG;
         signal->edge_timings[3] = ZERO_SECOND_END * Techkom_T_SIG;
         signal->edge_cnt = 4;
     } else if (bit == END){
-        signal->start_level = false;
+        signal->start_level = true;
         signal->edge_timings[0] = 41225 * Techkom_T_SIG;
         signal->edge_cnt = 1;
     }
@@ -801,10 +801,24 @@ void nfc_worker_emulate_techkom(NfcWorker* nfc_worker) {
     tx_rx.techkom_signal = techkom_signal_alloc();
 
     while(nfc_worker->state == NfcWorkerStateEmulateTechkom) {
-        if(furi_hal_nfc_field_detect()) {
+        rfalNfcState state = rfalNfcGetState();
+        if(state == RFAL_NFC_STATE_NOTINIT) {
+            rfalNfcInitialize();
+        } else if(state >= RFAL_NFC_STATE_ACTIVATED) {
+            rfalNfcDeactivate(false);
+        }
+        rfalLowPowerModeStop();
+        uint8_t uid[] = {0x01, 0x02, 0x03, 0x04};
+        unsigned char atqa[] = {0x00, 0x04};
+        uint8_t sak = 0x20;
+        
+        
+        if(furi_hal_nfc_listen(
+               uid, 4, atqa, sak, true, 300)) {
             techkom_emulator(&emulator, &tx_rx);
         }
     }
+    techkom_signal_free(tx_rx.techkom_signal);
 }
 
 
