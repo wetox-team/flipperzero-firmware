@@ -658,7 +658,7 @@ void techkom_signal_encode(TechkomSignal* techkom_signal, uint8_t* data) {
     //FURI_LOG_I("TECH", "Encoding signal: edge_cnt = %d", techkom_signal->tx_signal->edge_cnt);
     techkom_signal->tx_signal->start_level = true;
     //FURI_LOG_I("TECH", "Encoding signal: start_level = %d", techkom_signal->tx_signal->start_level);
-    for(size_t cycles = 0; cycles < 3; cycles++){
+    for(size_t cycles = 0; cycles < 5; cycles++){
         for(size_t i = 0; i < bits/8; i++) {
             for (size_t j = 0; j < 8; j++){
                 if(FURI_BIT(data[i], j)) {
@@ -726,4 +726,5 @@ void furi_hal_nfc_sleep() {
 
 bool furi_hal_nfc_field_detect(){
     return rfalIsExtFieldOn();
+    //return true;
 }

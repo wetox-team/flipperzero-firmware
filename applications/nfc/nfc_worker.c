@@ -18,6 +18,14 @@
 #define ZERO_END 3
 #define END 4
 
+#define PAUSE 108
+#define ONE_FIRST 1139
+#define ONE_SECOND 569
+#define ONE_SECOND_END 692
+#define ZERO_FIRST 406
+#define ZERO_SECOND 1274
+#define ZERO_SECOND_END 1410
+
 /***************************** NFC Worker API *******************************/
 
 NfcWorker* nfc_worker_alloc() {
@@ -718,37 +726,37 @@ void nfc_worker_read_mifare_desfire(NfcWorker* nfc_worker) {
 
 
 static void techkom_add_bit(DigitalSignal* signal, uint8_t bit) {
-    if(bit == 1) {
-        signal->start_level = false;
-        signal->edge_timings[0] = 231 * Techkom_T_SIG;
-        signal->edge_timings[1] = 1051 * Techkom_T_SIG;
-        signal->edge_timings[2] = 231 * Techkom_T_SIG;
-        signal->edge_timings[3] = 462 * Techkom_T_SIG;
+    if (bit == 1) {
+        signal->start_level = true;
+        signal->edge_timings[0] = PAUSE * Techkom_T_SIG;
+        signal->edge_timings[1] = ONE_FIRST * Techkom_T_SIG;
+        signal->edge_timings[2] = PAUSE * Techkom_T_SIG;
+        signal->edge_timings[3] = ONE_SECOND * Techkom_T_SIG;
         signal->edge_cnt = 4;
     } else if (bit == 0){
-        signal->start_level = false;
-        signal->edge_timings[0] = 231 * Techkom_T_SIG;
-        signal->edge_timings[1] = 298 * Techkom_T_SIG;
-        signal->edge_timings[2] = 231 * Techkom_T_SIG;
-        signal->edge_timings[3] = 1193 * Techkom_T_SIG;
+        signal->start_level = true;
+        signal->edge_timings[0] = PAUSE * Techkom_T_SIG;
+        signal->edge_timings[1] = ZERO_FIRST * Techkom_T_SIG;
+        signal->edge_timings[2] = PAUSE * Techkom_T_SIG;
+        signal->edge_timings[3] = ZERO_SECOND * Techkom_T_SIG;
         signal->edge_cnt = 4;
     } else if (bit == ONE_END){
-        signal->start_level = false;
-        signal->edge_timings[0] = 231 * Techkom_T_SIG;
-        signal->edge_timings[1] = 1051 * Techkom_T_SIG;
-        signal->edge_timings[2] = 231 * Techkom_T_SIG;
-        signal->edge_timings[3] = 583 * Techkom_T_SIG;
+        signal->start_level = true;
+        signal->edge_timings[0] = PAUSE * Techkom_T_SIG;
+        signal->edge_timings[1] = ONE_FIRST * Techkom_T_SIG;
+        signal->edge_timings[2] = PAUSE * Techkom_T_SIG;
+        signal->edge_timings[3] = ONE_SECOND_END * Techkom_T_SIG;
         signal->edge_cnt = 4;
     } else if (bit == ZERO_END){
-        signal->start_level = false;
-        signal->edge_timings[0] = 231 * Techkom_T_SIG;
-        signal->edge_timings[1] = 298 * Techkom_T_SIG;
-        signal->edge_timings[2] = 231 * Techkom_T_SIG;
-        signal->edge_timings[3] = 1315 * Techkom_T_SIG;
+        signal->start_level = true;
+        signal->edge_timings[0] = PAUSE * Techkom_T_SIG;
+        signal->edge_timings[1] = ZERO_FIRST * Techkom_T_SIG;
+        signal->edge_timings[2] = PAUSE * Techkom_T_SIG;
+        signal->edge_timings[3] = ZERO_SECOND_END * Techkom_T_SIG;
         signal->edge_cnt = 4;
     } else if (bit == END){
         signal->start_level = false;
-        signal->edge_timings[0] = 42500 * Techkom_T_SIG;
+        signal->edge_timings[0] = 41225 * Techkom_T_SIG;
         signal->edge_cnt = 1;
     }
 }
@@ -771,11 +779,11 @@ TechkomSignal* techkom_signal_alloc() {
     techkom_signal->end_zero = digital_signal_alloc(20);
     techkom_signal->end = digital_signal_alloc(20);
     techkom_add_bit(techkom_signal->one, 1);
-    techkom_add_bit(techkom_signal->zero, 2);
+    techkom_add_bit(techkom_signal->zero, 0);
     techkom_add_bit(techkom_signal->end_one, ONE_END);
     techkom_add_bit(techkom_signal->end_zero, ZERO_END);
     techkom_add_bit(techkom_signal->end, END);
-    techkom_signal->tx_signal = digital_signal_alloc(1024);
+    techkom_signal->tx_signal = digital_signal_alloc(2048);
 
     return techkom_signal;
 }
@@ -787,6 +795,8 @@ void nfc_worker_emulate_techkom(NfcWorker* nfc_worker) {
     FuriHalNfcTxRxContext tx_rx;
     TechkomEmulator emulator = {
         .cuid = {0xFF, 0xFF, 0xC6, 0x31, 0x70, 0x47, 0xE0, 0x34},
+        //.cuid = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+        //.cuid = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
     };
     tx_rx.techkom_signal = techkom_signal_alloc();
 
