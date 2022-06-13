@@ -704,7 +704,7 @@ void techkom_signal_encode(TechkomSignal* techkom_signal, uint8_t* data) {
 
     //FURI_LOG_I("TECH", "Encoding signal");
     //FURI_LOG_I("TECH", "Encoding signal: edge_cnt = %d", techkom_signal->tx_signal->edge_cnt);
-    techkom_signal->tx_signal->start_level = false;
+    techkom_signal->tx_signal->start_level = true;
     //FURI_LOG_I("TECH", "Encoding signal: start_level = %d", techkom_signal->tx_signal->start_level);
     for(size_t cycles = 0; cycles < 5; cycles++){
         for(size_t i = 0; i < bits/8; i++) {

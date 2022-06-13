@@ -727,35 +727,35 @@ void nfc_worker_read_mifare_desfire(NfcWorker* nfc_worker) {
 
 static void techkom_add_bit(DigitalSignal* signal, uint8_t bit) {
     if (bit == 1) {
-        signal->start_level = false;
+        signal->start_level = true;
         signal->edge_timings[0] = PAUSE * Techkom_T_SIG;
         signal->edge_timings[1] = ONE_FIRST * Techkom_T_SIG;
         signal->edge_timings[2] = PAUSE * Techkom_T_SIG;
         signal->edge_timings[3] = ONE_SECOND * Techkom_T_SIG;
         signal->edge_cnt = 4;
     } else if (bit == 0){
-        signal->start_level = false;
+        signal->start_level = true;
         signal->edge_timings[0] = PAUSE * Techkom_T_SIG;
         signal->edge_timings[1] = ZERO_FIRST * Techkom_T_SIG;
         signal->edge_timings[2] = PAUSE * Techkom_T_SIG;
         signal->edge_timings[3] = ZERO_SECOND * Techkom_T_SIG;
         signal->edge_cnt = 4;
     } else if (bit == ONE_END){
-        signal->start_level = false;
+        signal->start_level = true;
         signal->edge_timings[0] = PAUSE * Techkom_T_SIG;
         signal->edge_timings[1] = ONE_FIRST * Techkom_T_SIG;
         signal->edge_timings[2] = PAUSE * Techkom_T_SIG;
         signal->edge_timings[3] = ONE_SECOND_END * Techkom_T_SIG;
         signal->edge_cnt = 4;
     } else if (bit == ZERO_END){
-        signal->start_level = false;
+        signal->start_level = true;
         signal->edge_timings[0] = PAUSE * Techkom_T_SIG;
         signal->edge_timings[1] = ZERO_FIRST * Techkom_T_SIG;
         signal->edge_timings[2] = PAUSE * Techkom_T_SIG;
         signal->edge_timings[3] = ZERO_SECOND_END * Techkom_T_SIG;
         signal->edge_cnt = 4;
     } else if (bit == END){
-        signal->start_level = true;
+        signal->start_level = false;
         signal->edge_timings[0] = 41225 * Techkom_T_SIG;
         signal->edge_cnt = 1;
     }
