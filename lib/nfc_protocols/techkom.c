@@ -13,12 +13,12 @@ TechkomSignal* techkom_signal_alloc() {
     techkom_signal->end_one = digital_signal_alloc(20);
     techkom_signal->end_zero = digital_signal_alloc(20);
     techkom_signal->end = digital_signal_alloc(20);
-    techkom_add_bit(techkom_signal->one, 1);
-    techkom_add_bit(techkom_signal->zero, 0);
+    techkom_add_bit(techkom_signal->one, ONE);
+    techkom_add_bit(techkom_signal->zero, ZERO);
     techkom_add_bit(techkom_signal->end_one, ONE_END);
     techkom_add_bit(techkom_signal->end_zero, ZERO_END);
     techkom_add_bit(techkom_signal->end, QUIET);
-    techkom_signal->tx_signal = digital_signal_alloc(2048);
+    techkom_signal->tx_signal = digital_signal_alloc(4096);
 
     return techkom_signal;
 }
@@ -85,11 +85,11 @@ void techkom_signal_encode(TechkomSignal* techkom_signal, uint8_t* data) {
     furi_assert(techkom_signal);
     furi_assert(data);
 
-    uint16_t bits = sizeof(data) * 8;
+    uint16_t bits = sizeof(data) * 16;
 
     techkom_signal->tx_signal->start_level = true;
 
-    for(size_t cycles = 0; cycles < 5; cycles++) {
+    for(size_t cycles = 0; cycles < 10; cycles++) {
         for(size_t i = 0; i < bits / 8; i++) {
             for(size_t j = 0; j < 8; j++) {
                 if(FURI_BIT(data[i], j)) {
