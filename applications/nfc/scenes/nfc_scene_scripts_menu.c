@@ -42,11 +42,7 @@ void nfc_scene_scripts_menu_on_enter(void* context) {
         nfc_scene_scripts_menu_submenu_callback,
         nfc);
     submenu_add_item(
-        submenu,
-        "Read Techkom",
-        SubmenuIndexTechkom,
-        nfc_scene_scripts_menu_submenu_callback,
-        nfc);
+        submenu, "Read Techkom", SubmenuIndexTechkom, nfc_scene_scripts_menu_submenu_callback, nfc);
     submenu_set_selected_item(
         nfc->submenu, scene_manager_get_scene_state(nfc->scene_manager, NfcSceneScriptsMenu));
     view_dispatcher_switch_to_view(nfc->view_dispatcher, NfcViewMenu);
@@ -77,7 +73,7 @@ bool nfc_scene_scripts_menu_on_event(void* context, SceneManagerEvent event) {
                 nfc->scene_manager, NfcSceneScriptsMenu, SubmenuIndexMifareDesfire);
             scene_manager_next_scene(nfc->scene_manager, NfcSceneReadMifareDesfire);
             consumed = true;
-        } else if (event.event == SubmenuIndexTechkom) {
+        } else if(event.event == SubmenuIndexTechkom) {
             scene_manager_set_scene_state(
                 nfc->scene_manager, NfcSceneScriptsMenu, SubmenuIndexTechkom);
             scene_manager_next_scene(nfc->scene_manager, NfcSceneReadTechkom);

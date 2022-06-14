@@ -1,5 +1,4 @@
 #pragma once
-#include <digital_signal.h>
 
 typedef struct {
     uint8_t cuid[8];

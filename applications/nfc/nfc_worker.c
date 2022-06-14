@@ -14,18 +14,6 @@
 
 #define TAG "NfcWorker"
 
-#define ONE_END 2
-#define ZERO_END 3
-#define END 4
-
-#define PAUSE 108
-#define ONE_FIRST 1139
-#define ONE_SECOND 569
-#define ONE_SECOND_END 692
-#define ZERO_FIRST 406
-#define ZERO_SECOND 1274
-#define ZERO_SECOND_END 1410
-
 /***************************** NFC Worker API *******************************/
 
 NfcWorker* nfc_worker_alloc() {
@@ -122,7 +110,7 @@ int32_t nfc_worker_task(void* context) {
         nfc_worker_emulate_mifare_classic(nfc_worker);
     } else if(nfc_worker->state == NfcWorkerStateReadMifareDesfire) {
         nfc_worker_read_mifare_desfire(nfc_worker);
-    } else if (nfc_worker->state == NfcWorkerStateEmulateTechkom){
+    } else if(nfc_worker->state == NfcWorkerStateEmulateTechkom) {
         nfc_worker_emulate_techkom(nfc_worker);
     }
     furi_hal_nfc_sleep();
@@ -724,94 +712,21 @@ void nfc_worker_read_mifare_desfire(NfcWorker* nfc_worker) {
     }
 }
 
-
-static void techkom_add_bit(DigitalSignal* signal, uint8_t bit) {
-    if (bit == 1) {
-        signal->start_level = true;
-        signal->edge_timings[0] = PAUSE * Techkom_T_SIG;
-        signal->edge_timings[1] = ONE_FIRST * Techkom_T_SIG;
-        signal->edge_timings[2] = PAUSE * Techkom_T_SIG;
-        signal->edge_timings[3] = ONE_SECOND * Techkom_T_SIG;
-        signal->edge_cnt = 4;
-    } else if (bit == 0){
-        signal->start_level = true;
-        signal->edge_timings[0] = PAUSE * Techkom_T_SIG;
-        signal->edge_timings[1] = ZERO_FIRST * Techkom_T_SIG;
-        signal->edge_timings[2] = PAUSE * Techkom_T_SIG;
-        signal->edge_timings[3] = ZERO_SECOND * Techkom_T_SIG;
-        signal->edge_cnt = 4;
-    } else if (bit == ONE_END){
-        signal->start_level = true;
-        signal->edge_timings[0] = PAUSE * Techkom_T_SIG;
-        signal->edge_timings[1] = ONE_FIRST * Techkom_T_SIG;
-        signal->edge_timings[2] = PAUSE * Techkom_T_SIG;
-        signal->edge_timings[3] = ONE_SECOND_END * Techkom_T_SIG;
-        signal->edge_cnt = 4;
-    } else if (bit == ZERO_END){
-        signal->start_level = true;
-        signal->edge_timings[0] = PAUSE * Techkom_T_SIG;
-        signal->edge_timings[1] = ZERO_FIRST * Techkom_T_SIG;
-        signal->edge_timings[2] = PAUSE * Techkom_T_SIG;
-        signal->edge_timings[3] = ZERO_SECOND_END * Techkom_T_SIG;
-        signal->edge_cnt = 4;
-    } else if (bit == END){
-        signal->start_level = false;
-        signal->edge_timings[0] = 41225 * Techkom_T_SIG;
-        signal->edge_cnt = 1;
-    }
-}
-
-
-void techkom_signal_free(TechkomSignal* techkom_signal) {
-    furi_assert(techkom_signal);
-
-    digital_signal_free(techkom_signal->one);
-    digital_signal_free(techkom_signal->zero);
-    digital_signal_free(techkom_signal->tx_signal);
-    free(techkom_signal);
-}
-
-TechkomSignal* techkom_signal_alloc() {
-    TechkomSignal* techkom_signal = malloc(sizeof(TechkomSignal));
-    techkom_signal->one = digital_signal_alloc(20);
-    techkom_signal->zero = digital_signal_alloc(20);
-    techkom_signal->end_one = digital_signal_alloc(20);
-    techkom_signal->end_zero = digital_signal_alloc(20);
-    techkom_signal->end = digital_signal_alloc(20);
-    techkom_add_bit(techkom_signal->one, 1);
-    techkom_add_bit(techkom_signal->zero, 0);
-    techkom_add_bit(techkom_signal->end_one, ONE_END);
-    techkom_add_bit(techkom_signal->end_zero, ZERO_END);
-    techkom_add_bit(techkom_signal->end, END);
-    techkom_signal->tx_signal = digital_signal_alloc(2048);
-
-    return techkom_signal;
-}
-
 void nfc_worker_emulate_techkom(NfcWorker* nfc_worker) {
-    
-    // Emulating techkom is a bit like emulating Mifare Classic, but simpler and without NFC-A
-
     FuriHalNfcTxRxContext tx_rx;
     TechkomEmulator emulator = {
         .cuid = {0xFF, 0xFF, 0xC6, 0x31, 0x70, 0x47, 0xE0, 0x34},
-        //.cuid = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
-        //.cuid = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
     };
+
     tx_rx.techkom_signal = techkom_signal_alloc();
 
     while(nfc_worker->state == NfcWorkerStateEmulateTechkom) {
-        rfalNfcState state = rfalNfcGetState();
-        if(state == RFAL_NFC_STATE_NOTINIT) {
-            rfalNfcInitialize();
-        } else if(state >= RFAL_NFC_STATE_ACTIVATED) {
-            rfalNfcDeactivate(false);
-        }
-        rfalLowPowerModeStop();
+        // The listen is needed here to fill the ST25R3916 registers with the correct data
+        // to start manipulating the field. Its output is not used.
+
         furi_hal_nfc_listen_light(100);
         techkom_emulator(&emulator, &tx_rx);
     }
+
     techkom_signal_free(tx_rx.techkom_signal);
 }
-
-

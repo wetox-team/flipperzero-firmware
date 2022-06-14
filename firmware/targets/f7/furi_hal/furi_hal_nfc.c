@@ -7,6 +7,7 @@
 #include <m-string.h>
 
 #include <lib/digital_signal/digital_signal.h>
+#include <lib/nfc_protocols/techkom.h>
 
 #include <furi_hal_delay.h>
 
@@ -245,7 +246,7 @@ bool furi_hal_nfc_listen(
 }
 bool furi_hal_nfc_listen_light(int timeout) {
     UNUSED(timeout);
-    uint8_t uid[] = {0x12 ,0x34 ,0x56 ,0x78};
+    uint8_t uid[] = {0x12, 0x34, 0x56, 0x78};
     uint8_t uid_len = sizeof(uid);
     uint8_t atqa[2] = {0x00, 0x00};
     uint8_t sak = 0x00;
@@ -693,43 +694,7 @@ ReturnCode furi_hal_nfc_exchange_full(
     return err;
 }
 
-void techkom_signal_encode(TechkomSignal* techkom_signal, uint8_t* data) {
-    furi_assert(techkom_signal);
-    furi_assert(data);
-    // Print data in hex
-    //FURI_LOG_I(TAG, "Data: %02X %02X %02X %02X %02X %02X %02X %02X", data[0], data[1], data[2],
-    //           data[3], data[4], data[5], data[6], data[7]);
-
-    uint16_t bits = 64;
-
-    //FURI_LOG_I("TECH", "Encoding signal");
-    //FURI_LOG_I("TECH", "Encoding signal: edge_cnt = %d", techkom_signal->tx_signal->edge_cnt);
-    techkom_signal->tx_signal->start_level = true;
-    //FURI_LOG_I("TECH", "Encoding signal: start_level = %d", techkom_signal->tx_signal->start_level);
-    for(size_t cycles = 0; cycles < 5; cycles++){
-        for(size_t i = 0; i < bits/8; i++) {
-            for (size_t j = 0; j < 8; j++){
-                if(FURI_BIT(data[i], j)) {
-                    if (j == 7){
-                        digital_signal_append(techkom_signal->tx_signal, techkom_signal->end_one);
-                    } else {
-                        digital_signal_append(techkom_signal->tx_signal, techkom_signal->one);
-                    }
-                } else {
-                    if (j == 7){
-                        digital_signal_append(techkom_signal->tx_signal, techkom_signal->end_zero);
-                    } else {
-                        digital_signal_append(techkom_signal->tx_signal, techkom_signal->zero);
-                    }
-                }
-            }
-        }
-        digital_signal_append(techkom_signal->tx_signal, techkom_signal->end);
-    }
-}
-
-
-bool furi_hal_nfc_techkom_tx_rx(FuriHalNfcTxRxContext* tx_rx, uint16_t timeout_ms){
+bool furi_hal_nfc_techkom_tx_rx(FuriHalNfcTxRxContext* tx_rx, uint16_t timeout_ms) {
     UNUSED(timeout_ms);
     furi_assert(tx_rx->techkom_signal);
 
@@ -771,7 +736,7 @@ void furi_hal_nfc_sleep() {
     rfalLowPowerModeStart();
 }
 
-bool furi_hal_nfc_field_detect(){
+bool furi_hal_nfc_field_detect() {
     //return rfalIsExtFieldOn();
     return true;
 }

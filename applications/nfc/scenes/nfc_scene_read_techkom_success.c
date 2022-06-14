@@ -70,8 +70,7 @@ void nfc_scene_read_techkom_success_on_enter(void* context) {
 bool nfc_scene_read_techkom_success_on_event(void* context, SceneManagerEvent event) {
     Nfc* nfc = context;
     bool consumed = false;
-    uint32_t state =
-        scene_manager_get_scene_state(nfc->scene_manager, NfcSceneReadTechkomSuccess);
+    uint32_t state = scene_manager_get_scene_state(nfc->scene_manager, NfcSceneReadTechkomSuccess);
 
     if(event.type == SceneManagerEventTypeCustom) {
         if(state == ReadTechkomStateShowUID && event.event == DialogExResultLeft) {

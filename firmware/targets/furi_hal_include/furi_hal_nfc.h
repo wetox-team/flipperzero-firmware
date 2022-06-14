@@ -11,7 +11,7 @@
 #include <stdint.h>
 
 #include <lib/nfc_protocols/nfca.h>
-#include <techkom_structs.h>
+#include <lib/nfc_protocols/techkom_transport.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,7 +81,6 @@ typedef struct {
     uint8_t atqa[2];
     uint8_t sak;
 } FuriHalNfcDevData;
-
 
 typedef struct {
     uint8_t tx_data[FURI_HAL_NFC_DATA_BUFF_SIZE];
