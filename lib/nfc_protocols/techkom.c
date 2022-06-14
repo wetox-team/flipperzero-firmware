@@ -17,7 +17,7 @@ TechkomSignal* techkom_signal_alloc() {
     techkom_add_bit(techkom_signal->zero, 0);
     techkom_add_bit(techkom_signal->end_one, ONE_END);
     techkom_add_bit(techkom_signal->end_zero, ZERO_END);
-    techkom_add_bit(techkom_signal->end, END);
+    techkom_add_bit(techkom_signal->end, QUIET);
     techkom_signal->tx_signal = digital_signal_alloc(2048);
 
     return techkom_signal;
@@ -45,7 +45,6 @@ void techkom_emulator(TechkomEmulator* emulator, FuriHalNfcTxRxContext* tx_rx) {
 
 void techkom_add_bit(DigitalSignal* signal, uint8_t bit) {
     furi_assert(signal);
-    furi_assert(bit >= ONE && bit <= END);
 
     if(bit == ONE) {
         signal->start_level = true;
