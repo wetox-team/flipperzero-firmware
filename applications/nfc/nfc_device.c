@@ -642,10 +642,10 @@ static bool nfc_device_save_mifare_classic_data(FlipperFormat* file, NfcDevice* 
     do {
         if(!flipper_format_write_comment_cstr(file, "Mifare Classic specific data")) break;
 
-        if(data->type == MfClassicType1k) {
+        if(data->type == MfClassicType1k && !dev->dev_data.is_troika) {
             if(!flipper_format_write_string_cstr(file, "Mifare Classic type", "1K")) break;
             blocks = 64;
-        } else if(data->type == MfClassicType4k) {
+        } else if(data->type == MfClassicType4k && !dev->dev_data.is_troika) {
             if(!flipper_format_write_string_cstr(file, "Mifare Classic type", "4K")) break;
             blocks = 256;
         } else if(dev->dev_data.is_troika && data->type == MfClassicType1k) {

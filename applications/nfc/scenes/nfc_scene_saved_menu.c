@@ -87,7 +87,7 @@ bool nfc_scene_saved_menu_on_event(void* context, SceneManagerEvent event) {
             scene_manager_next_scene(nfc->scene_manager, NfcSceneDeviceInfo);
             consumed = true;
         } else if(event.event == SubmenuIndexTroikaInfo) {
-            scene_manager_next_scene(nfc->scene_manager, NfcSceneTroika);
+            scene_manager_next_scene(nfc->scene_manager, NfcSceneTroikaSuccess);
             consumed = true;
         } else if(event.event == SubmenuIndexRestoreOriginal) {
             if(!nfc_device_restore(nfc->dev, true)) {

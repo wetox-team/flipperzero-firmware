@@ -1,14 +1,17 @@
 #include "../nfc_i.h"
 #include <dolphin/dolphin.h>
 
-void nfc_scene_troika_data_widget_callback(GuiButtonType result, InputType type, void* context) {
+void nfc_scene_read_troika_data_success_widget_callback(
+    GuiButtonType result,
+    InputType type,
+    void* context) {
     Nfc* nfc = context;
     if(type == InputTypeShort) {
         view_dispatcher_send_custom_event(nfc->view_dispatcher, result);
     }
 }
 
-void nfc_scene_troika_data_on_enter(void* context) {
+void nfc_scene_read_troika_data_success_on_enter(void* context) {
     Nfc* nfc = context;
     MfClassicData* troika_data = &nfc->dev->dev_data.mf_classic_data;
     FuriHalNfcDevData* nfc_data = &nfc->dev->dev_data.nfc_data;
@@ -19,9 +22,17 @@ void nfc_scene_troika_data_on_enter(void* context) {
     widget_add_frame_element(nfc->widget, 0, 0, 128, 64, 6);
     // Add buttons
     widget_add_button_element(
-        nfc->widget, GuiButtonTypeLeft, "Back", nfc_scene_troika_data_widget_callback, nfc);
+        nfc->widget,
+        GuiButtonTypeLeft,
+        "Back",
+        nfc_scene_read_troika_data_success_widget_callback,
+        nfc);
     widget_add_button_element(
-        nfc->widget, GuiButtonTypeRight, "Save", nfc_scene_troika_data_widget_callback, nfc);
+        nfc->widget,
+        GuiButtonTypeRight,
+        "Save",
+        nfc_scene_read_troika_data_success_widget_callback,
+        nfc);
     // Add card name
     widget_add_string_element(nfc->widget, 64, 3, AlignCenter, AlignTop, FontSecondary, "TROIKA");
     // Add card number
@@ -126,29 +137,29 @@ void nfc_scene_troika_data_on_enter(void* context) {
     view_dispatcher_switch_to_view(nfc->view_dispatcher, NfcViewWidget);
 }
 
-bool nfc_scene_troika_data_on_event(void* context, SceneManagerEvent event) {
+bool nfc_scene_read_troika_data_success_on_event(void* context, SceneManagerEvent event) {
     Nfc* nfc = context;
     bool consumed = false;
 
     if(event.type == SceneManagerEventTypeCustom) {
         if(event.event == GuiButtonTypeLeft) {
             consumed = scene_manager_search_and_switch_to_previous_scene(
-                nfc->scene_manager, NfcSceneReadEmvAppSuccess);
+                nfc->scene_manager, NfcSceneTroikaSuccess);
         } else if(event.event == GuiButtonTypeRight) {
             // Clear device name
             nfc_device_set_name(nfc->dev, "");
-            nfc->dev->format = NfcDeviceSaveFormatBankCard;
+            nfc->dev->format = NfcDeviceSaveFormatMifareClassic;
             scene_manager_next_scene(nfc->scene_manager, NfcSceneSaveName);
             consumed = true;
         }
     } else if(event.type == SceneManagerEventTypeBack) {
         consumed = scene_manager_search_and_switch_to_previous_scene(
-            nfc->scene_manager, NfcSceneReadEmvAppSuccess);
+            nfc->scene_manager, NfcSceneTroikaSuccess);
     }
     return consumed;
 }
 
-void nfc_scene_troika_data_on_exit(void* context) {
+void nfc_scene_read_troika_data_success_on_exit(void* context) {
     Nfc* nfc = context;
 
     // Clear view

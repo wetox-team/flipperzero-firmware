@@ -28,13 +28,19 @@ void nfc_scene_device_info_bank_card_callback(GuiButtonType result, InputType ty
     }
 }
 
+uint8_t decToHex(uint8_t value) {
+    return ((value / 10) << 4) | (value % 10);
+}
+
 void nfc_scene_device_info_on_enter(void* context) {
     Nfc* nfc = context;
 
-    bool data_display_supported = (nfc->dev->format == NfcDeviceSaveFormatUid) ||
-                                  (nfc->dev->format == NfcDeviceSaveFormatMifareUl) ||
-                                  (nfc->dev->format == NfcDeviceSaveFormatMifareDesfire) ||
-                                  (nfc->dev->format == NfcDeviceSaveFormatBankCard);
+    bool data_display_supported =
+        (nfc->dev->format == NfcDeviceSaveFormatUid) ||
+        (nfc->dev->format == NfcDeviceSaveFormatMifareUl) ||
+        (nfc->dev->format == NfcDeviceSaveFormatMifareDesfire) ||
+        (nfc->dev->format == NfcDeviceSaveFormatBankCard) ||
+        (nfc->dev->format == NfcDeviceSaveFormatMifareClassic && nfc->dev->dev_data.is_troika);
     // Setup Custom Widget view
     widget_add_text_box_element(
         nfc->widget, 0, 0, 128, 22, AlignCenter, AlignTop, nfc->dev->dev_name, false);
@@ -160,6 +166,73 @@ void nfc_scene_device_info_on_enter(void* context) {
             string_clear(currency_name);
         }
         string_clear(display_str);
+    } else if(nfc->dev->format == NfcDeviceSaveFormatMifareClassic && nfc->dev->dev_data.is_troika) {
+        MfClassicData* troika_data = &nfc->dev->dev_data.mf_classic_data;
+        BankCard* bank_card = nfc->bank_card;
+        bank_card_set_name(bank_card, "TROIKA");
+        // Get troika number
+        // ----------------
+        // CURSED CODE BEGINS HERE
+        // ----------------
+
+        // Get number from block 8 bytes 3-7
+        uint8_t number[] = {0x00, 0x00, 0x00, 0x00};
+
+        for(uint8_t i = 0; i < 4; i++) {
+            number[i] = troika_data->block[8 * 4].value[i + 3];
+        }
+
+        // Remove the second half of the last byte
+        number[3] &= 0xF0;
+
+        // Convert number to decimal
+        uint32_t number_int = 0;
+        for(uint8_t i = 0; i < 4; i++) {
+            number_int <<= 8;
+            number_int |= number[i];
+        }
+        number_int >>= 4;
+
+        // Represent the decimal number in  hex
+        // 0123456789 becomes 0x01, 0x23, 0x45, 0x67, 0x89
+        uint8_t number_hex[5];
+        FURI_LOG_D("MF", "Number: %d", number_int);
+
+        for(int i = 4; i >= 0; i--) {
+            number_hex[i] = decToHex(number_int % 100);
+            number_int /= 100;
+        }
+
+        // Print the hex number
+        for(int i = 0; i < 5; i++) {
+            FURI_LOG_D("MF", "Number: %02x", number_hex[i]);
+        }
+
+        bank_card_set_number(bank_card, number_hex, 5);
+
+        string_t display_str;
+        string_init(display_str);
+
+        // Show balance
+        uint8_t balance_arr[] = {0x00, 0x00};
+        memcpy(balance_arr, &troika_data->block[8 * 4 + 1].value[5], 2);
+        uint16_t balance = 0;
+        for(uint8_t i = 0; i < 2; i++) {
+            balance <<= 8;
+            balance |= balance_arr[i];
+        }
+        balance = balance / 25;
+        string_printf(display_str, "BAL:%d", balance);
+        bank_card_set_currency_name(bank_card, string_get_cstr(display_str));
+
+        // Show last validator ID
+        uint8_t last_id[2];
+        memcpy(last_id, &troika_data->block[1 + (8 * 4 + 1)].value[0], 2);
+        string_t last_id_str;
+        string_init_printf(last_id_str, "VAL ID:%d", *last_id);
+        bank_card_set_country_name(bank_card, string_get_cstr(last_id_str));
+        string_clear(last_id_str);
+        bank_card_set_back_callback(bank_card, nfc_scene_device_info_bank_card_callback, nfc);
     }
     scene_manager_set_scene_state(nfc->scene_manager, NfcSceneDeviceInfo, NfcSceneDeviceInfoUid);
     view_dispatcher_switch_to_view(nfc->view_dispatcher, NfcViewWidget);
@@ -192,6 +265,11 @@ bool nfc_scene_device_info_on_event(void* context, SceneManagerEvent event) {
             } else if(nfc->dev->format == NfcDeviceSaveFormatMifareDesfire) {
                 scene_manager_next_scene(nfc->scene_manager, NfcSceneMifareDesfireData);
                 consumed = true;
+            } else if(nfc->dev->format == NfcDeviceSaveFormatMifareClassic) {
+                scene_manager_set_scene_state(
+                    nfc->scene_manager, NfcSceneDeviceInfo, NfcSceneDeviceInfoData);
+                view_dispatcher_switch_to_view(nfc->view_dispatcher, NfcViewBankCard);
+                consumed = true;
             }
         } else if(state == NfcSceneDeviceInfoData && event.event == NfcCustomEventViewExit) {
             scene_manager_set_scene_state(
@@ -221,6 +299,8 @@ void nfc_scene_device_info_on_exit(void* context) {
         text_box_reset(nfc->text_box);
         string_reset(nfc->text_box_store);
     } else if(nfc->dev->format == NfcDeviceSaveFormatBankCard) {
+        bank_card_clear(nfc->bank_card);
+    } else if(nfc->dev->format == NfcDeviceSaveFormatMifareClassic) {
         bank_card_clear(nfc->bank_card);
     }
 }

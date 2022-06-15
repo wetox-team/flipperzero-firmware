@@ -59,7 +59,7 @@ bool nfc_scene_mifare_classic_menu_on_event(void* context, SceneManagerEvent eve
         } else if(event.event == SubmenuIndexTroika) {
             scene_manager_set_scene_state(
                 nfc->scene_manager, NfcSceneMifareUlMenu, SubmenuIndexTroika);
-            scene_manager_next_scene(nfc->scene_manager, NfcSceneTroika);
+            scene_manager_next_scene(nfc->scene_manager, NfcSceneTroikaSuccess);
             consumed = true;
         }
     } else if(event.type == SceneManagerEventTypeBack) {
