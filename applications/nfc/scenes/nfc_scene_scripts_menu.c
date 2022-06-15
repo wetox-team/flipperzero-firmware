@@ -4,6 +4,7 @@ enum SubmenuIndex {
     SubmenuIndexBankCard,
     SubmenuIndexMifareUltralight,
     SubmenuIdexReadMfClassic,
+    SubmenuIndexReadTroika,
     SubmenuIndexMifareDesfire,
 };
 
@@ -36,6 +37,12 @@ void nfc_scene_scripts_menu_on_enter(void* context) {
         nfc);
     submenu_add_item(
         submenu,
+        "Read Troika card",
+        SubmenuIndexReadTroika,
+        nfc_scene_scripts_menu_submenu_callback,
+        nfc);
+    submenu_add_item(
+        submenu,
         "Read Mifare DESFire",
         SubmenuIndexMifareDesfire,
         nfc_scene_scripts_menu_submenu_callback,
@@ -64,6 +71,11 @@ bool nfc_scene_scripts_menu_on_event(void* context, SceneManagerEvent event) {
             scene_manager_set_scene_state(
                 nfc->scene_manager, NfcSceneScriptsMenu, SubmenuIdexReadMfClassic);
             scene_manager_next_scene(nfc->scene_manager, NfcSceneReadMifareClassic);
+            consumed = true;
+        } else if(event.event == SubmenuIndexReadTroika) {
+            scene_manager_set_scene_state(
+                nfc->scene_manager, NfcSceneScriptsMenu, SubmenuIndexReadTroika);
+            scene_manager_next_scene(nfc->scene_manager, NfcSceneReadTroika);
             consumed = true;
         } else if(event.event == SubmenuIndexMifareDesfire) {
             scene_manager_set_scene_state(

@@ -359,7 +359,7 @@ void nfc_worker_mifare_classic_dict_attack(NfcWorker* nfc_worker) {
 
     // Open dictionary
     nfc_worker->dict_stream = file_stream_alloc(nfc_worker->storage);
-    if(!nfc_mf_classic_dict_open_file(nfc_worker->dict_stream)) {
+    if(!nfc_mf_classic_dict_open_file(nfc_worker->dict_stream, nfc_worker->dev_data->is_troika)) {
         event = NfcWorkerEventNoDictFound;
         nfc_worker->callback(event, nfc_worker->context);
         nfc_mf_classic_dict_close_file(nfc_worker->dict_stream);
@@ -402,43 +402,86 @@ void nfc_worker_mifare_classic_dict_attack(NfcWorker* nfc_worker) {
             nfc_worker->callback(event, nfc_worker->context);
             mf_classic_auth_init_context(&auth_ctx, reader.cuid, curr_sector);
             bool sector_key_found = false;
-            while(nfc_mf_classic_dict_get_next_key(nfc_worker->dict_stream, &curr_key)) {
-                furi_hal_nfc_sleep();
-                if(furi_hal_nfc_activate_nfca(300, &reader.cuid)) {
-                    if(!card_found_notified) {
-                        if(reader.type == MfClassicType1k) {
-                            event = NfcWorkerEventDetectedClassic1k;
-                        } else {
-                            event = NfcWorkerEventDetectedClassic4k;
+            if(nfc_worker->dev_data->is_troika) {
+                stream_seek(nfc_worker->dict_stream, (curr_sector)*26, StreamOffsetFromStart);
+                while(nfc_mf_classic_dict_get_next_key(nfc_worker->dict_stream, &curr_key)) {
+                    furi_hal_nfc_sleep();
+                    if(furi_hal_nfc_activate_nfca(300, &reader.cuid)) {
+                        if(!card_found_notified) {
+                            if(reader.type == MfClassicType1k) {
+                                event = NfcWorkerEventDetectedClassic1k;
+                            } else {
+                                event = NfcWorkerEventDetectedClassic4k;
+                            }
+                            nfc_worker->callback(event, nfc_worker->context);
+                            card_found_notified = true;
+                            card_removed_notified = false;
                         }
-                        nfc_worker->callback(event, nfc_worker->context);
-                        card_found_notified = true;
-                        card_removed_notified = false;
+                        FURI_LOG_D(
+                            TAG,
+                            "Try to auth to sector %d with key %04lx%08lx",
+                            curr_sector,
+                            (uint32_t)(curr_key >> 32),
+                            (uint32_t)curr_key);
+                        if(mf_classic_auth_troika(&tx_rx_ctx, &auth_ctx, curr_key)) {
+                            sector_key_found = true;
+                            if((auth_ctx.key_a != MF_CLASSIC_NO_KEY) &&
+                               (auth_ctx.key_b != MF_CLASSIC_NO_KEY))
+                                break;
+                        }
+                    } else {
+                        // Notify that no tag is availalble
+                        FURI_LOG_D(TAG, "Can't find tags");
+                        if(!card_removed_notified) {
+                            event = NfcWorkerEventNoCardDetected;
+                            nfc_worker->callback(event, nfc_worker->context);
+                            card_removed_notified = true;
+                            card_found_notified = false;
+                        }
                     }
-                    FURI_LOG_D(
-                        TAG,
-                        "Try to auth to sector %d with key %04lx%08lx",
-                        curr_sector,
-                        (uint32_t)(curr_key >> 32),
-                        (uint32_t)curr_key);
-                    if(mf_classic_auth_attempt(&tx_rx_ctx, &auth_ctx, curr_key)) {
-                        sector_key_found = true;
-                        if((auth_ctx.key_a != MF_CLASSIC_NO_KEY) &&
-                           (auth_ctx.key_b != MF_CLASSIC_NO_KEY))
-                            break;
-                    }
-                } else {
-                    // Notify that no tag is availalble
-                    FURI_LOG_D(TAG, "Can't find tags");
-                    if(!card_removed_notified) {
-                        event = NfcWorkerEventNoCardDetected;
-                        nfc_worker->callback(event, nfc_worker->context);
-                        card_removed_notified = true;
-                        card_found_notified = false;
-                    }
+                    if(nfc_worker->state != NfcWorkerStateReadMifareClassic) break;
+                    osDelay(1);
                 }
-                if(nfc_worker->state != NfcWorkerStateReadMifareClassic) break;
-                osDelay(1);
+
+            } else {
+                while(nfc_mf_classic_dict_get_next_key(nfc_worker->dict_stream, &curr_key)) {
+                    furi_hal_nfc_sleep();
+                    if(furi_hal_nfc_activate_nfca(300, &reader.cuid)) {
+                        if(!card_found_notified) {
+                            if(reader.type == MfClassicType1k) {
+                                event = NfcWorkerEventDetectedClassic1k;
+                            } else {
+                                event = NfcWorkerEventDetectedClassic4k;
+                            }
+                            nfc_worker->callback(event, nfc_worker->context);
+                            card_found_notified = true;
+                            card_removed_notified = false;
+                        }
+                        FURI_LOG_D(
+                            TAG,
+                            "Try to auth to sector %d with key %04lx%08lx",
+                            curr_sector,
+                            (uint32_t)(curr_key >> 32),
+                            (uint32_t)curr_key);
+                        if(mf_classic_auth_attempt(&tx_rx_ctx, &auth_ctx, curr_key)) {
+                            sector_key_found = true;
+                            if((auth_ctx.key_a != MF_CLASSIC_NO_KEY) &&
+                               (auth_ctx.key_b != MF_CLASSIC_NO_KEY))
+                                break;
+                        }
+                    } else {
+                        // Notify that no tag is availalble
+                        FURI_LOG_D(TAG, "Can't find tags");
+                        if(!card_removed_notified) {
+                            event = NfcWorkerEventNoCardDetected;
+                            nfc_worker->callback(event, nfc_worker->context);
+                            card_removed_notified = true;
+                            card_found_notified = false;
+                        }
+                    }
+                    if(nfc_worker->state != NfcWorkerStateReadMifareClassic) break;
+                    osDelay(1);
+                }
             }
             if(nfc_worker->state != NfcWorkerStateReadMifareClassic) break;
             if(sector_key_found) {

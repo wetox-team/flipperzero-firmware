@@ -361,6 +361,45 @@ bool mf_classic_auth_attempt(
 
     return found_key;
 }
+bool mf_classic_auth_troika(
+    FuriHalNfcTxRxContext* tx_rx,
+    MfClassicAuthContext* auth_ctx,
+    uint64_t key) {
+    furi_assert(tx_rx);
+    furi_assert(auth_ctx);
+    bool found_key = false;
+
+    Crypto1 crypto;
+    if(auth_ctx->key_a == MF_CLASSIC_NO_KEY) {
+        // Try AUTH with key A
+        if(mf_classic_auth(
+               tx_rx,
+               auth_ctx->cuid,
+               mf_classic_get_first_block_num_of_sector(auth_ctx->sector),
+               key,
+               MfClassicKeyA,
+               &crypto)) {
+            auth_ctx->key_a = key;
+            found_key = true;
+        }
+    }
+
+    if(auth_ctx->key_b == MF_CLASSIC_NO_KEY) {
+        // Try AUTH with key B
+        if(mf_classic_auth(
+               tx_rx,
+               auth_ctx->cuid,
+               mf_classic_get_first_block_num_of_sector(auth_ctx->sector),
+               key,
+               MfClassicKeyB,
+               &crypto)) {
+            auth_ctx->key_b = key;
+            found_key = true;
+        }
+    }
+
+    return found_key;
+}
 
 bool mf_classic_read_block(
     FuriHalNfcTxRxContext* tx_rx,

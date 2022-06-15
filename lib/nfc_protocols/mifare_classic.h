@@ -94,6 +94,11 @@ bool mf_classic_auth_attempt(
     MfClassicAuthContext* auth_ctx,
     uint64_t key);
 
+bool mf_classic_auth_troika(
+    FuriHalNfcTxRxContext* tx_rx,
+    MfClassicAuthContext* auth_ctx,
+    uint64_t key);
+
 void mf_classic_reader_add_sector(
     MfClassicReader* reader,
     uint8_t sector,

@@ -43,6 +43,7 @@ typedef struct {
     FuriHalNfcDevData nfc_data;
     NfcProtocol protocol;
     NfcReaderRequestData reader_data;
+    bool is_troika;
     union {
         EmvData emv_data;
         MfUltralightData mf_ul_data;
