@@ -37,13 +37,22 @@ NfcWorker* nfc_worker_alloc() {
     }
     nfc_worker_change_state(nfc_worker, NfcWorkerStateReady);
 
+    if(furi_hal_rtc_is_flag_set(FuriHalRtcFlagDebug)) {
+        nfc_worker->debug_pcap_worker = nfc_debug_pcap_alloc(nfc_worker->storage);
+    }
+
     return nfc_worker;
 }
 
 void nfc_worker_free(NfcWorker* nfc_worker) {
     furi_assert(nfc_worker);
+
     furi_thread_free(nfc_worker->thread);
+
     furi_record_close("storage");
+
+    if(nfc_worker->debug_pcap_worker) nfc_debug_pcap_free(nfc_worker->debug_pcap_worker);
+
     free(nfc_worker);
 }
 
@@ -157,7 +166,7 @@ void nfc_worker_detect(NfcWorker* nfc_worker) {
 
 void nfc_worker_emulate(NfcWorker* nfc_worker) {
     FuriHalNfcTxRxContext tx_rx = {};
-    nfc_debug_pcap_prepare_tx_rx(&tx_rx, nfc_worker->storage, true);
+    nfc_debug_pcap_prepare_tx_rx(nfc_worker->debug_pcap_worker, &tx_rx, true);
     FuriHalNfcDevData* data = &nfc_worker->dev_data->nfc_data;
     NfcReaderRequestData* reader_data = &nfc_worker->dev_data->reader_data;
 
@@ -180,7 +189,7 @@ void nfc_worker_emulate(NfcWorker* nfc_worker) {
 
 void nfc_worker_read_emv_app(NfcWorker* nfc_worker) {
     FuriHalNfcTxRxContext tx_rx = {};
-    nfc_debug_pcap_prepare_tx_rx(&tx_rx, nfc_worker->storage, false);
+    nfc_debug_pcap_prepare_tx_rx(nfc_worker->debug_pcap_worker, &tx_rx, false);
     EmvApplication emv_app = {};
     NfcDeviceData* result = nfc_worker->dev_data;
     FuriHalNfcDevData* nfc_data = &nfc_worker->dev_data->nfc_data;
@@ -212,7 +221,7 @@ void nfc_worker_read_emv_app(NfcWorker* nfc_worker) {
 
 void nfc_worker_read_emv(NfcWorker* nfc_worker) {
     FuriHalNfcTxRxContext tx_rx = {};
-    nfc_debug_pcap_prepare_tx_rx(&tx_rx, nfc_worker->storage, false);
+    nfc_debug_pcap_prepare_tx_rx(nfc_worker->debug_pcap_worker, &tx_rx, false);
     EmvApplication emv_app = {};
     NfcDeviceData* result = nfc_worker->dev_data;
     FuriHalNfcDevData* nfc_data = &nfc_worker->dev_data->nfc_data;
@@ -261,7 +270,7 @@ void nfc_worker_read_emv(NfcWorker* nfc_worker) {
 
 void nfc_worker_emulate_apdu(NfcWorker* nfc_worker) {
     FuriHalNfcTxRxContext tx_rx = {};
-    nfc_debug_pcap_prepare_tx_rx(&tx_rx, nfc_worker->storage, true);
+    nfc_debug_pcap_prepare_tx_rx(nfc_worker->debug_pcap_worker, &tx_rx, true);
     FuriHalNfcDevData params = {
         .uid = {0xCF, 0x72, 0xd4, 0x40},
         .uid_len = 4,
@@ -286,7 +295,7 @@ void nfc_worker_emulate_apdu(NfcWorker* nfc_worker) {
 
 void nfc_worker_read_mifare_ultralight(NfcWorker* nfc_worker) {
     FuriHalNfcTxRxContext tx_rx = {};
-    nfc_debug_pcap_prepare_tx_rx(&tx_rx, nfc_worker->storage, false);
+    nfc_debug_pcap_prepare_tx_rx(nfc_worker->debug_pcap_worker, &tx_rx, false);
     MfUltralightReader reader = {};
     MfUltralightData data = {};
     NfcDeviceData* result = nfc_worker->dev_data;
@@ -351,7 +360,7 @@ void nfc_worker_emulate_mifare_ul(NfcWorker* nfc_worker) {
 void nfc_worker_mifare_classic_dict_attack(NfcWorker* nfc_worker) {
     furi_assert(nfc_worker->callback);
     FuriHalNfcTxRxContext tx_rx_ctx = {};
-    nfc_debug_pcap_prepare_tx_rx(&tx_rx_ctx, nfc_worker->storage, false);
+    nfc_debug_pcap_prepare_tx_rx(nfc_worker->debug_pcap_worker, &tx_rx_ctx, false);
     MfClassicAuthContext auth_ctx = {};
     MfClassicReader reader = {};
     uint64_t curr_key = 0;
@@ -494,7 +503,7 @@ void nfc_worker_mifare_classic_dict_attack(NfcWorker* nfc_worker) {
 
 void nfc_worker_emulate_mifare_classic(NfcWorker* nfc_worker) {
     FuriHalNfcTxRxContext tx_rx = {};
-    nfc_debug_pcap_prepare_tx_rx(&tx_rx, nfc_worker->storage, true);
+    nfc_debug_pcap_prepare_tx_rx(nfc_worker->debug_pcap_worker, &tx_rx, true);
     FuriHalNfcDevData* nfc_data = &nfc_worker->dev_data->nfc_data;
     MfClassicEmulator emulator = {
         .cuid = nfc_util_bytes2num(&nfc_data->uid[nfc_data->uid_len - 4], 4),
@@ -523,7 +532,7 @@ void nfc_worker_emulate_mifare_classic(NfcWorker* nfc_worker) {
 
 void nfc_worker_read_mifare_desfire(NfcWorker* nfc_worker) {
     FuriHalNfcTxRxContext tx_rx = {};
-    nfc_debug_pcap_prepare_tx_rx(&tx_rx, nfc_worker->storage, false);
+    nfc_debug_pcap_prepare_tx_rx(nfc_worker->debug_pcap_worker, &tx_rx, false);
     NfcDeviceData* result = nfc_worker->dev_data;
     nfc_device_data_clear(result);
     MifareDesfireData* data = &result->mf_df_data;
