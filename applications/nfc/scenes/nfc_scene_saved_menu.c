@@ -5,6 +5,7 @@ enum SubmenuIndex {
     SubmenuIndexEdit,
     SubmenuIndexDelete,
     SubmenuIndexInfo,
+    SubmenuIndexTroikaInfo,
     SubmenuIndexRestoreOriginal,
 };
 
@@ -32,6 +33,14 @@ void nfc_scene_saved_menu_on_enter(void* context) {
         nfc->dev->format == NfcDeviceSaveFormatMifareClassic) {
         submenu_add_item(
             submenu, "Emulate", SubmenuIndexEmulate, nfc_scene_saved_menu_submenu_callback, nfc);
+    }
+    if(nfc->dev->dev_data.is_troika) {
+        submenu_add_item(
+            submenu,
+            "See Troika data",
+            SubmenuIndexTroikaInfo,
+            nfc_scene_saved_menu_submenu_callback,
+            nfc);
     }
     submenu_add_item(
         submenu, "Edit UID and Name", SubmenuIndexEdit, nfc_scene_saved_menu_submenu_callback, nfc);
@@ -76,6 +85,9 @@ bool nfc_scene_saved_menu_on_event(void* context, SceneManagerEvent event) {
             consumed = true;
         } else if(event.event == SubmenuIndexInfo) {
             scene_manager_next_scene(nfc->scene_manager, NfcSceneDeviceInfo);
+            consumed = true;
+        } else if(event.event == SubmenuIndexTroikaInfo) {
+            scene_manager_next_scene(nfc->scene_manager, NfcSceneTroika);
             consumed = true;
         } else if(event.event == SubmenuIndexRestoreOriginal) {
             if(!nfc_device_restore(nfc->dev, true)) {

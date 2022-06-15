@@ -3,6 +3,7 @@
 enum SubmenuIndex {
     SubmenuIndexSave,
     SubmenuIndexEmulate,
+    SubmenuIndexTroika,
 };
 
 void nfc_scene_mifare_classic_menu_submenu_callback(void* context, uint32_t index) {
@@ -23,6 +24,14 @@ void nfc_scene_mifare_classic_menu_on_enter(void* context) {
         SubmenuIndexEmulate,
         nfc_scene_mifare_classic_menu_submenu_callback,
         nfc);
+    if(nfc->dev->dev_data.is_troika) {
+        submenu_add_item(
+            submenu,
+            "See Troika data",
+            SubmenuIndexTroika,
+            nfc_scene_mifare_classic_menu_submenu_callback,
+            nfc);
+    }
     submenu_set_selected_item(
         nfc->submenu, scene_manager_get_scene_state(nfc->scene_manager, NfcSceneMifareUlMenu));
 
@@ -46,6 +55,11 @@ bool nfc_scene_mifare_classic_menu_on_event(void* context, SceneManagerEvent eve
             scene_manager_set_scene_state(
                 nfc->scene_manager, NfcSceneMifareUlMenu, SubmenuIndexEmulate);
             scene_manager_next_scene(nfc->scene_manager, NfcSceneEmulateMifareClassic);
+            consumed = true;
+        } else if(event.event == SubmenuIndexTroika) {
+            scene_manager_set_scene_state(
+                nfc->scene_manager, NfcSceneMifareUlMenu, SubmenuIndexTroika);
+            scene_manager_next_scene(nfc->scene_manager, NfcSceneTroika);
             consumed = true;
         }
     } else if(event.type == SceneManagerEventTypeBack) {

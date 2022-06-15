@@ -648,6 +648,14 @@ static bool nfc_device_save_mifare_classic_data(FlipperFormat* file, NfcDevice* 
         } else if(data->type == MfClassicType4k) {
             if(!flipper_format_write_string_cstr(file, "Mifare Classic type", "4K")) break;
             blocks = 256;
+        } else if(dev->dev_data.is_troika && data->type == MfClassicType1k) {
+            if(!flipper_format_write_string_cstr(file, "Mifare Classic type", "Troika 1K")) break;
+            blocks = 64;
+        } else if(dev->dev_data.is_troika && data->type == MfClassicType4k) {
+            if(!flipper_format_write_string_cstr(file, "Mifare Classic type", "Troika 4K")) break;
+            blocks = 256;
+        } else {
+            break;
         }
         if(!flipper_format_write_uint32(
                file, "Data format version", &nfc_mifare_classic_data_format_version, 1))
@@ -690,9 +698,19 @@ static bool nfc_device_load_mifare_classic_data(FlipperFormat* file, NfcDevice* 
         if(!flipper_format_read_string(file, "Mifare Classic type", temp_str)) break;
         if(!string_cmp_str(temp_str, "1K")) {
             data->type = MfClassicType1k;
+            dev->dev_data.is_troika = false;
             data_blocks = 64;
         } else if(!string_cmp_str(temp_str, "4K")) {
             data->type = MfClassicType4k;
+            dev->dev_data.is_troika = false;
+            data_blocks = 256;
+        } else if(!string_cmp_str(temp_str, "Troika 1K")) {
+            data->type = MfClassicType4k;
+            dev->dev_data.is_troika = true;
+            data_blocks = 64;
+        } else if(!string_cmp_str(temp_str, "Troika 4K")) {
+            data->type = MfClassicType4k;
+            dev->dev_data.is_troika = true;
             data_blocks = 256;
         } else {
             break;
