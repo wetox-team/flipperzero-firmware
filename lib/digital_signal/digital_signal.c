@@ -5,14 +5,57 @@
 #include <stm32wbxx_ll_tim.h>
 #include <math.h>
 
+#pragma GCC optimize("O3,unroll-loops,Ofast")
+
 #define F_TIM (64000000.0)
-#define T_TIM (1.0 / F_TIM)
+#define T_TIM 1562 //15.625 ns *100
+#define T_TIM_DIV2 781 //15.625 ns / 2 *100
+
+#define STRICT_ASSIGN(type, lval, rval) ((lval) = (type)(rval))
+
+static inline float inline_modff(float x, float* iptr) {
+    union {
+        float x;
+        uint32_t n;
+    } u = {x};
+    uint32_t mask;
+    int e;
+
+    e = (int)(u.n >> 23 & 0xff) - 0x7f;
+
+    /* no fractional part */
+    if(e >= 23) {
+        *iptr = x;
+        if(e == 0x80 && u.n << 9 != 0) { /* nan */
+            return x;
+        }
+        u.n &= 0x80000000;
+        return u.x;
+    }
+    /* no integral part */
+    if(e < 0) {
+        u.n &= 0x80000000;
+        *iptr = u.x;
+        return x;
+    }
+
+    mask = 0x007fffff >> e;
+    if((u.n & mask) == 0) {
+        *iptr = x;
+        u.n &= 0x80000000;
+        return u.x;
+    }
+    u.n &= ~mask;
+    *iptr = u.x;
+    STRICT_ASSIGN(float, x, x - *iptr);
+    return x;
+}
 
 DigitalSignal* digital_signal_alloc(uint32_t max_edges_cnt) {
     DigitalSignal* signal = malloc(sizeof(DigitalSignal));
     signal->start_level = true;
     signal->edges_max_cnt = max_edges_cnt;
-    signal->edge_timings = malloc(max_edges_cnt * sizeof(float));
+    signal->edge_timings = malloc(max_edges_cnt * sizeof(uint32_t));
     signal->reload_reg_buff = malloc(max_edges_cnt * sizeof(uint32_t));
     signal->edge_cnt = 0;
 
@@ -69,7 +112,7 @@ uint32_t digital_signal_get_edges_cnt(DigitalSignal* signal) {
     return signal->edge_cnt;
 }
 
-float digital_signal_get_edge(DigitalSignal* signal, uint32_t edge_num) {
+uint32_t digital_signal_get_edge(DigitalSignal* signal, uint32_t edge_num) {
     furi_assert(signal);
     furi_assert(edge_num < signal->edge_cnt);
 
@@ -77,26 +120,25 @@ float digital_signal_get_edge(DigitalSignal* signal, uint32_t edge_num) {
 }
 
 static void digital_signal_prepare_arr(DigitalSignal* signal) {
-    float t_signal = 0;
-    float t_current = 0;
-    float r = 0;
-    float r_int = 0;
-    float r_dec = 0;
+    uint32_t t_signal_rest = signal->edge_timings[0];
+    uint32_t r_count_tick_arr = 0;
+    uint32_t r_rest_div = 0;
 
     for(size_t i = 0; i < signal->edge_cnt - 1; i++) {
-        t_signal += signal->edge_timings[i];
-        r = (t_signal - t_current) / T_TIM;
-        r_dec = modff(r, &r_int);
-        if(r_dec < 0.5f) {
-            signal->reload_reg_buff[i] = (uint32_t)r_int - 1;
+        r_count_tick_arr = t_signal_rest / T_TIM;
+        r_rest_div = t_signal_rest % T_TIM;
+        t_signal_rest = signal->edge_timings[i + 1] + r_rest_div;
+
+        if(r_rest_div < T_TIM_DIV2) {
+            signal->reload_reg_buff[i] = r_count_tick_arr - 1;
         } else {
-            signal->reload_reg_buff[i] = (uint32_t)r_int;
+            signal->reload_reg_buff[i] = r_count_tick_arr;
+            t_signal_rest -= T_TIM;
         }
-        t_current += (signal->reload_reg_buff[i] + 1) * T_TIM;
     }
 }
 
-bool digital_signal_send(DigitalSignal* signal, const GpioPin* gpio) {
+uint32_t digital_signal_send(DigitalSignal* signal, const GpioPin* gpio) {
     furi_assert(signal);
     furi_assert(gpio);
 
@@ -130,7 +172,9 @@ bool digital_signal_send(DigitalSignal* signal, const GpioPin* gpio) {
     LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_1);
 
     // Init timer arr register buffer and DMA channel
+    uint32_t time = DWT->CYCCNT;
     digital_signal_prepare_arr(signal);
+    time = DWT->CYCCNT - time;
     dma_config.MemoryOrM2MDstAddress = (uint32_t)signal->reload_reg_buff;
     dma_config.PeriphOrM2MSrcAddress = (uint32_t) & (TIM2->ARR);
     dma_config.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
@@ -169,5 +213,5 @@ bool digital_signal_send(DigitalSignal* signal, const GpioPin* gpio) {
     LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_1);
     LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_2);
 
-    return true;
+    return time;
 }
