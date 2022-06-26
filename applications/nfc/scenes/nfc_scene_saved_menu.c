@@ -34,14 +34,14 @@ void nfc_scene_saved_menu_on_enter(void* context) {
         submenu_add_item(
             submenu, "Emulate", SubmenuIndexEmulate, nfc_scene_saved_menu_submenu_callback, nfc);
     }
-    if(nfc->dev->dev_data.is_troika) {
-        submenu_add_item(
-            submenu,
-            "See Troika data",
-            SubmenuIndexTroikaInfo,
-            nfc_scene_saved_menu_submenu_callback,
-            nfc);
-    }
+    // if(nfc->dev->dev_data.is_troika) {
+    //     submenu_add_item(
+    //         submenu,
+    //         "See Troika data",
+    //         SubmenuIndexTroikaInfo,
+    //         nfc_scene_saved_menu_submenu_callback,
+    //         nfc);
+    // }
     submenu_add_item(
         submenu, "Edit UID and Name", SubmenuIndexEdit, nfc_scene_saved_menu_submenu_callback, nfc);
     submenu_add_item(
