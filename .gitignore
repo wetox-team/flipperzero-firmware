@@ -47,3 +47,11 @@ build/
 
 # Toolchain
 toolchain*/
+.vs/flipperzero-firmware/v16/.suo
+.vs/flipperzero-firmware/v16/Browse.VC.db
+.vs/flipperzero-firmware/v16/Browse.VC.db-shm
+.vs/flipperzero-firmware/v16/Browse.VC.db-wal
+.vs/flipperzero-firmware/v16/Browse.VC.opendb
+.vs/ProjectSettings.json
+.vs/slnx.sqlite
+Azz_Build_with_docker.bat
