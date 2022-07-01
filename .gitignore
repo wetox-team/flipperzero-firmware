@@ -55,3 +55,7 @@ toolchain*/
 .vs/ProjectSettings.json
 .vs/slnx.sqlite
 Azz_Build_with_docker.bat
+.vs/VSWorkspaceState.json
+.vs/flipperzero-firmware/v16/ipch/AutoPCH/f796914b5f4945d/DESKTOP_SETTINGS_SCENE.ipch
+.vs/flipperzero-firmware/v16/ipch/AutoPCH/bd589f3e68a86abe/STATISTICSFUNCTIONS.ipch
+.vs/flipperzero-firmware/v16/ipch/AutoPCH/2661d0af153d3bde/RFID_READER.ipch

@@ -59,16 +59,16 @@ void power_draw_battery_callback(Canvas* canvas, void* context) {
             if(power->info.charge <= 10) {
                 canvas_draw_icon(canvas, 1, 1, &I_BatteryFace_00_22x6);
             }
-			if(power->info.charge > 10) {
+			if((power->info.charge > 10) && (power->info.charge <= 30)) {
                 canvas_draw_icon(canvas, 1, 1, &I_BatteryFace_20_22x6);
             }
-            if(power->info.charge > 30) {
+            if((power->info.charge > 30) && (power->info.charge <= 50)) {
                 canvas_draw_icon(canvas, 1, 1, &I_BatteryFace_40_22x6);
             }
-            if(power->info.charge > 50) {
+            if((power->info.charge > 50) && (power->info.charge <= 70)) {
                 canvas_draw_icon(canvas, 1, 1, &I_BatteryFace_60_22x6);
             }
-            if(power->info.charge > 70) {
+            if((power->info.charge > 70) && (power->info.charge <= 90)) {
                 canvas_draw_icon(canvas, 1, 1, &I_BatteryFace_80_22x6);
             }
             if(power->info.charge > 90) {

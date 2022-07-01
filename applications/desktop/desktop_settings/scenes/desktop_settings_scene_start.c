@@ -7,11 +7,13 @@
 #define SCENE_EVENT_SELECT_FAVORITE_PRIMARY 0
 #define SCENE_EVENT_SELECT_FAVORITE_SECONDARY 1
 #define SCENE_EVENT_SELECT_PIN_SETUP 2
-#define SCENE_EVENT_SELECT_AUTO_LOCK_DELAY 3
-#define SCENE_EVENT_SELECT_BATTERY_DISPLAY 4
+#define SCENE_EVENT_SELECT_BATTERY_DISPLAY 3
+#define SCENE_EVENT_SELECT_AUTO_LOCK_DELAY 4
+
+
 
 #define AUTO_LOCK_DELAY_COUNT 6
-#define BATTERY_VIEW_COUNT 6
+
 const char* const auto_lock_delay_text[AUTO_LOCK_DELAY_COUNT] = {
     "OFF",
     "30s",
@@ -21,20 +23,8 @@ const char* const auto_lock_delay_text[AUTO_LOCK_DELAY_COUNT] = {
     "10min",
 };
 
-const char* const battery_view_count_text[BATTERY_VIEW_COUNT] = {
-    "Bar",
-    "%", 
-    "Inv. %",
-    "Retro 3",
-    "Retro 5", 
-    "Faces",
-};
-
 const uint32_t auto_lock_delay_value[AUTO_LOCK_DELAY_COUNT] =
     {0, 30000, 60000, 120000, 300000, 600000};
-
-const uint32_t displayBatteryPercentage_value[BATTERY_VIEW_COUNT] =
-    {0, 1, 2, 3, 4, 5};
 
 static void desktop_settings_scene_start_var_list_enter_callback(void* context, uint32_t index) {
     DesktopSettingsApp* app = context;
@@ -49,14 +39,14 @@ static void desktop_settings_scene_start_auto_lock_delay_changed(VariableItem* i
     app->settings.auto_lock_delay_ms = auto_lock_delay_value[index];
 }
 
-static void desktop_settings_scene_start_battery_view_changed(VariableItem* item) {
+/*static void desktop_settings_scene_start_battery_view_changed(VariableItem* item) {
     DesktopSettingsApp* app = variable_item_get_context(item);
     uint8_t index = variable_item_get_current_value_index(item);
 
     variable_item_set_current_value_text(item, battery_view_count_text[index]);
     app->settings.displayBatteryPercentage = index;
 }
-
+*/ 
 void desktop_settings_scene_start_on_enter(void* context) {
     DesktopSettingsApp* app = context;
     VariableItemList* variable_item_list = app->variable_item_list;
@@ -69,6 +59,8 @@ void desktop_settings_scene_start_on_enter(void* context) {
     variable_item_list_add(variable_item_list, "Secondary Favorite App", 1, NULL, NULL);
 
     variable_item_list_add(variable_item_list, "PIN Setup", 1, NULL, NULL);
+
+    variable_item_list_add(variable_item_list, "Battery Display Style", 1, NULL, NULL);
 
     item = variable_item_list_add(
         variable_item_list,
@@ -83,20 +75,6 @@ void desktop_settings_scene_start_on_enter(void* context) {
         app->settings.auto_lock_delay_ms, auto_lock_delay_value, AUTO_LOCK_DELAY_COUNT);
     variable_item_set_current_value_index(item, value_index);
     variable_item_set_current_value_text(item, auto_lock_delay_text[value_index]);
-    
-    item = variable_item_list_add(
-        variable_item_list,
-        "Battery View",
-        BATTERY_VIEW_COUNT,
-        desktop_settings_scene_start_battery_view_changed,
-        app);
-
-    value_index = value_index_uint32(
-        app->settings.displayBatteryPercentage,
-        displayBatteryPercentage_value,
-        BATTERY_VIEW_COUNT);
-    variable_item_set_current_value_index(item, value_index);
-    variable_item_set_current_value_text(item, battery_view_count_text[value_index]);
 
     view_dispatcher_switch_to_view(app->view_dispatcher, DesktopSettingsAppViewVarItemList);
 }
@@ -121,10 +99,11 @@ bool desktop_settings_scene_start_on_event(void* context, SceneManagerEvent even
             scene_manager_next_scene(app->scene_manager, DesktopSettingsAppScenePinMenu);
             consumed = true;
             break;
-        case SCENE_EVENT_SELECT_AUTO_LOCK_DELAY:
+        case SCENE_EVENT_SELECT_BATTERY_DISPLAY:
+            scene_manager_next_scene(app->scene_manager, DesktopSettingsAppSceneBattery);
             consumed = true;
             break;
-        case SCENE_EVENT_SELECT_BATTERY_DISPLAY:
+        case SCENE_EVENT_SELECT_AUTO_LOCK_DELAY:
             consumed = true;
             break;
         }
