@@ -13,8 +13,11 @@
 #include <assets_dolphin_internal.h>
 #include <assets_dolphin_blocking.h>
 
+#include <applications/desktop/desktop_settings/desktop_settings.h>
+
 #define ANIMATION_META_FILE "meta.txt"
 #define ANIMATION_DIR "/ext/dolphin"
+#define ANIMATION_DIR_INVERTED "/ext/dolphin_inverted"
 #define ANIMATION_MANIFEST_FILE ANIMATION_DIR "/manifest.txt"
 #define TAG "AnimationStorage"
 
@@ -295,9 +298,16 @@ static bool animation_storage_load_frames(
     string_init(filename);
     size_t max_filesize = ROUND_UP_TO(width, 8) * height + 1;
 
+    DesktopSettings* desktop_settings = malloc(sizeof(DesktopSettings));
+    LOAD_DESKTOP_SETTINGS(desktop_settings);
+
     for(int i = 0; i < icon->frame_count; ++i) {
         frames_ok = false;
-        string_printf(filename, ANIMATION_DIR "/%s/frame_%d.bm", name, i);
+        if(!desktop_settings->is_inverted) {
+            string_printf(filename, ANIMATION_DIR "/%s/frame_%d.bm", name, i);
+        } else {
+            string_printf(filename, ANIMATION_DIR_INVERTED "/%s/frame_%d.bm", name, i);
+        }
 
         if(storage_common_stat(storage, string_get_cstr(filename), &file_info) != FSE_OK) break;
         if(file_info.size > max_filesize) {

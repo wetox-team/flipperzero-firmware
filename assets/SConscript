@@ -91,6 +91,17 @@ if assetsenv["IS_BASE_FIRMWARE"]:
         assetsenv.AlwaysBuild(dolphin_external)
     assetsenv.Alias("dolphin_ext", dolphin_external)
 
+    # Inverted dolphin animations
+    dolphin_external_inv = assetsenv.DolphinExtBuilder(
+        assetsenv.Dir("#/assets/resources/dolphin_inverted"),
+        assetsenv.Dir("#/assets/dolphin_inverted"),
+        DOLPHIN_RES_TYPE="external",
+    )
+    assetsenv.NoClean(dolphin_external_inv)
+    if assetsenv["FORCE"]:
+        assetsenv.AlwaysBuild(dolphin_external_inv)
+    assetsenv.Alias("dolphin_ext_inv", dolphin_external_inv)
+
     # Resources manifest
 
     resources = assetsenv.Command(
