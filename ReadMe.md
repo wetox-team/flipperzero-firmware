@@ -9,6 +9,7 @@ This is a modified unofficial version of the Flipper Zero firmware with some add
 
 * Flashing the firmware using the blackmagic board with `make blackmagic_load`
 * Removing T5577 passwords via the cli command `rfid clear_pass_t5577` using a dictionary attack
+* Support for inverted screens via a toggle in the desktop settings
 
 # Clone the Repository
 
