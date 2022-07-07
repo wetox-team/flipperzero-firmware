@@ -1,0 +1,25 @@
+App(
+    appid="tomodachi",
+    name="TomodachiSrv",
+    apptype=FlipperAppType.SERVICE,
+    entry_point="tomo_srv",
+    cdefines=["SRV_TOMO"],
+    requires=[
+        "cli",
+        "dialogs",
+    ],
+    provides=[
+        "tomo_start",
+    ],
+    stack_size=4 * 1024,
+    order=20,
+)
+
+App(
+    appid="tomo_start",
+    apptype=FlipperAppType.STARTUP,
+    entry_point="tomodachi_on_system_start",
+    order=70,
+)
+
+

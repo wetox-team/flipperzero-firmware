@@ -1,0 +1,39 @@
+#pragma once
+#include <furi.h>
+#include <lib/subghz/subghz_tx_rx_worker.h>
+
+#define WORKER_BUSY 0x01
+#define WORKER_IDLE 0x00
+
+#define VERSION 0x00
+#define TTL 0x08
+
+#define VERSION_POS 0
+#define TYPE_POS 1
+#define TTL_POS 2
+
+#define PARAMS_COUNT 3
+
+#define MESSAGE_MAX_LEN 250
+#define COMPOSED_MAX_LEN (MESSAGE_MAX_LEN + PARAMS_COUNT)
+
+
+typedef struct {
+  uint32_t frequency;
+  void* callback;
+  SubGhzTxRxWorker* subghz_txrx;
+  FuriThread* thread;
+  volatile bool running;
+  uint8_t state;
+} FlipperCommsWorker;
+
+typedef void (*CommsRxCb)(void* message);
+
+FlipperCommsWorker* flipper_comms_alloc(uint32_t frequency);
+bool flipper_comms_send(FlipperCommsWorker* worker, uint8_t* message, size_t message_len);
+uint32_t flipper_comms_read(FlipperCommsWorker* worker, uint8_t* message);
+bool flipper_comms_set_callback(FlipperCommsWorker* worker, void* callback);
+bool flipper_comms_start_thread(FlipperCommsWorker* worker);
+bool flipper_comms_stop_thread(FlipperCommsWorker* worker);
+bool flipper_comms_free(FlipperCommsWorker* worker);
+uint8_t* flipper_comms_compose(uint8_t* message, size_t message_len);

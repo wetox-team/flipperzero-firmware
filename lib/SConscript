@@ -14,6 +14,7 @@ env.Append(
         "lib/toolbox",
         "lib/u8g2",
         "lib/update_util",
+        "lib/flipper_comms"
     ]
 )
 
@@ -50,6 +51,7 @@ env.Append(
 #    update_util
 #    heatshrink
 #    nanopb
+#    flipper_comms
 # apps
 #    app-scened-template
 #    callback-connector

@@ -1,5 +1,5 @@
 V:0
-T:1655152832
+T:1657046925
 D:badusb
 D:dolphin
 D:infrared
@@ -7,6 +7,7 @@ D:music_player
 D:nfc
 D:subghz
 D:u2f
+F:6391eedaea9075e43960ebc08c910543:10244:.DS_Store
 F:0e41ba26498b7511d7c9e6e6b5e3b149:1592:badusb/demo_macos.txt
 F:e538ad2ce5a06ec45e1b5b24824901b1:1552:badusb/demo_windows.txt
 D:dolphin/L1_Boxing_128x64
@@ -25,6 +26,7 @@ D:dolphin/L2_Soldering_128x64
 D:dolphin/L3_Furippa3_128x64
 D:dolphin/L3_Hijack_radio_128x64
 D:dolphin/L3_Lab_research_128x54
+F:5600cadd49299aa0adaadf611ec53744:10244:dolphin/.DS_Store
 F:d1148ab5354eaf4fa7f959589d840932:1563:dolphin/manifest.txt
 F:d37be8444102ec5cde5fe3a85d55b57d:481:dolphin/L1_Boxing_128x64/frame_0.bm
 F:54fb07443bc153ded9589b74d23b4263:461:dolphin/L1_Boxing_128x64/frame_1.bm

@@ -9,6 +9,7 @@ env.Append(
         "#/lib/nanopb",
         "#/lib/nfc_protocols",
         "#/lib/u8g2",
+        "#/lib/flipper_comms",
     ],
     CPPDEFINES=[
         "PB_ENABLE_MALLOC",
@@ -25,6 +26,7 @@ libs_recurse = [
     "digital_signal",
     "micro-ecc",
     "nfc_protocols",
+    "flipper_comms",
     "one_wire",
     "u8g2",
     "update_util",

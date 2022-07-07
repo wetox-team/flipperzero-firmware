@@ -28,6 +28,7 @@ struct SubGhzTxRxWorker {
 };
 
 bool subghz_tx_rx_worker_write(SubGhzTxRxWorker* instance, uint8_t* data, size_t size) {
+    FURI_LOG_I(TAG, "Writing %d bytes", size);
     furi_assert(instance);
     bool ret = false;
     size_t stream_tx_free_byte = xStreamBufferSpacesAvailable(instance->stream_tx);
