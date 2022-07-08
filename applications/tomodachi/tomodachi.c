@@ -16,6 +16,8 @@
 #define VERSION 1
 #define TTL 2
 
+#define MESSAGE_MAX_LENGTH 63
+
 // Tomodachi is a service that provides a way to discover and communicate with other devices.
 
 // We advertise our presence to other devices every 5 seconds.
@@ -27,14 +29,13 @@
 
 Tomodachi* tomo_alloc() {
     Tomodachi* tomodachi = malloc(sizeof(Tomodachi));
-    Dolphin* dolphin = furi_record_open("dolphin");
-    DolphinStats stats = dolphin_stats(dolphin);
+    // Dolphin* dolphin = furi_record_open("dolphin");
+    // DolphinStats stats = dolphin_stats(dolphin);
+    // DolphinStats* stats_ptr = &stats;
     // Get tomodachi name from furi
     tomodachi->me.name = furi_hal_version_get_name_ptr();
-    tomodachi->me.xp = stats.level;
     // Print debug info
     FURI_LOG_I(TAG, "Name: %s", tomodachi->me.name);
-    FURI_LOG_I(TAG, "LV: %u", tomodachi->me.xp);
     return tomodachi;
 }
 
@@ -58,15 +59,13 @@ bool tomo_adv(Tomodachi* tomodachi) {
     // Advertize our info through subghz
     // Initialize network thing.
     uint32_t frequency = 433920000;
-    size_t message_max_len = 180;
-    UNUSED(message_max_len);
     tomodachi->subghz_txrx = subghz_tx_rx_worker_alloc();
     FURI_LOG_I(TAG, "Starting worker");
     subghz_tx_rx_worker_start(tomodachi->subghz_txrx, frequency);
     FURI_LOG_I(TAG, "Worker started");
     // Advertize our info
     // Compile message into one buffer.
-    uint8_t message[180] = {0};
+    uint8_t message[MESSAGE_MAX_LENGTH] = {0};
     message[TYPE] = 0x01; // Type: advertisement
     message[VERSION] = 0x00; // Version: 0.0.0
     message[TTL] = 0x08; // TTL: 8
@@ -79,10 +78,6 @@ bool tomo_adv(Tomodachi* tomodachi) {
     for(int i = 0; i < 16; i++) {
         message[message_len++] = tomodachi->me.name[i];
     }
-    message[message_len++] = tomodachi->me.xp >> 24;
-    message[message_len++] = tomodachi->me.xp >> 16;
-    message[message_len++] = tomodachi->me.xp >> 8;
-    message[message_len++] = tomodachi->me.xp;
     // Send message 2 times.
     FURI_LOG_I(TAG, "Sending message");
     for(int i = 0; i < 2; i++) {
@@ -108,6 +103,8 @@ bool tomo_listen(Tomodachi* tomodachi, uint32_t timeout_ms) {
     // Initialize network thing.
     uint32_t frequency = 433920000;
     size_t message_max_len = 180;
+    FuriHalRtcDateTime date_time;
+    uint32_t timestamp = 0;
     tomodachi->subghz_txrx = subghz_tx_rx_worker_alloc();
     FURI_LOG_I(TAG, "Starting worker");
     subghz_tx_rx_worker_start(tomodachi->subghz_txrx, frequency);
@@ -116,39 +113,50 @@ bool tomo_listen(Tomodachi* tomodachi, uint32_t timeout_ms) {
     // Listen for other devices advertising
     // Wait for message
     size_t message_len = 0;
-    uint8_t received_messages[2][180] = {0};
+    uint8_t received_messages[2][MESSAGE_MAX_LENGTH] = {0};
+    uint8_t message_count = 0;
     while(timeout_ms > 0) {
         message_len = subghz_tx_rx_worker_read(
-            tomodachi->subghz_txrx, received_messages[0], message_max_len);
+            tomodachi->subghz_txrx, received_messages[message_count], message_max_len);
         if(message_len > 0) {
-            FURI_LOG_I(TAG, "Message: %s", received_messages[0]);
+            FURI_LOG_I(TAG, "Message: %s", received_messages[message_count]);
             // Check message
             if(message_len == 0) {
                 FURI_LOG_I(TAG, "No message received");
                 break;
             }
-            if(received_messages[0][0] != 0x01) {
+            if(received_messages[message_count][0] != 0x01) {
                 FURI_LOG_I(TAG, "Invalid message type");
                 break;
             }
-            if(received_messages[0][1] != 0x00) {
+            if(received_messages[message_count][1] != 0x00) {
                 FURI_LOG_I(TAG, "Invalid message version");
                 break;
             }
 
             FURI_LOG_W(TAG, "Message received");
-            FURI_LOG_W(TAG, "TTL: %u", received_messages[0][2]);
-            FURI_LOG_W(TAG, "Timestamp: %u", *(uint32_t*)(received_messages[0] + 3));
+            FURI_LOG_W(TAG, "TTL: %u", received_messages[message_count][2]);
+            FURI_LOG_W(TAG, "Timestamp: %u", *(uint32_t*)(received_messages[message_count] + 3));
 
-            FURI_LOG_W(TAG, "Name: %s", received_messages[0] + (3 + 4));
-            FURI_LOG_W(
-                TAG,
-                "LV: %u",
-                received_messages[0][19] << 24 | received_messages[0][20] << 16 |
-                    received_messages[0][21] << 8 | received_messages[0][22]);
-            for(int i = 0; i < 5; i++) {
-                FURI_LOG_W(TAG, "%u", received_messages[0][23 + i]);
+            FURI_LOG_W(TAG, "Name: %s", received_messages[message_count] + (3 + 4));
+            furi_hal_rtc_get_datetime(&date_time);
+            timestamp = furi_hal_rtc_datetime_to_timestamp(&date_time);
+            // check if more than 30 seconds have passed since timestamp
+            if(timestamp - *(uint32_t*)(received_messages[message_count] + 3) > 3) {
+                FURI_LOG_I(TAG, "Timestamp too old");
+                break;
+            } else {
+                FURI_LOG_W(TAG, "Timestamp OK");
+                tomo_send_message(tomodachi, received_messages[message_count], message_len);
+                message_count++;
             }
+        }
+        for (int message_index = 0; message_index < message_count; message_index++) {
+            if (received_messages[message_index][2] == 0) {
+                FURI_LOG_I(TAG, "TTL expired");
+                message_count--;
+            }
+            if
         }
         furi_hal_delay_ms(1);
         timeout_ms -= 1;
@@ -160,28 +168,6 @@ bool tomo_listen(Tomodachi* tomodachi, uint32_t timeout_ms) {
     } else {
         furi_crash("Subghz worker is not running");
     }
-    FURI_LOG_I(TAG, "Message: %s", received_messages[0]);
-    // Check message
-    if(message_len == 0) {
-        FURI_LOG_I(TAG, "No message received");
-        return false;
-    }
-    if(received_messages[0][0] != 0x01) {
-        FURI_LOG_I(TAG, "Invalid message type");
-        return false;
-    }
-    if(received_messages[0][1] != 0x00) {
-        FURI_LOG_I(TAG, "Invalid message version");
-        return false;
-    }
-
-    FURI_LOG_W(TAG, "Message received");
-    FURI_LOG_W(TAG, "Name: %s", received_messages[0] + 2);
-    FURI_LOG_W(
-        TAG,
-        "LV: %u",
-        received_messages[0][18] << 24 | received_messages[0][19] << 16 |
-            received_messages[0][20] << 8 | received_messages[0][21]);
     return true;
 }
 
@@ -191,14 +177,14 @@ uint32_t tomo_srv() {
     FuriHalRtcDateTime date_time;
     while(1) {
         furi_hal_rtc_get_datetime(&date_time);
-        if(date_time.minute % 5 == 0) {
+        if(date_time.second % 15 <= 1) {
             tomo_adv(tomodachi);
             furi_hal_delay_ms(1);
             tomo_listen(tomodachi, TOMODACHI_ADV_INTERVAL_MS + (rand() % 100));
         } else {
-            furi_hal_delay_ms(5000);
-            FURI_LOG_W(TAG, "Minutes: %u", date_time.minute);
-            FURI_LOG_W(TAG, "Seconds: %u", date_time.second);
+            furi_hal_delay_ms(100);
+            FURI_LOG_I(TAG, "Minutes: %u", date_time.minute);
+            FURI_LOG_I(TAG, "Seconds: %u", date_time.second);
         }
     }
     furi_crash("Tomodachi service died");
