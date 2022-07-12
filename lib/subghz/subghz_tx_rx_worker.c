@@ -6,7 +6,7 @@
 #define TAG "SubGhzTxRxWorker"
 
 #define SUBGHZ_TXRX_WORKER_BUF_SIZE 2048
-//you can not set more than 62 because it will not fit into the FIFO CC1101
+// you can not set more than 62 because it will not fit into the FIFO CC1101
 #define SUBGHZ_TXRX_WORKER_MAX_TXRX_SIZE 60
 
 #define SUBGHZ_TXRX_WORKER_TIMEOUT_READ_WRITE_BUF 40
@@ -160,20 +160,20 @@ static int32_t subghz_tx_rx_worker_thread(void* context) {
                     SUBGHZ_TXRX_WORKER_TIMEOUT_READ_WRITE_BUF);
                 subghz_tx_rx_worker_tx(instance, data, SUBGHZ_TXRX_WORKER_MAX_TXRX_SIZE);
             } else {
-                //todo checking that he managed to write all the data to the TX buffer
+                // todo checking that it managed to write all the data to the TX buffer
                 xStreamBufferReceive(
                     instance->stream_tx, &data, size_tx, SUBGHZ_TXRX_WORKER_TIMEOUT_READ_WRITE_BUF);
                 subghz_tx_rx_worker_tx(instance, data, size_tx);
             }
         } else {
-            //recive
+            // receive
             if(subghz_tx_rx_worker_rx(instance, data, size_rx)) {
                 if(xStreamBufferSpacesAvailable(instance->stream_rx) >= size_rx[0]) {
                     if(instance->callback_have_read &&
                        xStreamBufferBytesAvailable(instance->stream_rx) == 0) {
                         callback_rx = true;
                     }
-                    //todo checking that he managed to write all the data to the RX buffer
+                    // todo checking that it managed to write all the data to the RX buffer
                     xStreamBufferSend(
                         instance->stream_rx,
                         &data,
@@ -184,7 +184,8 @@ static int32_t subghz_tx_rx_worker_thread(void* context) {
                         callback_rx = false;
                     }
                 } else {
-                    //todo RX buffer overflow
+                    // todo RX buffer overflow
+                    FURI_LOG_E(TAG, "RX buffer overflow");
                 }
             }
         }
