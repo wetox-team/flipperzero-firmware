@@ -29,9 +29,15 @@ bool troyka_parser_verify(NfcWorker* nfc_worker, FuriHalNfcTxRxContext* tx_rx) {
     MfClassicAuthContext auth_ctx = {
         .key_a = MF_CLASSIC_NO_KEY,
         .key_b = MF_CLASSIC_NO_KEY,
-        .sector = 0,
+        .sector = 8,
     };
-    return mf_classic_auth_attempt(tx_rx, &auth_ctx, 0xa0a1a2a3a4a5);
+    FURI_LOG_D("troika", "verify");
+    if ( mf_classic_auth_attempt(tx_rx, &auth_ctx, 0xa73f5dc1d333)) {
+        FURI_LOG_D("troika", "verify success");
+        return true;
+    } else {
+        return false;
+    }
 }
 
 bool troyka_parser_read(NfcWorker* nfc_worker, FuriHalNfcTxRxContext* tx_rx) {
