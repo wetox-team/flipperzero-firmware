@@ -13,10 +13,11 @@
 #define TTL_POS 2
 #define CHUNK_COUNT_POS 3
 #define CHUNK_NUMBER_POS 4
+#define CRC_POS 5
 
-#define PARAMS_COUNT 5
+#define PARAMS_COUNT 6
 
-#define COMPOSED_MAX_LEN 59
+#define COMPOSED_MAX_LEN 50
 #define MESSAGE_MAX_LEN (uint8_t)(COMPOSED_MAX_LEN - PARAMS_COUNT)
 
 #define CHUNKED_MESSAGE_MAX_LEN 512
@@ -32,7 +33,7 @@ typedef struct {
     uint32_t adv_message_len;
 } FlipperCommsWorker;
 
-typedef void (*CommsRxCb)(void* message);
+typedef void (*CommsRxCb)(uint8_t* message, uint32_t len);
 
 FlipperCommsWorker* flipper_comms_alloc(uint32_t frequency);
 bool flipper_comms_send(FlipperCommsWorker* worker, uint8_t* message, size_t message_len);

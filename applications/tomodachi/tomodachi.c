@@ -14,7 +14,6 @@
 
 #include "flipper_comms.h"
 
-
 // Tomodachi is a service that provides a way to discover and communicate with other devices.
 
 // We advertise our presence to other devices every 5 seconds.
@@ -36,7 +35,6 @@ Tomodachi* tomo_alloc() {
     return tomodachi;
 }
 
-
 bool tomo_adv(Tomodachi* tomodachi, FlipperCommsWorker* worker) {
     // Use flipper comms to send a chunked message to all devices.
     // Get our name from furi.
@@ -47,10 +45,9 @@ bool tomo_adv(Tomodachi* tomodachi, FlipperCommsWorker* worker) {
     return flipper_comms_send_by_chunk(worker, message, sizeof(message));
 }
 
-bool tomo_callback(uint8_t* message, size_t message_len, void* user_data) {
+bool tomo_callback(uint8_t* message, size_t message_len) {
     UNUSED(message);
     UNUSED(message_len);
-    UNUSED(user_data);
 
     FURI_LOG_W(TAG, "Message received");
     FURI_LOG_W(TAG, "TTL: %u", message[2]);
@@ -73,11 +70,22 @@ uint32_t tomo_srv() {
         // Get current time.
         furi_hal_rtc_get_datetime(&date_time);
         // Advertise
+        // Start subghz worker
+        comms_worker->state = WORKER_BUSY;
+        comms_worker->subghz_txrx = subghz_tx_rx_worker_alloc();
+        subghz_tx_rx_worker_start(comms_worker->subghz_txrx, comms_worker->frequency);
+
         tomo_adv(tomodachi, comms_worker);
-        furi_hal_delay_ms(1000);
+        // Stop subghz worker
+        subghz_tx_rx_worker_stop(comms_worker->subghz_txrx);
+        subghz_tx_rx_worker_free(comms_worker->subghz_txrx);
+        comms_worker->subghz_txrx = NULL;
+
+        comms_worker->state = WORKER_IDLE;
+        furi_hal_delay_ms(1);
         // Start listening thread.
         flipper_comms_start_listen_thread(comms_worker);
-        furi_hal_delay_ms(1000);
+        furi_hal_delay_ms(4000);
         // Stop listening thread.
         flipper_comms_stop_listen_thread(comms_worker);
     }

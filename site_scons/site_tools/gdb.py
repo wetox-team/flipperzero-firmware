@@ -5,7 +5,7 @@ from SCons.Action import Action
 def generate(env):
     env.SetDefault(
         GDB="gdb",
-        GDBPY="gdb-py",
+        GDBPY="gdb",
         GDBOPTS="",
         GDBPYOPTS="",
         GDBCOM="$GDB $GDBOPTS $SOURCES",  # no $TARGET
