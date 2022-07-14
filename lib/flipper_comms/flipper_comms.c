@@ -17,6 +17,8 @@ uint8_t flipper_comms_checksum(uint8_t* data, uint8_t len) {
         }
         checksum += data[i];
     }
+    // Invert checksum
+    checksum = ~checksum;
     return checksum;
 }
 
@@ -50,6 +52,11 @@ size_t flipper_comms_read(FlipperCommsWorker* comms, uint8_t* buffer) {
     for (int i = 0; i < 100; i++) {
         recv_len = subghz_tx_rx_worker_read(comms->subghz_txrx, buffer, COMPOSED_MAX_LEN);
         if (recv_len > 0) {
+            // Check length
+            if (recv_len < buffer[LENGTH_POS]) {
+                FURI_LOG_E(TAG,"Len mismatch: %d != %d", recv_len, buffer[LENGTH_POS]);
+                continue;
+            }
             // Check CRC
             uint8_t crc = buffer[CRC_POS];
             uint8_t calculated_crc = flipper_comms_checksum(buffer, buffer[LENGTH_POS]);
@@ -57,6 +64,7 @@ size_t flipper_comms_read(FlipperCommsWorker* comms, uint8_t* buffer) {
                 return recv_len;
             } else {
                 FURI_LOG_E(TAG, "CRC error, %d != %d", crc, calculated_crc);
+                continue;
             }
         } else {
             furi_hal_delay_ms(1);
@@ -120,9 +128,9 @@ int32_t flipper_comms_listen_service(void* context) {
         } else {
             recv_len = flipper_comms_read(comms, message);
             if(recv_len > 0) {
+                flipper_comms_mesh(comms, message, message[LENGTH_POS]);
                 if(recv_len != message[LENGTH_POS]) {
                     FURI_LOG_E(TAG, "Message length error, %d != %d", recv_len, message[LENGTH_POS]);
-                    continue;
                 }
                 furi_hal_delay_ms(1);
                 FURI_LOG_W(
@@ -134,9 +142,8 @@ int32_t flipper_comms_listen_service(void* context) {
                     message[3],
                     message[4],
                     message[5]);
-                FURI_LOG_W(TAG, "Message len: %u", recv_len);
-                flipper_comms_mesh(comms, message, message[LENGTH_POS]);
-                callback(message, recv_len);
+                FURI_LOG_W(TAG, "Message len: %u", message[LENGTH_POS]);
+                callback(message, message[LENGTH_POS]);
             } else {
                 FURI_LOG_D(TAG, "No message received");
             }

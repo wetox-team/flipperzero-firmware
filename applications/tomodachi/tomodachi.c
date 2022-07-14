@@ -12,8 +12,6 @@
 #include <lib/toolbox/args.h>
 #include <lib/subghz/subghz_keystore.h>
 
-#include "flipper_comms.h"
-
 // Tomodachi is a service that provides a way to discover and communicate with other devices.
 
 // We advertise our presence to other devices every 5 seconds.
@@ -25,6 +23,8 @@
 
 Tomodachi* tomo_alloc() {
     Tomodachi* tomodachi = malloc(sizeof(Tomodachi));
+    // Create furi record
+    furi_record_create("tomodachi", tomodachi);
     // Dolphin* dolphin = furi_record_open("dolphin");
     // DolphinStats stats = dolphin_stats(dolphin);
     // DolphinStats* stats_ptr = &stats;
@@ -53,8 +53,11 @@ bool tomo_callback(uint8_t* message, size_t message_len) {
     FURI_LOG_W(TAG, "Message received");
     FURI_LOG_W(TAG, "CRC: %d", message[CRC_POS]);
     FURI_LOG_W(TAG, "Len: %d", message[LENGTH_POS]);
-    FURI_LOG_W(TAG, "TTL: %d", message[TTL_POS])
-    ;
+    FURI_LOG_W(TAG, "TTL: %d", message[TTL_POS]);
+
+    Tomodachi* tomodachi = furi_record_open("tomodachi");
+    memcpy(tomodachi->last_message, message, message[LENGTH_POS]);
+    furi_record_close("tomodachi");
     // Assemble name from message
     uint8_t* name = malloc(message[LENGTH_POS] - PARAMS_LEN);
     for (uint8_t i = 0; i < message[LENGTH_POS] - PARAMS_LEN; i++) {
@@ -75,31 +78,32 @@ bool tomo_callback(uint8_t* message, size_t message_len) {
 
 uint32_t tomo_srv() {
     Tomodachi* tomodachi = tomo_alloc();
-    FlipperCommsWorker* comms_worker = flipper_comms_alloc(433920000);
+    tomodachi->flipper_comms = flipper_comms_alloc(433920000);
     // Set callback
-    flipper_comms_set_listen_callback(comms_worker, tomo_callback);
+    flipper_comms_set_listen_callback(tomodachi->flipper_comms, tomo_callback);
     // Loop forever, listening every 15 seconds and advertising every 300-400 milliseconds.
     FuriHalRtcDateTime date_time;
+    UNUSED(tomodachi);
     while(1) {
         // Sleep for 15 seconds.
         // Get current time.
         furi_hal_rtc_get_datetime(&date_time);
         // Advertise
         // Start subghz worker
-        comms_worker->subghz_txrx = subghz_tx_rx_worker_alloc();
-        subghz_tx_rx_worker_start(comms_worker->subghz_txrx, comms_worker->frequency);
+        tomodachi->flipper_comms->subghz_txrx = subghz_tx_rx_worker_alloc();
+        subghz_tx_rx_worker_start(tomodachi->flipper_comms->subghz_txrx, tomodachi->flipper_comms->frequency);
 
-        tomo_adv(tomodachi, comms_worker);
+        tomo_adv(tomodachi, tomodachi->flipper_comms);
         // Stop subghz worker
-        subghz_tx_rx_worker_stop(comms_worker->subghz_txrx);
-        subghz_tx_rx_worker_free(comms_worker->subghz_txrx);
-        comms_worker->subghz_txrx = NULL;
+        subghz_tx_rx_worker_stop(tomodachi->flipper_comms->subghz_txrx);
+        subghz_tx_rx_worker_free(tomodachi->flipper_comms->subghz_txrx);
+        tomodachi->flipper_comms->subghz_txrx = NULL;
 
         // Start listening thread.
-        flipper_comms_start_listen_thread(comms_worker);
+        flipper_comms_start_listen_thread(tomodachi->flipper_comms);
         furi_hal_delay_ms(4000 + furi_hal_random_get() % 1000);
         // Stop listening thread.
-        flipper_comms_stop_listen_thread(comms_worker);
+        flipper_comms_stop_listen_thread(tomodachi->flipper_comms);
     }
     furi_crash("Tomodachi service died");
     return 0;

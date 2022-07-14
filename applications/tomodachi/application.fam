@@ -8,18 +8,22 @@ App(
         "cli",
         "dialogs",
     ],
-    provides=[
-        "tomo_start",
-    ],
     stack_size=4 * 1024,
     order=20,
 )
 
 App(
-    appid="tomo_start",
-    apptype=FlipperAppType.STARTUP,
-    entry_point="tomodachi_on_system_start",
-    order=70,
+    appid="tomodachi_monitor",
+    name="Tomo Monitor",
+    apptype=FlipperAppType.APP,
+    entry_point="tomodachi_monitor",
+    cdefines=["APP_TOMO_MON"],
+    requires=[
+        "gui",
+        "dialogs",
+    ],
+    stack_size=2 * 1024,
+    icon="A_U2F_14",
+    order=80,
 )
-
 

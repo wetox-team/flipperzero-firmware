@@ -26,6 +26,7 @@ App(
         "subghz",
         "bad_usb",
         "u2f",
+        "tomodachi_monitor",
     ],
 )
 
