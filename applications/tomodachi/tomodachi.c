@@ -42,7 +42,7 @@ bool tomo_adv(Tomodachi* tomodachi, FlipperCommsWorker* worker) {
     uint8_t message[16] = {0};
     memcpy(message, tomodachi->me.name, 16);
     // Send message to all devices
-    return flipper_comms_send_by_chunk(worker, message, sizeof(message));
+    return flipper_comms_send(worker, message, sizeof(message));
 }
 
 bool tomo_callback(uint8_t* message, size_t message_len) {
@@ -50,9 +50,7 @@ bool tomo_callback(uint8_t* message, size_t message_len) {
     UNUSED(message_len);
 
     FURI_LOG_W(TAG, "Message received");
-    FURI_LOG_W(TAG, "TTL: %u", message[2]);
-    FURI_LOG_W(TAG, "Timestamp: %u", *(uint32_t*)(message + PARAMS_COUNT));
-    FURI_LOG_W(TAG, "Name: %s", message + (PARAMS_COUNT));
+    FURI_LOG_W(TAG, "Name: %s", message);
     furi_hal_delay_ms(1);
     return true;
 }
@@ -66,12 +64,10 @@ uint32_t tomo_srv() {
     FuriHalRtcDateTime date_time;
     while(1) {
         // Sleep for 15 seconds.
-        furi_hal_delay_ms(1000);
         // Get current time.
         furi_hal_rtc_get_datetime(&date_time);
         // Advertise
         // Start subghz worker
-        comms_worker->state = WORKER_BUSY;
         comms_worker->subghz_txrx = subghz_tx_rx_worker_alloc();
         subghz_tx_rx_worker_start(comms_worker->subghz_txrx, comms_worker->frequency);
 
@@ -81,8 +77,6 @@ uint32_t tomo_srv() {
         subghz_tx_rx_worker_free(comms_worker->subghz_txrx);
         comms_worker->subghz_txrx = NULL;
 
-        comms_worker->state = WORKER_IDLE;
-        furi_hal_delay_ms(1);
         // Start listening thread.
         flipper_comms_start_listen_thread(comms_worker);
         furi_hal_delay_ms(4000);
