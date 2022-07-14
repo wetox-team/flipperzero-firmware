@@ -39,7 +39,7 @@ uint8_t* flipper_comms_compose(FlipperCommsWorker* comms, uint8_t* buffer, uint3
 
     // Fill length and checksum
     message_composed[LENGTH_POS] = message_composed_len;
-    message_composed[CRC_POS] = flipper_comms_checksum(message_composed, message_composed_len);
+    message_composed[CRC_POS] = flipper_comms_checksum(message_composed, message_composed[LENGTH_POS]);
 
     return message_composed;
 }
@@ -69,10 +69,31 @@ bool flipper_comms_send(FlipperCommsWorker* comms, uint8_t* buffer, size_t size)
     uint8_t* message_composed = flipper_comms_compose(comms, buffer, size);
     for (size_t i = 0; i < 5; i++) {
         furi_hal_delay_ms(1);
-        subghz_tx_rx_worker_write(comms->subghz_txrx, message_composed, size);
+        subghz_tx_rx_worker_write(comms->subghz_txrx, message_composed, message_composed[LENGTH_POS]);
     }
     free(message_composed);
     return true;
+}
+
+bool flipper_comms_mesh(FlipperCommsWorker* comms, uint8_t* buffer, size_t size) {
+    UNUSED(size);
+    furi_hal_delay_ms(1);
+    if (buffer[TTL_POS] == 0) {
+        return false; // TTL == 0, drop message
+    } else {
+        // Decrement TTL
+        buffer[TTL_POS]--;
+
+        // Calculate new CRC
+        buffer[CRC_POS] = flipper_comms_checksum(buffer, buffer[LENGTH_POS]);
+
+        // Send message
+        for (size_t i = 0; i < 5; i++) {
+            furi_hal_delay_ms(1);
+            subghz_tx_rx_worker_write(comms->subghz_txrx, buffer, buffer[LENGTH_POS]);
+        }
+        return true;
+    }
 }
 
 bool flipper_comms_set_listen_callback(FlipperCommsWorker* comms, void* callback) {
@@ -90,11 +111,19 @@ int32_t flipper_comms_listen_service(void* context) {
     uint32_t recv_len = 0;
     CommsRxCb callback = comms->callback;
     while(1) {
+        // Clear message
+        for (uint8_t i = 0; i < COMPOSED_MAX_LEN; i++) {
+            message[i] = 0;
+        }
         if(!comms->running) {
             break;
         } else {
             recv_len = flipper_comms_read(comms, message);
             if(recv_len > 0) {
+                if(recv_len != message[LENGTH_POS]) {
+                    FURI_LOG_E(TAG, "Message length error, %d != %d", recv_len, message[LENGTH_POS]);
+                    continue;
+                }
                 furi_hal_delay_ms(1);
                 FURI_LOG_W(
                     TAG,
@@ -106,6 +135,7 @@ int32_t flipper_comms_listen_service(void* context) {
                     message[4],
                     message[5]);
                 FURI_LOG_W(TAG, "Message len: %u", recv_len);
+                flipper_comms_mesh(comms, message, message[LENGTH_POS]);
                 callback(message, recv_len);
             } else {
                 FURI_LOG_D(TAG, "No message received");
