@@ -11,12 +11,24 @@ FlipperCommsWorker* flipper_comms_alloc(uint32_t frequency) {
 
 size_t flipper_comms_read(FlipperCommsWorker* comms, uint8_t* buffer) {
     furi_hal_delay_ms(100);
-    return subghz_tx_rx_worker_read(comms->subghz_txrx, buffer, COMPOSED_MAX_LEN);
+    size_t recv_len;
+    for (int i = 0; i < 100; i++) {
+        recv_len = subghz_tx_rx_worker_read(comms->subghz_txrx, buffer, COMPOSED_MAX_LEN);
+        if (recv_len > 0) {
+            return recv_len;
+        } else {
+            furi_hal_delay_ms(1);
+        }
+    }
+    return 0;
 }
 
 bool flipper_comms_send(FlipperCommsWorker* comms, uint8_t* buffer, size_t size) {
-    furi_hal_delay_ms(10);
-    return subghz_tx_rx_worker_write(comms->subghz_txrx, buffer, size);
+    for (size_t i = 0; i < 5; i++) {
+        furi_hal_delay_ms(1);
+        subghz_tx_rx_worker_write(comms->subghz_txrx, buffer, size);
+    }
+    return true;
 }
 
 bool flipper_comms_set_listen_callback(FlipperCommsWorker* comms, void* callback) {
