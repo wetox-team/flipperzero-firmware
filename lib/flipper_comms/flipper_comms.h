@@ -4,6 +4,23 @@
 
 #define COMPOSED_MAX_LEN 50
 
+// Message structure:
+// {CRC, Length, TTL, Message}
+// CRC: 1 byte
+// Length: 1 byte
+// TTL: 1 byte
+// Message: COMPOSED_MAX_LEN - all other bytes (50 - 3 = 47 bytes)
+
+// Create defines
+#define CRC_POS 0
+#define LENGTH_POS 1
+#define TTL_POS 2
+
+#define PARAMS_LEN 3
+
+#define MESSAGE_MAX_LEN (COMPOSED_MAX_LEN - PARAMS_LEN)
+
+
 typedef struct {
     uint32_t frequency;
     void* callback;
@@ -27,3 +44,4 @@ bool flipper_comms_stop_adv_thread(FlipperCommsWorker* worker);
 bool flipper_comms_free(FlipperCommsWorker* worker);
 size_t flipper_comms_read(FlipperCommsWorker* worker, uint8_t* buffer);
 bool flipper_comms_send(FlipperCommsWorker* worker, uint8_t* buffer, size_t size);
+uint8_t flipper_comms_checksum(uint8_t* data, uint8_t len);

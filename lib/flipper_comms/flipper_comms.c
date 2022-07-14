@@ -9,13 +9,55 @@ FlipperCommsWorker* flipper_comms_alloc(uint32_t frequency) {
     return comms;
 }
 
+uint8_t flipper_comms_checksum(uint8_t* data, uint8_t len) {
+    uint8_t checksum = 0;
+    for(uint8_t i = 0; i < len; i++) {
+        if(i == CRC_POS) {
+            continue;
+        }
+        checksum += data[i];
+    }
+    return checksum;
+}
+
+uint8_t* flipper_comms_compose(FlipperCommsWorker* comms, uint8_t* buffer, uint32_t buffer_len) {
+    UNUSED(comms);
+    if (buffer_len > MESSAGE_MAX_LEN) {
+        FURI_LOG_E(TAG, "Message too large");
+        return 0;
+    }
+
+    // Fill parameters
+    uint8_t* message_composed = malloc(COMPOSED_MAX_LEN);
+    uint8_t message_composed_len = PARAMS_LEN;
+    message_composed[TTL_POS] = 0x08; // 8 hops
+
+    // Fill message
+    for (uint8_t i = 0; i < buffer_len; i++) {
+        message_composed[message_composed_len++] = buffer[i];
+    }
+
+    // Fill length and checksum
+    message_composed[LENGTH_POS] = message_composed_len;
+    message_composed[CRC_POS] = flipper_comms_checksum(message_composed, message_composed_len);
+
+    return message_composed;
+}
+
 size_t flipper_comms_read(FlipperCommsWorker* comms, uint8_t* buffer) {
     furi_hal_delay_ms(100);
     size_t recv_len;
     for (int i = 0; i < 100; i++) {
         recv_len = subghz_tx_rx_worker_read(comms->subghz_txrx, buffer, COMPOSED_MAX_LEN);
         if (recv_len > 0) {
-            return recv_len;
+            // Check CRC
+            uint8_t crc = buffer[CRC_POS];
+            uint8_t calculated_crc = flipper_comms_checksum(buffer, buffer[LENGTH_POS]);
+            if (crc == calculated_crc) {
+                return recv_len;
+            } else {
+                FURI_LOG_E(TAG, "CRC error, %d != %d", crc, calculated_crc);
+            }
         } else {
             furi_hal_delay_ms(1);
         }
@@ -24,10 +66,12 @@ size_t flipper_comms_read(FlipperCommsWorker* comms, uint8_t* buffer) {
 }
 
 bool flipper_comms_send(FlipperCommsWorker* comms, uint8_t* buffer, size_t size) {
+    uint8_t* message_composed = flipper_comms_compose(comms, buffer, size);
     for (size_t i = 0; i < 5; i++) {
         furi_hal_delay_ms(1);
-        subghz_tx_rx_worker_write(comms->subghz_txrx, buffer, size);
+        subghz_tx_rx_worker_write(comms->subghz_txrx, message_composed, size);
     }
+    free(message_composed);
     return true;
 }
 
@@ -39,6 +83,10 @@ bool flipper_comms_set_listen_callback(FlipperCommsWorker* comms, void* callback
 int32_t flipper_comms_listen_service(void* context) {
     FlipperCommsWorker* comms = (FlipperCommsWorker*)context;
     uint8_t message[COMPOSED_MAX_LEN];
+    // Set messsage to 0 to make sure we don't get a message from the previous run
+    for (uint8_t i = 0; i < COMPOSED_MAX_LEN; i++) {
+        message[i] = 0;
+    }
     uint32_t recv_len = 0;
     CommsRxCb callback = comms->callback;
     while(1) {

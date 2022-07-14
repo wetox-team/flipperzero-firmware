@@ -40,7 +40,8 @@ bool tomo_adv(Tomodachi* tomodachi, FlipperCommsWorker* worker) {
     // Get our name from furi.
     tomodachi->me.name = furi_hal_version_get_name_ptr();
     uint8_t message[16] = {0};
-    memcpy(message, tomodachi->me.name, 16);
+    // Fill message
+    sprintf((char*)message, "%s", tomodachi->me.name);
     // Send message to all devices
     return flipper_comms_send(worker, message, sizeof(message));
 }
@@ -50,7 +51,24 @@ bool tomo_callback(uint8_t* message, size_t message_len) {
     UNUSED(message_len);
 
     FURI_LOG_W(TAG, "Message received");
-    FURI_LOG_W(TAG, "Name: %s", message);
+    FURI_LOG_W(TAG, "CRC: %d", message[CRC_POS]);
+    FURI_LOG_W(TAG, "Len: %d", message[LENGTH_POS]);
+    FURI_LOG_W(TAG, "TTL: %d", message[TTL_POS])
+    ;
+    // Assemble name from message
+    uint8_t* name = malloc(message[LENGTH_POS] - PARAMS_LEN);
+    for (uint8_t i = 0; i < message[LENGTH_POS] - PARAMS_LEN; i++) {
+        name[i] = message[i + PARAMS_LEN];
+    }
+    FURI_LOG_W(TAG, "Name: %s", name);
+    free(name);
+    // Check CRC
+    uint8_t crc = message[CRC_POS];
+    uint8_t calculated_crc = flipper_comms_checksum(message, message[LENGTH_POS]);
+    if (crc != calculated_crc) {
+        FURI_LOG_W(TAG, "CRC mismatch: %d != %d", crc, calculated_crc);
+        return false;
+    }
     furi_hal_delay_ms(1);
     return true;
 }
@@ -79,7 +97,7 @@ uint32_t tomo_srv() {
 
         // Start listening thread.
         flipper_comms_start_listen_thread(comms_worker);
-        furi_hal_delay_ms(4000);
+        furi_hal_delay_ms(4000 + furi_hal_random_get() % 1000);
         // Stop listening thread.
         flipper_comms_stop_listen_thread(comms_worker);
     }
