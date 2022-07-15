@@ -218,8 +218,8 @@ bool furi_hal_bt_start_app(FuriHalBtProfile profile, GapEventCallback event_cb, 
         } else if(profile == FuriHalBtProfileHidKeyboard) {
             // Change MAC address for HID profile
             config->mac_address[2]++;
-            // Change name Flipper -> Keynote
-            const char* clicker_str = "Keynote";
+            // Change name Flipper -> Control
+            const char* clicker_str = "Control";
             memcpy(&config->adv_name[1], clicker_str, strlen(clicker_str));
         }
         if(!gap_init(config, event_cb, context)) {
@@ -322,7 +322,7 @@ void furi_hal_bt_set_key_storage_change_callback(
 
 void furi_hal_bt_nvm_sram_sem_acquire() {
     while(LL_HSEM_1StepLock(HSEM, CFG_HW_BLE_NVM_SRAM_SEMID)) {
-        osThreadYield();
+        furi_thread_yield();
     }
 }
 
