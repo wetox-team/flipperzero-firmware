@@ -1,6 +1,7 @@
 #pragma once
 #include <furi.h>
 #include <lib/subghz/subghz_tx_rx_worker.h>
+#include <notification/notification.h>
 
 #include "flipper_comms.h"
 
@@ -14,4 +15,6 @@ typedef struct {
     SubGhzTxRxWorker* subghz_txrx;
     FlipperCommsWorker* flipper_comms;
     char last_message[COMPOSED_MAX_LEN];
+    char prev_message[COMPOSED_MAX_LEN];
+    NotificationApp* notifications;
 } Tomodachi;

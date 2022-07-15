@@ -8,9 +8,13 @@
 #include <furi_hal_version.h>
 #include "math.h"
 #include "furi_hal_rtc.h"
+#include <time.h>
+#include <furi_hal.h>
 
 #include <lib/toolbox/args.h>
 #include <lib/subghz/subghz_keystore.h>
+
+#define ADVERTISE true
 
 // Tomodachi is a service that provides a way to discover and communicate with other devices.
 
@@ -39,10 +43,26 @@ bool tomo_adv(Tomodachi* tomodachi, FlipperCommsWorker* worker) {
     // Use flipper comms to send a chunked message to all devices.
     // Get our name from furi.
     tomodachi->me.name = furi_hal_version_get_name_ptr();
-    uint8_t message[16] = {0};
-    // Fill message
+
+    FuriHalRtcDateTime* datetime = malloc(sizeof(FuriHalRtcDateTime));
+    // Clear datetime
+    memset(datetime, 0, sizeof(FuriHalRtcDateTime));
+    furi_hal_rtc_get_datetime(datetime);
+    uint32_t timestamp = furi_hal_rtc_datetime_to_timestamp(datetime);
+    // First 16 bytes are the name, next 4 are the timestamp.
+    uint8_t message[20] = {0};
+    // Fill message name
     sprintf((char*)message, "%s", tomodachi->me.name);
+    // Fill message timestamp
+    for(int i = 0; i < 4; i++) {
+        message[16 + i] = (timestamp >> (8 * i)) & 0xFF;
+    }
+    // Log timestamp
+    for(int i = 0; i < 4; i++) {
+        FURI_LOG_W(TAG, "ts%d", message[16 + i]);
+    }
     // Send message to all devices
+    free(datetime);
     return flipper_comms_send(worker, message, sizeof(message));
 }
 
@@ -60,7 +80,7 @@ bool tomo_callback(uint8_t* message, size_t message_len) {
     furi_record_close("tomodachi");
     // Assemble name from message
     uint8_t* name = malloc(message[LENGTH_POS] - PARAMS_LEN);
-    for (uint8_t i = 0; i < message[LENGTH_POS] - PARAMS_LEN; i++) {
+    for(uint8_t i = 0; i < message[LENGTH_POS] - PARAMS_LEN; i++) {
         name[i] = message[i + PARAMS_LEN];
     }
     FURI_LOG_W(TAG, "Name: %s", name);
@@ -68,7 +88,7 @@ bool tomo_callback(uint8_t* message, size_t message_len) {
     // Check CRC
     uint8_t crc = message[CRC_POS];
     uint8_t calculated_crc = flipper_comms_checksum(message, message[LENGTH_POS]);
-    if (crc != calculated_crc) {
+    if(crc != calculated_crc) {
         FURI_LOG_W(TAG, "CRC mismatch: %d != %d", crc, calculated_crc);
         return false;
     }
@@ -89,19 +109,22 @@ uint32_t tomo_srv() {
         // Get current time.
         furi_hal_rtc_get_datetime(&date_time);
         // Advertise
-        // Start subghz worker
-        tomodachi->flipper_comms->subghz_txrx = subghz_tx_rx_worker_alloc();
-        subghz_tx_rx_worker_start(tomodachi->flipper_comms->subghz_txrx, tomodachi->flipper_comms->frequency);
+        if(ADVERTISE) {
+            // Start subghz worker
+            tomodachi->flipper_comms->subghz_txrx = subghz_tx_rx_worker_alloc();
+            subghz_tx_rx_worker_start(
+                tomodachi->flipper_comms->subghz_txrx, tomodachi->flipper_comms->frequency);
 
-        tomo_adv(tomodachi, tomodachi->flipper_comms);
-        // Stop subghz worker
-        subghz_tx_rx_worker_stop(tomodachi->flipper_comms->subghz_txrx);
-        subghz_tx_rx_worker_free(tomodachi->flipper_comms->subghz_txrx);
-        tomodachi->flipper_comms->subghz_txrx = NULL;
+            tomo_adv(tomodachi, tomodachi->flipper_comms);
+            // Stop subghz worker
+            subghz_tx_rx_worker_stop(tomodachi->flipper_comms->subghz_txrx);
+            subghz_tx_rx_worker_free(tomodachi->flipper_comms->subghz_txrx);
+            tomodachi->flipper_comms->subghz_txrx = NULL;
+        }
 
         // Start listening thread.
         flipper_comms_start_listen_thread(tomodachi->flipper_comms);
-        furi_hal_delay_ms(4000 + furi_hal_random_get() % 1000);
+        furi_hal_delay_ms(furi_hal_random_get() % 1000);
         // Stop listening thread.
         flipper_comms_stop_listen_thread(tomodachi->flipper_comms);
     }
