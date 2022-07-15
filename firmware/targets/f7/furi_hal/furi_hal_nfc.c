@@ -799,7 +799,7 @@ bool furi_hal_nfc_techkom_tx_rx(FuriHalNfcTxRxContext* tx_rx, uint16_t timeout_m
     // st25r3916ExecuteCommand(ST25R3916_CMD_UNMASK_RECEIVE_DATA);
 
     // Manually wait for interrupt
-    furi_hal_gpio_init(&gpio_rfid_pull, GpioModeInput, GpioPullDown, GpioSpeedVeryHigh);
+    furi_hal_gpio_init(&gpio_nfc_irq_rfid_pull, GpioModeInput, GpioPullDown, GpioSpeedVeryHigh);
     // st25r3916ClearAndEnableInterrupts(ST25R3916_IRQ_MASK_RXE);
 
     st25r3916ClearInterrupts();

@@ -5,11 +5,8 @@
 #include <stm32wbxx_ll_tim.h>
 #include <math.h>
 
-<<<<<<< HEAD
 #include <furi_hal.h>
-=======
 #pragma GCC optimize("O3,unroll-loops,Ofast")
->>>>>>> upstream/dev
 
 #define F_TIM (64000000.0)
 #define T_TIM 1562 //15.625 ns *100
@@ -175,10 +172,4 @@ void digital_signal_send(DigitalSignal* signal, const GpioPin* gpio) {
     LL_TIM_SetCounter(TIM2, 0);
     LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_1);
     LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_2);
-<<<<<<< HEAD
-    // \OK
-
-    return true;
-=======
->>>>>>> upstream/dev
 }
