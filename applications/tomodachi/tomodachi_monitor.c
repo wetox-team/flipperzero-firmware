@@ -48,10 +48,10 @@ static void tomodachi_app_draw_callback(Canvas* canvas, void* ctx) {
     sprintf(timestamp_str, "Timestamp: %ld", (uint32_t)timestamp);
     canvas_draw_str(canvas, 0, 30, timestamp_str);
     free(timestamp);
-    // Log full message
-    for(uint8_t i = 0; i < tomodachi->last_message[LENGTH_POS]; i++) {
-        FURI_LOG_W(TAG, "%d", tomodachi->last_message[i]);
-    }
+    // Print known devices count
+    char known_devices_str[20] = {0};
+    sprintf(known_devices_str, "Known devices: %d", tomodachi->tomodachi_known_count);
+    canvas_draw_str(canvas, 0, 40, known_devices_str);
 
     // Handle beeping
     // Compare prev and last_message

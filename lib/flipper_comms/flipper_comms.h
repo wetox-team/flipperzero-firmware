@@ -12,14 +12,14 @@
 // Message: COMPOSED_MAX_LEN - all other bytes (50 - 3 = 47 bytes)
 
 // Create defines
-#define CRC_POS 0
-#define LENGTH_POS 1
-#define TTL_POS 2
+#define FF_POS 0
+#define CRC_POS 1
+#define LENGTH_POS 2
+#define TTL_POS 3
 
-#define PARAMS_LEN 3
+#define PARAMS_LEN 5 // 2 for FF in the beginning and in the end
 
 #define MESSAGE_MAX_LEN (COMPOSED_MAX_LEN - PARAMS_LEN)
-
 
 typedef struct {
     uint32_t frequency;
@@ -30,6 +30,7 @@ typedef struct {
     uint8_t state;
     uint8_t* adv_message;
     uint32_t adv_message_len;
+    uint8_t* last_messages[20];
 } FlipperCommsWorker;
 
 typedef void (*CommsRxCb)(uint8_t* message, uint32_t len);

@@ -6,11 +6,11 @@
 #include "flipper_comms.h"
 
 typedef struct {
-    const char* name;
-    uint32_t xp;
+    char name[16];
 } TomodachiObject;
 typedef struct {
     TomodachiObject tomodachi_known[20];
+    uint8_t tomodachi_known_count;
     TomodachiObject me;
     SubGhzTxRxWorker* subghz_txrx;
     FlipperCommsWorker* flipper_comms;
