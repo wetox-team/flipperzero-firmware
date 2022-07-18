@@ -379,6 +379,7 @@ const char* furi_hal_version_get_device_name_ptr() {
 }
 
 const char* furi_hal_version_get_ble_local_device_name_ptr() {
+    furi_hal_version_load_custom_otp();
     return furi_hal_version.device_name;
 }
 
