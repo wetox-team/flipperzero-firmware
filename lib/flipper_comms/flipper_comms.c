@@ -39,6 +39,42 @@ bool flipper_comms_check_last_messages(FlipperCommsWorker* comms, uint8_t* messa
     return false;
 }
 
+bool flipper_comms_sanity_check(FlipperCommsWorker* comms, uint8_t* buffer, uint8_t recv_len) {
+    // Check length
+    if(recv_len < buffer[LENGTH_POS]) {
+        FURI_LOG_E(TAG, "Len mismatch: %d != %d", recv_len, buffer[LENGTH_POS]);
+        return false;
+    }
+
+    // Check CRC
+    uint8_t crc = buffer[CRC_POS];
+    uint8_t calculated_crc = flipper_comms_checksum(buffer, buffer[LENGTH_POS]);
+    if(crc == calculated_crc) {
+        FURI_LOG_I(TAG, "CRC OK");
+    } else {
+        FURI_LOG_E(TAG, "CRC error, %d != %d", crc, calculated_crc);
+        return false;
+    }
+
+    // Check FF in the beginning and end
+    if(buffer[0] != 0xFF || buffer[buffer[LENGTH_POS] - 1] != 0xFF) {
+        FURI_LOG_E(TAG, "FF error, message incomplete");
+        FURI_LOG_E(TAG, "FF: %d, %d", buffer[0], buffer[buffer[LENGTH_POS] - 1]);
+        for(int i = 0; i < buffer[LENGTH_POS]; i++) {
+            FURI_LOG_E(TAG, "%02X", buffer[i]);
+        }
+        return false;
+    }
+
+    // Check if message is a duplicate
+    if(flipper_comms_check_last_messages(comms, buffer)) {
+        FURI_LOG_E(TAG, "Message is a duplicate");
+        return false;
+    }
+
+    return true;
+}
+
 uint8_t* flipper_comms_compose(FlipperCommsWorker* comms, uint8_t* buffer, uint32_t buffer_len) {
     UNUSED(comms);
     if(buffer_len > MESSAGE_MAX_LEN) {
@@ -72,45 +108,14 @@ uint8_t* flipper_comms_compose(FlipperCommsWorker* comms, uint8_t* buffer, uint3
 }
 
 size_t flipper_comms_read(FlipperCommsWorker* comms, uint8_t* buffer) {
-    furi_hal_delay_ms(100);
+    //furi_hal_delay_ms(100);
     size_t recv_len;
     for(int i = 0; i < 100; i++) {
         recv_len = subghz_tx_rx_worker_read(comms->subghz_txrx, buffer, COMPOSED_MAX_LEN);
         if(recv_len > 0) {
-            // Check length
-            if(recv_len < buffer[LENGTH_POS]) {
-                FURI_LOG_E(TAG, "Len mismatch: %d != %d", recv_len, buffer[LENGTH_POS]);
-                continue;
+            if(flipper_comms_sanity_check(comms, buffer, recv_len)) {
+                return recv_len;
             }
-
-            // Check CRC
-            uint8_t crc = buffer[CRC_POS];
-            uint8_t calculated_crc = flipper_comms_checksum(buffer, buffer[LENGTH_POS]);
-            if(crc == calculated_crc) {
-                FURI_LOG_I(TAG, "CRC OK");
-            } else {
-                FURI_LOG_E(TAG, "CRC error, %d != %d", crc, calculated_crc);
-                continue;
-            }
-
-            // Check FF in the beginning and end
-            if(buffer[0] != 0xFF || buffer[buffer[LENGTH_POS] - 1] != 0xFF) {
-                FURI_LOG_E(TAG, "FF error, message incomplete");
-                FURI_LOG_E(TAG, "FF: %d, %d", buffer[0], buffer[buffer[LENGTH_POS] - 1]);
-                for(int i = 0; i < buffer[LENGTH_POS]; i++) {
-                    FURI_LOG_E(TAG, "%02X", buffer[i]);
-                }
-                continue;
-            }
-
-            // Check if message is a duplicate
-            if(flipper_comms_check_last_messages(comms, buffer)) {
-                FURI_LOG_E(TAG, "Message is a duplicate");
-                continue;
-            }
-
-            // Finally, return message
-            return recv_len;
         } else {
             furi_hal_delay_ms(1);
         }
@@ -144,7 +149,7 @@ bool flipper_comms_mesh(FlipperCommsWorker* comms, uint8_t* buffer, size_t size)
 
         // Send message
         for(size_t i = 0; i < 5; i++) {
-            furi_hal_delay_ms(1);
+            furi_hal_delay_ms(furi_hal_random_get() % 3);
             if(subghz_tx_rx_worker_is_running(comms->subghz_txrx) && comms->subghz_txrx) {
                 comms->running = true;
                 subghz_tx_rx_worker_write(comms->subghz_txrx, buffer, buffer[LENGTH_POS]);
