@@ -13,7 +13,7 @@ static DialogMessageButton product_screen(DialogsApp* dialogs, DialogMessage* me
     DialogMessageButton result;
 
     const char* screen_header = "Product: Flipper Zero\n"
-                                "Model: FZ.1\n";
+                                "Model: FZ.1 rev. F7\n";
     const char* screen_text = "FCC ID: 2A2V6-FZ\n"
                               "IC: 27624-FZ";
 
@@ -76,6 +76,7 @@ static DialogMessageButton icon2_screen(DialogsApp* dialogs, DialogMessage* mess
 }
 
 static DialogMessageButton hw_version_screen(DialogsApp* dialogs, DialogMessage* message) {
+    furi_hal_version_load_custom_otp();
     DialogMessageButton result;
     string_t buffer;
     string_init(buffer);

@@ -168,6 +168,8 @@ size_t furi_hal_version_uid_size();
  */
 const uint8_t* furi_hal_version_uid();
 
+void furi_hal_version_load_custom_otp();
+
 #ifdef __cplusplus
 }
 #endif

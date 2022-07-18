@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include "ble.h"
 
+#include "flipper_format.h"
+#include "m-string.h"
+
 #define TAG "FuriHalVersion"
 
 #define FURI_HAL_VERSION_OTP_HEADER_MAGIC 0xBABE
@@ -171,6 +174,98 @@ static void furi_hal_version_load_otp_v2() {
     }
 }
 
+void furi_hal_version_load_custom_otp() {
+    FURI_LOG_D("NAME", "Loading custom OTP");
+    const FuriHalVersionOTPv2* otp = (FuriHalVersionOTPv2*)FURI_HAL_VERSION_OTP_ADDRESS;
+
+    // 1st block, programmed afer baking
+    furi_hal_version.timestamp = otp->header_timestamp;
+
+    // 2nd block, programmed afer baking
+    furi_hal_version.board_version = otp->board_version;
+    furi_hal_version.board_target = otp->board_target;
+    furi_hal_version.board_body = otp->board_body;
+    furi_hal_version.board_connect = otp->board_connect;
+    furi_hal_version.board_display = otp->board_display;
+
+    // 3rd and 4th blocks, programmed on FATP stage
+
+    // Try to load some info from /ext/device.fcf
+    Storage* storage = furi_record_open("storage");
+    FlipperFormat* file = flipper_format_file_alloc(storage);
+    // Check if the file exists
+    if(storage_common_stat(storage, "/any/device.fcf", NULL) == FSE_OK) {
+        if(flipper_format_file_open_existing(file, "/any/device.fcf")) {
+            FURI_LOG_D("NAME", "Loading custom OTP from /int/device.fcf");
+            string_t name_string;
+            string_init(name_string);
+            if(flipper_format_read_string(file, "Name", name_string)) {
+                FURI_LOG_D("NAME", "Found name in device.fcf");
+                FURI_LOG_D("NAME", "Name is %s", string_get_cstr(name_string));
+                furi_hal_version_set_name(string_get_cstr(name_string));
+            }
+            string_clear(name_string);
+            string_t region;
+            string_init(region);
+            if(flipper_format_read_string(file, "Region", region)) {
+                FURI_LOG_D("NAME", "Region: %s", string_get_cstr(region));
+                if(!strcmp(string_get_cstr(region), "01")) {
+                    FURI_LOG_D("NAME", "Region is 01");
+                    furi_hal_version.board_region = 0x01;
+                } else if(!strcmp(string_get_cstr(region), "02")) {
+                    FURI_LOG_D("NAME", "Region is 02");
+                    furi_hal_version.board_region = 0x02;
+                } else if(!strcmp(string_get_cstr(region), "03")) {
+                    FURI_LOG_D("NAME", "Region is 03");
+                    furi_hal_version.board_region = 0x03;
+                } else if(!strcmp(string_get_cstr(region), "00")) {
+                    FURI_LOG_D("NAME", "Region is 00");
+                    furi_hal_version.board_region = 0x00;
+                } else if(!strcmp(string_get_cstr(region), "0")) {
+                    FURI_LOG_D("NAME", "Region is 0");
+                    furi_hal_version.board_region = 0x00;
+                } else {
+                    FURI_LOG_D("NAME", "Region is unknown");
+                    furi_hal_version.board_region = 0x00;
+                }
+            }
+            string_clear(region);
+
+            string_t color;
+            string_init(color);
+            if(flipper_format_read_string(file, "Color", color)) {
+                FURI_LOG_D("NAME", "Color: %s", string_get_cstr(color));
+                if(!strcmp(string_get_cstr(color), "Black")) {
+                    furi_hal_version.board_color = 0x01;
+                } else if(!strcmp(string_get_cstr(color), "White")) {
+                    furi_hal_version.board_color = 0x02;
+                } else {
+                    furi_hal_version.board_color = 0x00;
+                }
+            }
+            string_clear(color);
+
+            flipper_format_file_close(file);
+        } else {
+            FURI_LOG_D("NAME", "No name found in /int/device.fcf");
+            if(otp->board_color != 0xFF) {
+                furi_hal_version.board_color = otp->board_color;
+                furi_hal_version.board_region = otp->board_region;
+                furi_hal_version_set_name(otp->name);
+            } else {
+                furi_hal_version.board_color = 0;
+                furi_hal_version.board_region = 0;
+                furi_hal_version_set_name(NULL);
+            }
+        }
+    } else {
+        // Load otp info from OTP
+        furi_record_close("storage");
+        flipper_format_free(file);
+        furi_hal_version_load_otp_v2();
+    }
+}
+
 void furi_hal_version_init() {
     switch(furi_hal_version_get_otp_version()) {
     case FuriHalVersionOtpVersionUnknown:
@@ -253,6 +348,7 @@ FuriHalVersionRegion furi_hal_version_get_hw_region() {
 }
 
 const char* furi_hal_version_get_hw_region_name() {
+    furi_hal_version_load_custom_otp();
     switch(furi_hal_version_get_hw_region()) {
     case FuriHalVersionRegionUnknown:
         return "R00";

@@ -43,4 +43,5 @@ void flipper_init() {
     }
 
     FURI_LOG_I(TAG, "services startup complete");
+    furi_hal_version_load_custom_otp();
 }
