@@ -5,6 +5,8 @@
 Welcome to the [Wetox Flipper Zero](https://wetox.team/)'s Firmware repo!
 This is a modified unofficial version of the Flipper Zero firmware with some additional features.
 
+# If you want to incorporate our features into your firmware fork, please contact us beforehand!
+
 # Feature list
 
 * Flashing the firmware using the blackmagic board with `make blackmagic_load`
