@@ -7,7 +7,6 @@ env.Append(
         "#/lib/heatshrink",
         "#/lib/micro-ecc",
         "#/lib/nanopb",
-        "#/lib/nfc_protocols",
         "#/lib/u8g2",
         "#/lib/flipper_comms",
     ],
@@ -25,7 +24,6 @@ sources = []
 libs_recurse = [
     "digital_signal",
     "micro-ecc",
-    "nfc_protocols",
     "flipper_comms",
     "one_wire",
     "u8g2",
