@@ -1,7 +1,7 @@
 #include "tomodachi.h"
 #include "dolphin/helpers/dolphin_state.h"
-#include "furi/check.h"
-#include "furi/record.h"
+#include "core/check.h"
+#include "core/record.h"
 #include "dolphin/dolphin.h"
 #include <input/input.h>
 #include <stdlib.h>
@@ -106,7 +106,7 @@ bool tomo_callback(uint8_t* message, size_t message_len) {
     tomo_known(tomodachi, (char*)name);
     FURI_LOG_W(TAG, "Name: %s", name);
     free(name);
-    furi_hal_delay_ms(1);
+    furi_delay_ms(1);
     return true;
 }
 
@@ -138,7 +138,7 @@ uint32_t tomo_srv() {
 
         // Start listening thread.
         flipper_comms_start_listen_thread(tomodachi->flipper_comms);
-        furi_hal_delay_ms(4000 + furi_hal_random_get() % 1000);
+        furi_delay_ms(4000 + furi_hal_random_get() % 1000);
         // Stop listening thread.
         flipper_comms_stop_listen_thread(tomodachi->flipper_comms);
     }

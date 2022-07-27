@@ -66,17 +66,17 @@ static void tomodachi_app_draw_callback(Canvas* canvas, void* ctx) {
 
 static void tomodachi_app_input_callback(InputEvent* input_event, void* ctx) {
     furi_assert(ctx);
-    osMessageQueueId_t event_queue = ctx;
+    FuriMessageQueue* event_queue = ctx;
 
     TomoEvent event = {.type = TomoEventTypeInput, .input = *input_event};
-    osMessageQueuePut(event_queue, &event, 0, osWaitForever);
+    furi_message_queue_put(event_queue, &event, FuriWaitForever);
 }
 
 void tomodachi_app_update(void* ctx) {
     furi_assert(ctx);
-    osMessageQueueId_t event_queue = ctx;
+    FuriMessageQueue* event_queue = ctx;
     TomoEvent event = {.type = TomoEventTypeTick};
-    osMessageQueuePut(event_queue, &event, 0, 0);
+    furi_message_queue_put(event_queue, &event, 0);
 }
 
 int32_t tomodachi_monitor(void* p) {
@@ -85,7 +85,8 @@ int32_t tomodachi_monitor(void* p) {
     Tomodachi* tomodachi = furi_record_open("tomodachi");
 
     // Create event queue
-    osMessageQueueId_t event_queue = osMessageQueueNew(8, sizeof(TomoEvent), NULL);
+    //osMessageQueueId_t event_queue = osMessageQueueNew(8, sizeof(TomoEvent), NULL);
+    FuriMessageQueue* event_queue = furi_message_queue_alloc(8, sizeof(TomoEvent));
 
     // Configure view port
     ViewPort* view_port = view_port_alloc();
@@ -104,9 +105,9 @@ int32_t tomodachi_monitor(void* p) {
 
     while(1) {
         view_port_update(view_port);
-        furi_hal_delay_ms(100);
+        furi_delay_ms(100);
 
-        furi_check(osMessageQueueGet(event_queue, &event, NULL, osWaitForever) == osOK);
+        furi_check(furi_message_queue_get(event_queue, &event, FuriWaitForever) == FuriStatusOk);
 
         if((event.input.type == InputTypeShort) && (event.input.key == InputKeyBack)) {
             break;
@@ -115,7 +116,7 @@ int32_t tomodachi_monitor(void* p) {
 
     gui_remove_view_port(gui, view_port);
     view_port_free(view_port);
-    osMessageQueueDelete(event_queue);
+    furi_message_queue_free(event_queue);
 
     furi_record_close("gui");
     furi_record_close("tomodachi");

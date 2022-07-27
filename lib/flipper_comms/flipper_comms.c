@@ -108,7 +108,7 @@ uint8_t* flipper_comms_compose(FlipperCommsWorker* comms, uint8_t* buffer, uint3
 }
 
 size_t flipper_comms_read(FlipperCommsWorker* comms, uint8_t* buffer) {
-    //furi_hal_delay_ms(100);
+    //furi_delay_ms(100);
     size_t recv_len;
     for(int i = 0; i < 100; i++) {
         recv_len = subghz_tx_rx_worker_read(comms->subghz_txrx, buffer, COMPOSED_MAX_LEN);
@@ -117,7 +117,7 @@ size_t flipper_comms_read(FlipperCommsWorker* comms, uint8_t* buffer) {
                 return recv_len;
             }
         } else {
-            furi_hal_delay_ms(1);
+            furi_delay_ms(1);
         }
     }
     return 0;
@@ -126,7 +126,7 @@ size_t flipper_comms_read(FlipperCommsWorker* comms, uint8_t* buffer) {
 bool flipper_comms_send(FlipperCommsWorker* comms, uint8_t* buffer, size_t size) {
     uint8_t* message_composed = flipper_comms_compose(comms, buffer, size);
     for(size_t i = 0; i < 5; i++) {
-        furi_hal_delay_ms(1);
+        furi_delay_ms(1);
         subghz_tx_rx_worker_write(
             comms->subghz_txrx, message_composed, message_composed[LENGTH_POS]);
     }
@@ -137,7 +137,7 @@ bool flipper_comms_send(FlipperCommsWorker* comms, uint8_t* buffer, size_t size)
 bool flipper_comms_mesh(FlipperCommsWorker* comms, uint8_t* buffer, size_t size) {
     UNUSED(size);
     furi_assert(comms->subghz_txrx);
-    furi_hal_delay_ms(1);
+    furi_delay_ms(1);
     if(buffer[TTL_POS] == 0) {
         return false; // TTL == 0, drop message
     } else {
@@ -149,7 +149,7 @@ bool flipper_comms_mesh(FlipperCommsWorker* comms, uint8_t* buffer, size_t size)
 
         // Send message
         for(size_t i = 0; i < 5; i++) {
-            furi_hal_delay_ms(furi_hal_random_get() % 3);
+            furi_delay_ms(furi_hal_random_get() % 3);
             if(subghz_tx_rx_worker_is_running(comms->subghz_txrx) && comms->subghz_txrx) {
                 comms->running = true;
                 subghz_tx_rx_worker_write(comms->subghz_txrx, buffer, buffer[LENGTH_POS]);
@@ -191,7 +191,7 @@ int32_t flipper_comms_listen_service(void* context) {
                     FURI_LOG_E(
                         TAG, "Message length error, %d != %d", recv_len, message[LENGTH_POS]);
                 }
-                furi_hal_delay_ms(1);
+                furi_delay_ms(1);
                 FURI_LOG_W(
                     TAG,
                     "Calling back with message %02X %02X %02X %02X %02X %02X",
@@ -235,7 +235,7 @@ bool flipper_comms_stop_listen_thread(FlipperCommsWorker* comms) {
 
     // Stop subghz worker
     while(comms->running) {
-        furi_hal_delay_ms(1);
+        furi_delay_ms(1);
         FURI_LOG_W(TAG, "Waiting for thread to stop");
     }
     subghz_tx_rx_worker_stop(comms->subghz_txrx);
@@ -258,7 +258,7 @@ uint32_t flipper_comms_adv_service(void* context) {
                 comms->adv_message[3]);
             furi_crash("Failed to send message");
         }
-        furi_hal_delay_ms(100);
+        furi_delay_ms(100);
         if(!comms->running) {
             break;
         }
