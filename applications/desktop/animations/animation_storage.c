@@ -17,7 +17,7 @@
 
 #define ANIMATION_META_FILE "meta.txt"
 #define ANIMATION_DIR EXT_PATH("dolphin")
-#defune ANIMATION_DIR_INVERTED EXT_PATH("dolphin_inverted");
+#define ANIMATION_DIR_INVERTED EXT_PATH("dolphin_inverted")
 #define ANIMATION_MANIFEST_FILE ANIMATION_DIR "/manifest.txt"
 #define TAG "AnimationStorage"
 
