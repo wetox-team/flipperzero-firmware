@@ -108,7 +108,7 @@ static void lfrfid_cli_write(Cli* cli, string_t args) {
     UNUSED(cli);
     UNUSED(args);
     // TODO implement rfid write
-    printf("Not implemented :(\r\n");
+    printf("Not Implemented :(\r\n");
 }
 
 static void lfrfid_cli_t5577_clear_password_and_config_to_EM(Cli* cli, string_t args) {
