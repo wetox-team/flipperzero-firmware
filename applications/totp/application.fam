@@ -9,6 +9,6 @@ App(
         "dialogs",
     ],
     stack_size=2 * 1024,
-    icon="A_U2F_14",
+    icon="A_TOTP_14",
     order=80,
 )

@@ -6,7 +6,7 @@
 
 #include <notification/notification_messages.h>
 
-#include <totp.h>
+#include <TOTP.h>
 #include "totp_app.h"
 
 #include <base32.h>
@@ -14,6 +14,11 @@
 
 #include <toolbox/path.h>
 #include <flipper_format/flipper_format.h>
+
+#include <math.h>
+
+#define membersof(x) (sizeof(x) / sizeof(x[0]))
+
 
 static const char* totp_file_header = "Flipper TOTP storage";
 static const uint32_t totp_file_version = 1;
@@ -30,23 +35,24 @@ typedef struct {
 } TotpEvent;
 
 uint8_t keyId = 0;
-uint8_t keys = 3;
 uint8_t* base32key[] = {
+    (unsigned char*)"A65FL2SUBAWMTQKYEISB3YXF",
     (unsigned char*)"JBSWY3DPEHPK3PXP",
-    (unsigned char*)"AMOGUSYOBABOBAAA",
-    (unsigned char*)"AMOGUSAAAAAAAAAA"};
-const char* keyNames[] = {"Test Key 1", "Test Key 2", "Amogus key"};
+    (unsigned char*)"EHWTBRS64DH5RXUEAEG6SZZE",
+    (unsigned char*)"JFVJLXZ6XMO726CZKYWMFFP4KZ5ABONO"
+};
+uint8_t keys = membersof(base32key);
+//uint8_t keys = 4;
 
-int keyLengths[] = {10, 10, 10};
+const char* keyNames[] = {"TOTP 1", "TOTP2", "TOTP3", "TOTP4"};
 
 static void totp_app_draw_callback(Canvas* canvas, void* ctx) {
     osMessageQueueId_t event_queue = ctx;
     TotpEvent event;
     osMessageQueueGet(event_queue, &event, NULL, osWaitForever);
+    int timezone = 0;
 
     uint8_t hmacKey[20];
-
-    int timezone = -3;
 
     canvas_clear(canvas);
     canvas_set_font(canvas, FontPrimary);
@@ -55,17 +61,19 @@ static void totp_app_draw_callback(Canvas* canvas, void* ctx) {
 
     //FURI_LOG_I("TOTP", "key is %s", base32key[keyId]);
 
-    base32_decode(base32key[keyId], hmacKey, keyLengths[keyId]);
+    char* currentKey = (char*)base32key[keyId];
+    uint8_t keyLength = ceil((strlen(currentKey)/1.6));
+
+    base32_decode(base32key[keyId], hmacKey, keyLength);
     //FURI_LOG_I("TOTP", "len = %d", len);
 
-    //uint8_t hmacKey[] = {0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x21, 0xde, 0xad, 0xbe, 0xef}; // Secret key
-    TOTP(hmacKey, keyLengths[keyId], 30); // Secret key, Secret key length, Timestep (30s)
+    TOTP(hmacKey, keyLength, 30); // Secret key, Secret key length, Timestep (30s)
 
     FuriHalRtcDateTime datetime = {0};
     furi_hal_rtc_get_datetime(&datetime);
 
     struct tm date = {0};
-    date.tm_hour = datetime.hour + timezone;
+    date.tm_hour = datetime.hour - 2;
     date.tm_min = datetime.minute;
     date.tm_sec = datetime.second;
     date.tm_mday = datetime.day;
