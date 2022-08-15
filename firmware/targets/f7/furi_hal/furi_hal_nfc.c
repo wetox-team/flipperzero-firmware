@@ -14,6 +14,43 @@
 
 #define TAG "FuriHalNfc"
 
+static const uint8_t nfc_furi_odd_byte_parity[256] = {
+    1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0,
+    1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1,
+    1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1,
+    0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0,
+    1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1,
+    0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0,
+    0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1,
+    0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
+    1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1};
+
+uint8_t nfc_furi_odd_parity8(uint8_t data) {
+    return nfc_furi_odd_byte_parity[data];
+}
+
+void nfc_furi_get_parity(uint8_t* data, uint8_t len, uint8_t* par) {
+    uint16_t paritybit_cnt = 0;
+    uint16_t paritybyte_cnt = 0;
+    uint8_t parityBits = 0;
+
+    for(uint16_t i = 0; i < len; i++) {
+        // Generate the parity bits
+        parityBits |= ((nfc_furi_odd_parity8(data[i])) << (7 - paritybit_cnt));
+        if(paritybit_cnt == 7) {
+            par[paritybyte_cnt] = parityBits; // save 8 Bits parity
+            parityBits = 0; // and advance to next Parity Byte
+            paritybyte_cnt++;
+            paritybit_cnt = 0;
+        } else {
+            paritybit_cnt++;
+        }
+    }
+
+    // save remaining parity bits
+    par[paritybyte_cnt] = parityBits;
+}
+
 static const uint32_t clocks_in_ms = 64 * 1000;
 
 FuriEventFlag* event = NULL;
@@ -292,6 +329,65 @@ bool furi_hal_nfc_listen_rx(FuriHalNfcTxRxContext* tx_rx, uint32_t timeout_ms) {
         }
     }
 
+    if(tx_rx->sniff_rx) {
+        uint8_t parity[3] = {0x00, 0x00, 0x00};
+        // WUPA
+        uint8_t wupa[1] = {0x26};
+        nfc_furi_get_parity(wupa, 1, parity);
+        tx_rx->sniff_rx(wupa, 8, false, tx_rx->sniff_context, parity, 1);
+        // ATQA
+        uint8_t atqa[2] = {0x04, 0x00};
+        nfc_furi_get_parity(atqa, 2, parity);
+        tx_rx->sniff_tx(atqa, 16, false, tx_rx->sniff_context, parity, 1);
+        // ANTICOLL
+        uint8_t anticoll[2] = {0x93, 0x20};
+        nfc_furi_get_parity(anticoll, 2, parity);
+        tx_rx->sniff_rx(anticoll, 16, false, tx_rx->sniff_context, parity, 1);
+        // UID cascade 1
+        uint8_t card_uid[7] = {0x04, 0x59, 0x5A, 0x72, 0x9C, 0x69, 0x80};
+        uint8_t uid[5] = {0x88, 0x00, 0x00, 0x00, 0x00};
+        memcpy(&uid[1], &card_uid[0], 3);
+        nfc_furi_get_parity(uid, 5, parity);
+        tx_rx->sniff_tx(uid, 40, false, tx_rx->sniff_context, parity, 1);
+        // SELECT_UID
+        uint8_t select_uid[9] = {0x93, 0x70, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        memcpy(&select_uid[2], uid, 5);
+        nfca_append_crc16(select_uid, 7);
+        nfc_furi_get_parity(select_uid, 9, parity);
+        tx_rx->sniff_rx(select_uid, 72, false, tx_rx->sniff_context, parity, 2);
+        // SAK cascade 1
+        uint8_t sak[3] = {0x04, 0xDA, 0x17};
+        nfc_furi_get_parity(sak, 3, parity);
+        tx_rx->sniff_tx(sak, 24, false, tx_rx->sniff_context, parity, 1);
+        // ANTICOLL 2
+        uint8_t anticoll2[2] = {0x95, 0x20};
+        nfc_furi_get_parity(anticoll2, 2, parity);
+        tx_rx->sniff_rx(anticoll2, 16, false, tx_rx->sniff_context, parity, 1);
+        // UID cascade 2
+        uint8_t uid2[5] = {0x00, 0x00, 0x00, 0x00, 0x00};
+        memcpy(&uid2[0], &card_uid[3], 4);
+        nfc_furi_get_parity(uid2, 5, parity);
+        tx_rx->sniff_tx(uid2, 40, false, tx_rx->sniff_context, parity, 1);
+        // SELECT_UID 2
+        uint8_t select_uid2[9] = {0x95, 0x70, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        memcpy(&select_uid2[2], uid2, 5);
+        nfca_append_crc16(select_uid2, 7);
+        nfc_furi_get_parity(select_uid2, 9, parity);
+        tx_rx->sniff_rx(select_uid2, 72, false, tx_rx->sniff_context, parity, 2);
+        // SAK cascade 2
+        uint8_t sak2[3] = {0x08, 0xB6, 0xDD};
+        nfc_furi_get_parity(sak2, 3, parity);
+        tx_rx->sniff_tx(sak2, 24, false, tx_rx->sniff_context, parity, 1);
+    }
+    if(tx_rx->sniff_rx) {
+        uint8_t rx_bytes = ceil(tx_rx->rx_bits / 8);
+        uint8_t parity_len = ceil(((rx_bytes - 1) / 8) + 1);
+        uint8_t parity[parity_len];
+        memset(parity, 0, sizeof(parity));
+        tx_rx->sniff_rx(
+            tx_rx->rx_data, tx_rx->rx_bits, false, tx_rx->sniff_context, parity, parity_len);
+    }
+
     return data_received;
 }
 
@@ -496,7 +592,12 @@ static bool furi_hal_nfc_transparent_tx_rx(FuriHalNfcTxRxContext* tx_rx, uint16_
     st25r3916ExecuteCommand(ST25R3916_CMD_UNMASK_RECEIVE_DATA);
 
     if(tx_rx->sniff_tx) {
-        tx_rx->sniff_tx(tx_rx->tx_data, tx_rx->tx_bits, false, tx_rx->sniff_context);
+        uint8_t tx_bytes = ceil(tx_rx->tx_bits / 8);
+        uint8_t parity_len = ceil(((tx_bytes - 1) / 8) + 1);
+        uint8_t parity[parity_len];
+        memset(parity, 0, sizeof(parity));
+        tx_rx->sniff_tx(
+            tx_rx->tx_data, tx_rx->tx_bits, false, tx_rx->sniff_context, parity, parity_len);
     }
 
     // Manually wait for interrupt
@@ -539,7 +640,12 @@ static bool furi_hal_nfc_transparent_tx_rx(FuriHalNfcTxRxContext* tx_rx, uint16_
         memcpy(tx_rx->rx_data, rx, len);
 
         if(tx_rx->sniff_rx) {
-            tx_rx->sniff_rx(tx_rx->rx_data, tx_rx->rx_bits, false, tx_rx->sniff_context);
+            uint8_t rx_bytes = ceil(tx_rx->rx_bits / 8);
+            uint8_t parity_len = ceil(((rx_bytes - 1) / 8) + 1);
+            uint8_t parity[parity_len];
+            memset(parity, 0, sizeof(parity));
+            tx_rx->sniff_rx(
+                tx_rx->rx_data, tx_rx->rx_bits, false, tx_rx->sniff_context, parity, parity_len);
         }
 
         ret = true;
@@ -654,7 +760,15 @@ bool furi_hal_nfc_tx_rx(FuriHalNfcTxRxContext* tx_rx, uint16_t timeout_ms) {
 
     if(tx_rx->sniff_tx) {
         bool crc_dropped = !(flags & RFAL_TXRX_FLAGS_CRC_TX_MANUAL);
-        tx_rx->sniff_tx(tx_rx->tx_data, tx_rx->tx_bits, crc_dropped, tx_rx->sniff_context);
+        uint8_t tx_bytes = ceil(tx_rx->tx_bits / 8);
+        uint8_t parity_len = ceil(((tx_bytes - 1) / 8) + 1);
+        tx_rx->sniff_tx(
+            tx_rx->tx_data,
+            tx_rx->tx_bits,
+            crc_dropped,
+            tx_rx->sniff_context,
+            tx_rx->tx_parity,
+            parity_len);
     }
 
     uint32_t start = DWT->CYCCNT;
@@ -685,7 +799,15 @@ bool furi_hal_nfc_tx_rx(FuriHalNfcTxRxContext* tx_rx, uint16_t timeout_ms) {
 
     if(tx_rx->sniff_rx) {
         bool crc_dropped = !(flags & RFAL_TXRX_FLAGS_CRC_RX_KEEP);
-        tx_rx->sniff_rx(tx_rx->rx_data, tx_rx->rx_bits, crc_dropped, tx_rx->sniff_context);
+        uint8_t rx_bytes = ceil(tx_rx->rx_bits / 8);
+        uint8_t parity_len = ceil(((rx_bytes - 1) / 8) + 1);
+        tx_rx->sniff_rx(
+            tx_rx->rx_data,
+            tx_rx->rx_bits,
+            crc_dropped,
+            tx_rx->sniff_context,
+            tx_rx->rx_parity,
+            parity_len);
     }
 
     return true;

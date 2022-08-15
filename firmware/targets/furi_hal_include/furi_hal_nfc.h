@@ -80,8 +80,13 @@ typedef struct {
     uint8_t sak;
 } FuriHalNfcDevData;
 
-typedef void (
-    *FuriHalNfcTxRxSniffCallback)(uint8_t* data, uint16_t bits, bool crc_dropped, void* context);
+typedef void (*FuriHalNfcTxRxSniffCallback)(
+    uint8_t* data,
+    uint16_t bits,
+    bool crc_dropped,
+    void* context,
+    uint8_t* parity,
+    int parity_len);
 
 typedef struct {
     uint8_t tx_data[FURI_HAL_NFC_DATA_BUFF_SIZE];

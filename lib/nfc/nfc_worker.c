@@ -499,7 +499,17 @@ void nfc_worker_emulate_mf_classic(NfcWorker* nfc_worker) {
     furi_hal_nfc_listen_start(nfc_data);
     while(nfc_worker->state == NfcWorkerStateMfClassicEmulate) {
         if(furi_hal_nfc_listen_rx(&tx_rx, 300)) {
+            // Fake anticollision if uid is 7 bytes long
             mf_classic_emulator(&emulator, &tx_rx);
+        } else {
+            uint8_t halt[4] = {0x50, 0x00, 0x00, 0x00};
+            nfca_append_crc16(halt, 2);
+            uint8_t parity[1] = {0x00};
+            nfc_util_get_parity(halt, 2, parity);
+            tx_rx.sniff_rx(halt, 32, true, tx_rx.sniff_context, parity, 1);
+            uint8_t wupa[1] = {0x26};
+            nfc_util_get_parity(wupa, 1, parity);
+            tx_rx.sniff_rx(wupa, 8, true, tx_rx.sniff_context, parity, 1);
         }
     }
     if(emulator.data_changed) {

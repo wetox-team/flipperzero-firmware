@@ -45,3 +45,25 @@ uint8_t nfc_util_even_parity32(uint32_t data) {
 uint8_t nfc_util_odd_parity8(uint8_t data) {
     return nfc_util_odd_byte_parity[data];
 }
+
+void nfc_util_get_parity(uint8_t* data, uint8_t len, uint8_t* par) {
+    uint16_t paritybit_cnt = 0;
+    uint16_t paritybyte_cnt = 0;
+    uint8_t parityBits = 0;
+
+    for(uint16_t i = 0; i < len; i++) {
+        // Generate the parity bits
+        parityBits |= ((nfc_util_odd_parity8(data[i])) << (7 - paritybit_cnt));
+        if(paritybit_cnt == 7) {
+            par[paritybyte_cnt] = parityBits; // save 8 Bits parity
+            parityBits = 0; // and advance to next Parity Byte
+            paritybyte_cnt++;
+            paritybit_cnt = 0;
+        } else {
+            paritybit_cnt++;
+        }
+    }
+
+    // save remaining parity bits
+    par[paritybyte_cnt] = parityBits;
+}
