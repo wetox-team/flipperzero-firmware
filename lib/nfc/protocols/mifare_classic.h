@@ -3,6 +3,7 @@
 #include <furi_hal_nfc.h>
 
 #include "crypto1.h"
+#include "mfkey32v2.h"
 
 #define MF_CLASSIC_BLOCK_SIZE (16)
 #define MF_CLASSIC_TOTAL_BLOCKS_MAX (256)

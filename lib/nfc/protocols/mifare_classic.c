@@ -855,6 +855,15 @@ bool mf_classic_emulator(MfClassicEmulator* emulator, FuriHalNfcTxRxContext* tx_
                 nr,
                 ar);
 
+            // Insert nonce brute here
+            uint32_t nonce1 = 0xfd3dd2ce;
+            uint32_t nr1 = 0xe25fb8d8;
+            uint32_t ar1 = 0x51f4a887;
+            uint32_t nonce2 = 0xdc0fae97;
+            uint32_t nr2 = 0xac63f2af;
+            uint32_t ar2 = 0xb23aa283;
+            mfkey32v2(emulator->cuid, nonce1, nonce2, nr1, ar1, nr2, ar2);
+
             crypto1_word(&emulator->crypto, nr, 1);
             uint32_t cardRr = ar ^ crypto1_word(&emulator->crypto, 0, 0);
             if(cardRr != prng_successor(nonce, 64)) {
