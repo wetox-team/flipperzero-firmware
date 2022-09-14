@@ -5,6 +5,9 @@
 #include "plantain_4k_parser.h"
 #include "troika_4k_parser.h"
 #include "two_cities.h"
+#include "concession_spb_4k_parser.h"
+#include "concession_spb_4k_parser_1.h"
+#include "ekp_4k_parser.h"
 #include "all_in_one.h"
 
 NfcSupportedCard nfc_supported_card[NfcSupportedCardTypeEnd] = {
@@ -42,6 +45,27 @@ NfcSupportedCard nfc_supported_card[NfcSupportedCardTypeEnd] = {
             .verify = two_cities_parser_verify,
             .read = two_cities_parser_read,
             .parse = two_cities_parser_parse,
+        },
+    [NfcSupportedCardTypeConcessionSPB4K] =
+        {
+            .protocol = NfcDeviceProtocolMifareClassic,
+            .verify = concession_spb_4k_parser_verify,
+            .read = concession_spb_4k_parser_read,
+            .parse = concession_spb_4k_parser_parse,
+        },
+    [NfcSupportedCardTypeConcessionSPB4K_1] =
+        {
+            .protocol = NfcDeviceProtocolMifareClassic,
+            .verify = concession_spb_4k_parser_verify_1,
+            .read = concession_spb_4k_parser_read_1,
+            .parse = concession_spb_4k_parser_parse_1,
+        },
+    [NfcSupportedCardTypeEKP4K] =
+        {
+            .protocol = NfcDeviceProtocolMifareClassic,
+            .verify = ekp_4k_parser_verify,
+            .read = ekp_4k_parser_read,
+            .parse = ekp_4k_parser_parse,
         },
     [NfcSupportedCardTypeAllInOne] =
         {

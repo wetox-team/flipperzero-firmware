@@ -13,6 +13,9 @@ typedef enum {
     NfcSupportedCardTypeTroika4K,
     NfcSupportedCardTypeTwoCities,
     NfcSupportedCardTypeAllInOne,
+    NfcSupportedCardTypeConcessionSPB4K,
+    NfcSupportedCardTypeConcessionSPB4K_1,
+    NfcSupportedCardTypeEKP4K,
 
     NfcSupportedCardTypeEnd,
 } NfcSupportedCardType;
