@@ -11,8 +11,11 @@ void magspoof_scene_file_select_on_enter(void* context) {
 }
 
 bool magspoof_scene_file_select_on_event(void* context, SceneManagerEvent event) {
+    UNUSED(context);
+    UNUSED(event);
     return false;
 }
 
 void magspoof_scene_file_select_on_exit(void* context) {
+    UNUSED(context);
 }

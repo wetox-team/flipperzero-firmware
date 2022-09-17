@@ -59,5 +59,5 @@ bool magspoof_scene_start_on_event(void* context, SceneManagerEvent event) {
 void magspoof_scene_start_on_exit(void* context) {
     Magspoof* magspoof = (Magspoof*)context;
 
-    submenu_clean(magspoof->submenu);
+    submenu_free(magspoof->submenu);
 }

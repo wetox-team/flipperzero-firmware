@@ -63,5 +63,5 @@ bool magspoof_scene_saved_menu_on_event(void* context, SceneManagerEvent event) 
 void magspoof_scene_saved_menu_on_exit(void* context) {
     Magspoof* app = (Magspoof*)context;
 
-    submenu_clean(app->submenu);
+    submenu_free(app->submenu);
 }

@@ -19,7 +19,7 @@ bool magspoof_custom_event_callback(void* context, uint32_t event) {
 }
 
 static Magspoof* magspoof_alloc() {
-    Magspoof* app = furi_alloc(sizeof(Magspoof));
+    Magspoof* app = malloc(sizeof(Magspoof));
     // UartDumpModel* cont = furi_alloc(sizeof(UartDumpModel));
 
     app->rx_stream = xStreamBufferCreate(2048, 1);
@@ -79,7 +79,7 @@ static Magspoof* magspoof_alloc() {
     view_dispatcher_switch_to_view(app->view_dispatcher, MagspoofViewMenu);
 
     // Enable uart listener
-    furi_hal_console_disable();
+    // furi_hal_console_disable();
     // furi_hal_uart_set_br(FuriHalUartIdUSART1, 9600);
     // furi_hal_uart_set_irq_cb(FuriHalUartIdUSART1, magspoof_on_irq_cb, app);
 
@@ -105,7 +105,7 @@ static void magspoof_free(Magspoof* app) {
 
     magspoof_device_free(app->dev);
 
-    furi_hal_console_enable();
+    //furi_hal_console_enable();
 
     // Free views
     view_dispatcher_remove_view(app->view_dispatcher, MagspoofViewMenu);
@@ -142,6 +142,7 @@ static void magspoof_free(Magspoof* app) {
 }
 
 int32_t magspoof_app(void* p) {
+    UNUSED(p);
     Magspoof* app = magspoof_alloc();
 
     scene_manager_next_scene(app->scene_manager, MagspoofSceneStart);

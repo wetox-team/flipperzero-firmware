@@ -6,13 +6,7 @@
 #include <storage/storage.h>
 #include <dialogs/dialogs.h>
 
-#include "mifare_ultralight.h"
-
-
 #define MAGSPOOF_DEV_NAME_MAX_LEN 22
-#define MAGSPOOF_FILE_NAME_MAX_LEN 120
-
-
 
 typedef struct {
     string_t data;
@@ -28,7 +22,7 @@ typedef struct {
     MagspoofDeviceData dev_data;
     string_t data;
     char dev_name[MAGSPOOF_DEV_NAME_MAX_LEN + 1];
-    char file_name[MAGSPOOF_FILE_NAME_MAX_LEN];
+    string_t load_path;
     bool shadow_file_exist;
 } MagspoofDevice;
 
@@ -46,4 +40,4 @@ bool magspoof_file_select(MagspoofDevice* dev);
 
 void magspoof_device_clear(MagspoofDevice* dev);
 
-bool magspoof_device_delete(MagspoofDevice* dev);
+bool magspoof_device_delete(MagspoofDevice* dev, bool use_load_path);

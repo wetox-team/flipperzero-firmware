@@ -1,5 +1,4 @@
 #include "../magspoof_i.h"
-#include <furi-hal-resources.h>
 
 #define MAGSPOOF_READ_CARD_CUSTOM_EVENT (10UL)
 #define MAGSPOOF_READ_CARD_DRAW_EVENT (999)
@@ -7,7 +6,7 @@
 #define WORKER_EVENTS_MASK (WorkerEventStop | WorkerEventRx)
 
 const NotificationSequence magspoof_sequence_notification = {
-    &message_display_on,
+    &message_display_backlight_on,
     &message_green_255,
     &message_delay_10,
     NULL,
@@ -48,6 +47,7 @@ void magspoof_scene_read_card_dialog_callback(DialogExResult result, void* conte
 
 //             canvas_draw_box(
 //                 canvas,
+
 //                 width,
 //                 (i) * (canvas_current_font_height(canvas) - 1) + 2,
 //                 2,
@@ -63,7 +63,7 @@ void gpio_item_set_rfid_pin(uint8_t index, bool level) {
     if (index == 2) {
         // hal_gpio_write(&gpio_ext_pa2, level);
         // hal_gpio_write(&gpio_rfid_pull, level);
-        hal_gpio_write(&gpio_rfid_carrier_out, level);
+        furi_hal_gpio_write(&gpio_rfid_carrier_out, level);
     }
     if (index == 1) {
         // hal_gpio_write(&gpio_ext_pb13, level);
@@ -77,7 +77,7 @@ static void playBit(uint8_t sendBit)
   magspoof_bit_dir ^= 1;
   gpio_item_set_rfid_pin(PIN_A, magspoof_bit_dir);
   gpio_item_set_rfid_pin(PIN_B, !magspoof_bit_dir);
-  delay_us(CLOCK_US);
+  furi_delay_us(CLOCK_US);
 
   if (sendBit)
   {
@@ -85,7 +85,7 @@ static void playBit(uint8_t sendBit)
     gpio_item_set_rfid_pin(PIN_A, magspoof_bit_dir);
     gpio_item_set_rfid_pin(PIN_B, !magspoof_bit_dir);
   }
-  delay_us(CLOCK_US);
+  furi_delay_us(CLOCK_US);
 }
 
 static void magspoof_spoof(string_t track_str, uint8_t track) {
@@ -122,18 +122,18 @@ static void magspoof_spoof(string_t track_str, uint8_t track) {
     
     // gpio_item_configure_all_pins(GpioModeOutputPushPull);
 
-    furi_hal_ibutton_start();
+    furi_hal_ibutton_start_drive();
     furi_hal_ibutton_pin_low();
     
     // hal_gpio_init(&gpio_rfid_carrier, GpioModeOutputPushPull, GpioPullNo, GpioSpeedLow);
     
     
-    hal_gpio_init(&gpio_rfid_pull, GpioModeOutputPushPull, GpioPullNo, GpioSpeedLow);
-    hal_gpio_write(&gpio_rfid_pull, false);
+    furi_hal_gpio_init(&gpio_rfid_data_in, GpioModeOutputPushPull, GpioPullNo, GpioSpeedLow);
+    furi_hal_gpio_write(&gpio_rfid_data_in, false);
 
-    hal_gpio_init(&gpio_rfid_carrier_out, GpioModeOutputPushPull, GpioPullNo, GpioSpeedLow);
+    furi_hal_gpio_init(&gpio_rfid_carrier_out, GpioModeOutputPushPull, GpioPullNo, GpioSpeedLow);
     
-    delay(300);
+    furi_delay_ms(300);
 
     FURI_CRITICAL_ENTER();
 
@@ -253,7 +253,7 @@ static void magspoof_on_irq_cb(UartIrqEvent ev, uint8_t data, void* context) {
 
     if(ev == UartIrqEventRXNE) {
         xStreamBufferSendFromISR(app->rx_stream, &data, 1, &xHigherPriorityTaskWoken);
-        osThreadFlagsSet(furi_thread_get_thread_id(app->worker_thread), WorkerEventRx);
+        furi_thread_flags_set(furi_thread_get_id(app->worker_thread), WorkerEventRx);
         portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
 }
@@ -309,8 +309,8 @@ static int32_t magspoof_worker(void* context) {
     Magspoof* app = context;
 
     while(1) {
-        uint32_t events = osThreadFlagsWait(WORKER_EVENTS_MASK, osFlagsWaitAny, osWaitForever);
-        furi_check((events & osFlagsError) == 0);
+        uint32_t events = furi_thread_flags_wait(WORKER_EVENTS_MASK, FuriFlagWaitAny, FuriWaitForever);
+        furi_check((events & FuriFlagError) == 0);
 
         if(events & WorkerEventStop) break;
         if(events & WorkerEventRx) {
@@ -332,9 +332,8 @@ static int32_t magspoof_worker(void* context) {
             } while(length > 0);
 
             notification_message(app->notification, &magspoof_sequence_notification);
-            with_view_model(
-                app->view, (UartDumpModel * model) { return true; });
-            
+            with_view_model(app->view, (UartDumpModel * model) { 
+                    UNUSED(model); return true; });
             
             // XXX make event
             view_dispatcher_send_custom_event(app->view_dispatcher, MAGSPOOF_READ_CARD_DRAW_EVENT);
@@ -408,7 +407,8 @@ bool magspoof_scene_read_card_on_event(void* context, SceneManagerEvent event) {
             int8_t COUNT = 4;
             string_t res;
             string_init(res);
-            for (int8_t i = 0; i < string_size(app->dev->data); i+=1) {
+            size_t data_size = string_size(app->dev->data);
+            for (size_t i = 0; i < data_size; i++) {
                 // string_t tmp;
                 // string_init_set(tmp, app->dev->data);
                 // string_mid(tmp, i, COUNT);
@@ -465,7 +465,7 @@ bool magspoof_scene_read_card_on_event(void* context, SceneManagerEvent event) {
             // nfc_device_set_name(nfc->dev, "");
             // scene_manager_next_scene(nfc->scene_manager, NfcSceneCardMenu);
             // magspoof_device_save(app->dev, "Test");
-            char * d = furi_alloc(1);
+            char * d = malloc(1);
             d[0] = string_get_char(app->dev->data, 2);
             magspoof_device_save(app->dev, d);
             return true;
@@ -490,7 +490,7 @@ void magspoof_scene_read_card_on_exit(void* context) {
 
     // Stop worker
     // magspoof_worker_stop(nfc->worker);
-    osThreadFlagsSet(furi_thread_get_thread_id(app->worker_thread), WorkerEventStop);
+    furi_thread_flags_set(furi_thread_get_id(app->worker_thread), WorkerEventStop);
     furi_thread_join(app->worker_thread);
     furi_thread_free(app->worker_thread);
 
