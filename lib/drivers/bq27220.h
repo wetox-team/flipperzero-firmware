@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <furi-hal-i2c.h>
+#include <furi_hal_i2c.h>
 
 #define BQ27220_ERROR 0x0
 #define BQ27220_SUCCESS 0x1
@@ -28,21 +28,24 @@ typedef struct {
     bool FD : 1; // Full-discharge is detected
 } BatteryStatus;
 
+_Static_assert(sizeof(BatteryStatus) == 2, "Incorrect structure size");
+
 typedef struct {
     // Low byte, Low bit first
-    bool CALMD : 1;
-    bool SEC0 : 1;
-    bool SEC1 : 1;
-    bool EDV2 : 1;
-    bool VDQ : 1;
-    bool INITCOMP : 1;
-    bool SMTH : 1;
-    bool BTPINT : 1;
+    bool CALMD : 1; /**< Calibration mode enabled */
+    uint8_t SEC : 2; /**< Current security access */
+    bool EDV2 : 1; /**< EDV2 threshold exceeded */
+    bool VDQ : 1; /**< Indicates if Current discharge cycle is NOT qualified or qualified for an FCC updated */
+    bool INITCOMP : 1; /**< gauge initialization is complete */
+    bool SMTH : 1; /**< RemainingCapacity is scaled by smooth engine */
+    bool BTPINT : 1; /**< BTP threshold has been crossed */
     // High byte, Low bit first
     uint8_t RSVD1 : 2;
-    bool CFGUPDATE : 1;
+    bool CFGUPDATE : 1; /**< Gauge is in CONFIG UPDATE mode */
     uint8_t RSVD0 : 5;
 } OperationStatus;
+
+_Static_assert(sizeof(OperationStatus) == 2, "Incorrect structure size");
 
 typedef struct {
     // Low byte, Low bit first
@@ -62,6 +65,7 @@ typedef struct {
     uint8_t RSVD3 : 3;
 } GaugingConfig;
 
+_Static_assert(sizeof(GaugingConfig) == 2, "Incorrect structure size");
 
 typedef struct {
     union {
@@ -108,7 +112,8 @@ int16_t bq27220_get_current(FuriHalI2cBusHandle* handle);
 uint8_t bq27220_get_battery_status(FuriHalI2cBusHandle* handle, BatteryStatus* battery_status);
 
 /** Get operation status */
-uint8_t bq27220_get_operation_status(FuriHalI2cBusHandle* handle, OperationStatus* operation_status);
+uint8_t
+    bq27220_get_operation_status(FuriHalI2cBusHandle* handle, OperationStatus* operation_status);
 
 /** Get temperature in units of 0.1°K */
 uint16_t bq27220_get_temperature(FuriHalI2cBusHandle* handle);

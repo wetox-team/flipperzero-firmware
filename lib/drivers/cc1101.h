@@ -4,7 +4,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <furi-hal-spi.h>
+#include <furi_hal_spi.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -140,13 +140,6 @@ uint32_t cc1101_set_frequency(FuriHalSpiBusHandle* handle, uint32_t value);
  * @return     real inermediate frequency that were synthesized
  */
 uint32_t cc1101_set_intermediate_frequency(FuriHalSpiBusHandle* handle, uint32_t value);
-
-/** Set Power Amplifier level table, ramp
- *
- * @param      handle  - pointer to FuriHalSpiHandle
- * @param      value   - array of power level values
- */
-void cc1101_set_pa_table(FuriHalSpiBusHandle* handle, const uint8_t value[8]);
 
 /** Set Power Amplifier level table, ramp
  *

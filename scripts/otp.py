@@ -24,6 +24,7 @@ OTP_REGIONS = {
     "eu_ru": 0x01,
     "us_ca_au": 0x02,
     "jp": 0x03,
+    "world": 0x04,
 }
 
 OTP_DISPLAYS = {
@@ -149,8 +150,10 @@ class Main(App):
         self.logger.info(f"Generating OTP")
         self._processFirstArgs()
         self._processSecondArgs()
-        open(f"{self.args.file}_first.bin", "wb").write(self._packFirst())
-        open(f"{self.args.file}_second.bin", "wb").write(self._packSecond())
+        with open(f"{self.args.file}_first.bin", "wb") as file:
+            file.write(self._packFirst())
+        with open(f"{self.args.file}_second.bin", "wb") as file:
+            file.write(self._packSecond())
         self.logger.info(
             f"Generated files: {self.args.file}_first.bin and {self.args.file}_second.bin"
         )
@@ -166,9 +169,9 @@ class Main(App):
 
         try:
             self.logger.info(f"Packing binary data")
-            file = open(filename, "wb")
-            file.write(self._packFirst())
-            file.close()
+            with open(filename, "wb") as file:
+                file.write(self._packFirst())
+
             self.logger.info(f"Flashing OTP")
             cp = CubeProgrammer(self._getCubeParams())
             cp.flashBin("0x1FFF7000", filename)
@@ -190,9 +193,9 @@ class Main(App):
 
         try:
             self.logger.info(f"Packing binary data")
-            file = open(filename, "wb")
-            file.write(self._packSecond())
-            file.close()
+            with open(filename, "wb") as file:
+                file.write(self._packSecond())
+
             self.logger.info(f"Flashing OTP")
             cp = CubeProgrammer(self._getCubeParams())
             cp.flashBin("0x1FFF7010", filename)
@@ -215,10 +218,10 @@ class Main(App):
 
         try:
             self.logger.info(f"Packing binary data")
-            file = open(filename, "wb")
-            file.write(self._packFirst())
-            file.write(self._packSecond())
-            file.close()
+            with open(filename, "wb") as file:
+                file.write(self._packFirst())
+                file.write(self._packSecond())
+
             self.logger.info(f"Flashing OTP")
             cp = CubeProgrammer(self._getCubeParams())
             cp.flashBin("0x1FFF7000", filename)

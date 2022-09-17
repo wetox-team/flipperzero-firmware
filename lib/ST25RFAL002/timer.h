@@ -1,3 +1,4 @@
+#pragma once
 /******************************************************************************
   * @attention
   *
@@ -32,29 +33,29 @@
  *   an abstraction for SW timers
  *
  */
- 
- 
- /*
+
+/*
 ******************************************************************************
 * INCLUDES
 ******************************************************************************
 */
-#include "platform.h"
+#include <stdint.h>
+#include <stdbool.h>
 
 /*
 ******************************************************************************
 * GLOBAL MACROS
 ******************************************************************************
 */
-#define timerIsRunning(t)            (!timerIsExpired(t))
+#define timerIsRunning(t) (!timerIsExpired(t))
 
 /*
 ******************************************************************************
 * GLOBAL DEFINES
 ******************************************************************************
 */
- 
- /*! 
+
+/*! 
  *****************************************************************************
  * \brief  Calculate Timer
  *  
@@ -70,8 +71,7 @@
  * \return u32 : The new timer calculated based on the given time 
  *****************************************************************************
  */
-uint32_t timerCalculateTimer( uint16_t time );
-
+uint32_t timerCalculateTimer(uint16_t time);
 
 /*! 
  *****************************************************************************
@@ -89,10 +89,9 @@ uint32_t timerCalculateTimer( uint16_t time );
  * \return false : timer is still running
  *****************************************************************************
  */
-bool timerIsExpired( uint32_t timer );
+bool timerIsExpired(uint32_t timer);
 
-
- /*! 
+/*! 
  *****************************************************************************
  * \brief  Performs a Delay
  *  
@@ -102,8 +101,7 @@ bool timerIsExpired( uint32_t timer );
  *
  *****************************************************************************
  */
-void timerDelay( uint16_t time );
-
+void timerDelay(uint16_t time);
 
 /*! 
  *****************************************************************************
@@ -113,8 +111,7 @@ void timerDelay( uint16_t time );
  * 
  *****************************************************************************
  */
-void timerStopwatchStart( void );
-
+void timerStopwatchStart(void);
 
 /*! 
  *****************************************************************************
@@ -125,4 +122,4 @@ void timerStopwatchStart( void );
  * \return The time in ms since the stopwatch was started
  *****************************************************************************
  */
-uint32_t timerStopwatchMeasure( void );
+uint32_t timerStopwatchMeasure(void);

@@ -41,7 +41,7 @@
 ******************************************************************************
 */
 #include "timer.h"
-
+#include <furi.h>
 
 /*
 ******************************************************************************
@@ -63,54 +63,43 @@ static uint32_t timerStopwatchTick;
 ******************************************************************************
 */
 
-
 /*******************************************************************************/
-uint32_t timerCalculateTimer( uint16_t time )
-{  
-  return (HAL_GetTick() + time);
+uint32_t timerCalculateTimer(uint16_t time) {
+    return (furi_get_tick() + time);
 }
 
-
 /*******************************************************************************/
-bool timerIsExpired( uint32_t timer )
-{
-  uint32_t uDiff;
-  int32_t sDiff;
-  
-  uDiff = (timer - HAL_GetTick());          /* Calculate the diff between the timers */
-  sDiff = uDiff;                            /* Convert the diff to a signed var      */
-  
-  /* Check if the given timer has expired already */
-  if( sDiff < 0 )
-  {
-    return true;
-  }
-  
-  return false;
+bool timerIsExpired(uint32_t timer) {
+    uint32_t uDiff;
+    int32_t sDiff;
+
+    uDiff = (timer - furi_get_tick()); /* Calculate the diff between the timers */
+    sDiff = uDiff; /* Convert the diff to a signed var      */
+
+    /* Check if the given timer has expired already */
+    if(sDiff < 0) {
+        return true;
+    }
+
+    return false;
 }
 
-
 /*******************************************************************************/
-void timerDelay( uint16_t tOut )
-{
-  uint32_t t;
-  
-  /* Calculate the timer and wait blocking until is running */
-  t = timerCalculateTimer( tOut );
-  while( timerIsRunning(t) );
+void timerDelay(uint16_t tOut) {
+    uint32_t t;
+
+    /* Calculate the timer and wait blocking until is running */
+    t = timerCalculateTimer(tOut);
+    while(timerIsRunning(t))
+        ;
 }
 
-
 /*******************************************************************************/
-void timerStopwatchStart( void )
-{
-  timerStopwatchTick = HAL_GetTick();
+void timerStopwatchStart(void) {
+    timerStopwatchTick = furi_get_tick();
 }
 
-
 /*******************************************************************************/
-uint32_t timerStopwatchMeasure( void )
-{
-  return (uint32_t)(HAL_GetTick() - timerStopwatchTick);
+uint32_t timerStopwatchMeasure(void) {
+    return (uint32_t)(furi_get_tick() - timerStopwatchTick);
 }
-

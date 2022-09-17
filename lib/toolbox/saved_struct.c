@@ -13,11 +13,7 @@ typedef struct {
     uint32_t timestamp;
 } SavedStructHeader;
 
-bool saved_struct_save(const char* path,
-                       void* data,
-                       size_t size,
-                       uint8_t magic,
-                       uint8_t version) {
+bool saved_struct_save(const char* path, void* data, size_t size, uint8_t magic, uint8_t version) {
     furi_assert(path);
     furi_assert(data);
     furi_assert(size);
@@ -26,16 +22,13 @@ bool saved_struct_save(const char* path,
     FURI_LOG_I(TAG, "Saving \"%s\"", path);
 
     // Store
-    Storage* storage = furi_record_open("storage");
+    Storage* storage = furi_record_open(RECORD_STORAGE);
     File* file = storage_file_alloc(storage);
     bool result = true;
     bool saved = storage_file_open(file, path, FSAM_WRITE, FSOM_CREATE_ALWAYS);
     if(!saved) {
         FURI_LOG_E(
-            TAG,
-            "Open failed \"%s\". Error: \'%s\'",
-            path,
-            storage_file_get_error_desc(file));
+            TAG, "Open failed \"%s\". Error: \'%s\'", path, storage_file_get_error_desc(file));
         result = false;
     }
 
@@ -58,44 +51,34 @@ bool saved_struct_save(const char* path,
 
         if(bytes_count != (size + sizeof(header))) {
             FURI_LOG_E(
-                TAG,
-                "Write failed \"%s\". Error: \'%s\'",
-                path,
-                storage_file_get_error_desc(file));
+                TAG, "Write failed \"%s\". Error: \'%s\'", path, storage_file_get_error_desc(file));
             result = false;
         }
     }
 
     storage_file_close(file);
     storage_file_free(file);
-    furi_record_close("storage");
+    furi_record_close(RECORD_STORAGE);
     return result;
 }
 
-bool saved_struct_load(const char* path,
-                       void* data,
-                       size_t size,
-                       uint8_t magic,
-                       uint8_t version) {
+bool saved_struct_load(const char* path, void* data, size_t size, uint8_t magic, uint8_t version) {
     FURI_LOG_I(TAG, "Loading \"%s\"", path);
 
     SavedStructHeader header;
 
-    uint8_t* data_read = furi_alloc(size);
-    Storage* storage = furi_record_open("storage");
+    uint8_t* data_read = malloc(size);
+    Storage* storage = furi_record_open(RECORD_STORAGE);
     File* file = storage_file_alloc(storage);
     bool result = true;
     bool loaded = storage_file_open(file, path, FSAM_READ, FSOM_OPEN_EXISTING);
-    if (!loaded) {
+    if(!loaded) {
         FURI_LOG_E(
-            TAG,
-            "Failed to read \"%s\". Error: %s",
-            path,
-            storage_file_get_error_desc(file));
+            TAG, "Failed to read \"%s\". Error: %s", path, storage_file_get_error_desc(file));
         result = false;
     }
 
-    if (result) {
+    if(result) {
         uint16_t bytes_count = storage_file_read(file, &header, sizeof(SavedStructHeader));
         bytes_count += storage_file_read(file, data_read, size);
 
@@ -126,24 +109,19 @@ bool saved_struct_load(const char* path,
 
         if(header.checksum != checksum) {
             FURI_LOG_E(
-                TAG,
-                "Checksum(%d != %d) mismatch of file \"%s\"",
-                header.checksum,
-                checksum,
-                path);
+                TAG, "Checksum(%d != %d) mismatch of file \"%s\"", header.checksum, checksum, path);
             result = false;
         }
     }
 
-    if (result) {
+    if(result) {
         memcpy(data, data_read, size);
     }
 
     storage_file_close(file);
     storage_file_free(file);
-    furi_record_close("storage");
+    furi_record_close(RECORD_STORAGE);
     free(data_read);
 
     return result;
 }
-
