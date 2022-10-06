@@ -49,6 +49,84 @@ static const MfClassicAuthContext plantain_keys_4k[] = {
     {.sector = 39, .key_a = 0x7259fa0197c6, .key_b = 0x5583698df085},
 };
 
+static const MfClassicAuthContext SPB_type_1[] = {
+    {.sector = 4, .key_a = 0xe56ac127dd45, .key_b = 0x19fc84a3784b},
+    {.sector = 5, .key_a = 0x77dabc9825e1, .key_b = 0x9764fec3154a},
+    {.sector = 8, .key_a = 0x26973ea74321, .key_b = 0xd27058c6e2c7},
+    {.sector = 12, .key_a = 0xacffffffffff, .key_b = 0x71f3a315ad26},
+};
+
+static const MfClassicAuthContext SPB_type_2[] = {
+    {.sector = 4, .key_a = 0xe56ac127dd45, .key_b = 0x19fc84a3784b},
+    {.sector = 5, .key_a = 0x77dabc9825e1, .key_b = 0x9764fec3154a},
+    {.sector = 8, .key_a = 0xa73f5dc1d333, .key_b = 0xd27058c6e2c7}, //B unknown, TODO
+};
+
+static const MfClassicAuthContext SPB_type_3[] = {
+    {.sector = 8, .key_a = 0x26973ea74321, .key_b = 0xd27058c6e2c7},
+    {.sector = 9, .key_a = 0xeb0a8ff88ade, .key_b = 0x578a9ada41e3},
+    {.sector = 12, .key_a = 0x000000000000, .key_b = 0x71f3a315ad26},
+    {.sector = 13, .key_a = 0xac70ca327a04, .key_b = 0xf29411c2663c},
+    {.sector = 14, .key_a = 0x51044efb5aab, .key_b = 0xebdc720dd1ce},
+};
+
+bool check_card_type(FuriHalNfcTxRxContext* tx_rx, uint8_t type) {
+    // furi_assert(nfc_worker);
+    // UNUSED(nfc_worker);
+
+    const MfClassicAuthContext* auth_context;
+    uint8_t auth_context_size;
+
+    if(type == 1) {
+        auth_context = SPB_type_1;
+        auth_context_size = COUNT_OF(SPB_type_1);
+    } else if(type == 2) {
+        auth_context = SPB_type_2;
+        auth_context_size = COUNT_OF(SPB_type_2);
+    } else if(type == 3) {
+        auth_context = SPB_type_3;
+        auth_context_size = COUNT_OF(SPB_type_3);
+    } else {
+        return false;
+    }
+    uint8_t counter = 0;
+    for(size_t i = 0; i < auth_context_size; i++) {
+        // check if we can read sector
+        if(mf_classic_authenticate(
+               tx_rx,
+               mf_classic_get_sector_trailer_block_num_by_sector(auth_context[i].sector),
+               auth_context[i].key_a,
+               MfClassicKeyA)) {
+            counter++;
+        } else {
+            FURI_LOG_D(
+                "Plant4k",
+                "Error: Type: %d, Sector: %d, Key A: %x",
+                type,
+                auth_context[i].sector,
+                auth_context[i].key_a);
+        }
+    }
+    if(counter == auth_context_size) {
+        return true;
+    }
+
+    return false;
+}
+
+uint8_t get_card_type(FuriHalNfcTxRxContext* tx_rx) {
+    uint8_t card_type = 0;
+
+    if(check_card_type(tx_rx, 1)) {
+        card_type = 1;
+    } else if(check_card_type(tx_rx, 2)) {
+        card_type = 2;
+    } else if(check_card_type(tx_rx, 3)) {
+        card_type = 3;
+    }
+    return card_type;
+}
+
 bool plantain_4k_parser_verify(NfcWorker* nfc_worker, FuriHalNfcTxRxContext* tx_rx) {
     furi_assert(nfc_worker);
     UNUSED(nfc_worker);
@@ -57,35 +135,227 @@ bool plantain_4k_parser_verify(NfcWorker* nfc_worker, FuriHalNfcTxRxContext* tx_
         return false;
     }
 
-    uint8_t sector = 8;
-    uint8_t block = mf_classic_get_sector_trailer_block_num_by_sector(sector);
-    FURI_LOG_D("Plant4K", "Verifying sector %d", sector);
-    if(mf_classic_authenticate(tx_rx, block, 0x26973ea74321, MfClassicKeyA)) {
-        FURI_LOG_D("Plant4K", "Sector %d verified", sector);
+    //     uint8_t sector = 8;
+    //     uint8_t block = mf_classic_get_sector_trailer_block_num_by_sector(sector);
+    //     FURI_LOG_D("Plant4K", "Verifying sector %d", sector);
+    //     if(mf_classic_authenticate(tx_rx, block, 0x26973ea74321, MfClassicKeyA)) {
+    //         FURI_LOG_D("Plant4K", "Sector %d verified", sector);
+    //         return true;
+    //     }
+    //     return false;
+
+    uint8_t card_type = get_card_type(tx_rx);
+    if(card_type) {
+        FURI_LOG_D("Plant4K", "SPB type %d", card_type);
         return true;
     }
+
     return false;
+}
+
+static uint8_t mf_classic_get_blocks_num_in_sector(uint8_t sector) {
+    furi_assert(sector < 40);
+    return sector < 32 ? 4 : 16;
+}
+
+static uint8_t mf_classic_get_first_block_num_of_sector(uint8_t sector) {
+    furi_assert(sector < 40);
+    if(sector < 32) {
+        return sector * 4;
+    } else {
+        return 32 * 4 + (sector - 32) * 16;
+    }
+}
+
+void add_fake_sector(
+    uint8_t sector_num,
+    MfClassicData* data,
+    uint64_t key_a,
+    uint64_t key_b,
+    MfClassicSector* temp_sector) {
+    uint8_t first_block = mf_classic_get_first_block_num_of_sector(sector_num);
+    for(uint8_t j = 0; j < temp_sector->total_blocks; j++) {
+        mf_classic_set_block_read(data, first_block + j, &(temp_sector->block[j]));
+    }
+    if(key_a != MF_CLASSIC_NO_KEY) {
+        mf_classic_set_key_found(data, sector_num, MfClassicKeyA, key_a);
+    }
+    if(key_b != MF_CLASSIC_NO_KEY) {
+        mf_classic_set_key_found(data, sector_num, MfClassicKeyB, key_b);
+    }
 }
 
 bool plantain_4k_parser_read(NfcWorker* nfc_worker, FuriHalNfcTxRxContext* tx_rx) {
     furi_assert(nfc_worker);
 
-    MfClassicReader reader = {};
+    uint8_t counter = 0;
     FuriHalNfcDevData* nfc_data = &nfc_worker->dev_data->nfc_data;
+    MfClassicReader reader = {};
+
     reader.type = mf_classic_get_classic_type(nfc_data->atqa[0], nfc_data->atqa[1], nfc_data->sak);
-    for(size_t i = 0; i < COUNT_OF(plantain_keys_4k); i++) {
-        mf_classic_reader_add_sector(
-            &reader,
-            plantain_keys_4k[i].sector,
-            plantain_keys_4k[i].key_a,
-            plantain_keys_4k[i].key_b);
-        FURI_LOG_T("plant4k", "Added sector %d", plantain_keys_4k[i].sector);
+    MfClassicReader reader_copy = reader;
+    uint8_t card_type = get_card_type(tx_rx);
+    if(!card_type) {
+        return false;
     }
-    for(int i = 0; i < 5; i++) {
-        if(mf_classic_read_card(tx_rx, &reader, &nfc_worker->dev_data->mf_classic_data) == 40) {
+
+    FURI_LOG_D("Plant4K", "Card type: %d", card_type);
+
+    switch(card_type) {
+    case 1:
+
+        for(size_t i = 0; i < COUNT_OF(plantain_keys_4k); i++) {
+            mf_classic_reader_add_sector(
+                &reader,
+                plantain_keys_4k[i].sector,
+                plantain_keys_4k[i].key_a,
+                plantain_keys_4k[i].key_b);
+            FURI_LOG_T("plant4k", "Added sector %d", plantain_keys_4k[i].sector);
+        }
+        for(int i = 0; i < 5; i++) {
+            if(mf_classic_read_card(tx_rx, &reader, &nfc_worker->dev_data->mf_classic_data) ==
+               40) {
+                return true;
+            }
+        }
+        break;
+    case 2:
+        counter = 0;
+        reader = reader_copy;
+        for(size_t i = 0; i < COUNT_OF(plantain_keys_4k); i++) {
+            bool readed = false;
+            mf_classic_reader_add_sector(
+                &reader,
+                plantain_keys_4k[i].sector,
+                plantain_keys_4k[i].key_a,
+                plantain_keys_4k[i].key_b);
+            for(int i = 0; i < 5; i++) {
+                if(mf_classic_read_card(tx_rx, &reader, &nfc_worker->dev_data->mf_classic_data) ==
+                   counter + 1) {
+                    readed = true;
+                    break;
+                }
+            }
+            if(readed) {
+                counter++;
+            } else {
+                if(plantain_keys_4k[i].sector == 1) {
+                    // Manually add sector 1
+                    MfClassicSector temp_sector = {};
+                    temp_sector.total_blocks =
+                        mf_classic_get_blocks_num_in_sector(plantain_keys_4k[i].sector);
+                    memset(temp_sector.block, 0, sizeof(temp_sector.block));
+                    add_fake_sector(
+                        plantain_keys_4k[i].sector,
+                        &nfc_worker->dev_data->mf_classic_data,
+                        plantain_keys_4k[i].key_a,
+                        plantain_keys_4k[i].key_b,
+                        &temp_sector);
+                    counter++;
+                }
+            }
+
+            // FURI_LOG_T("plant4k", "Added sector %d", plantain_keys_4k[i].sector);
+        }
+        if(counter == 40) {
             return true;
         }
+
+        break;
+    case 3:
+        counter = 0;
+        reader = reader_copy;
+        for(size_t i = 0; i < COUNT_OF(plantain_keys_4k); i++) {
+            bool readed = false;
+            uint8_t sector_num = plantain_keys_4k[i].sector;
+            uint8_t variants_count = 0;
+            MfClassicAuthContext sector_auth_variants[40] = {plantain_keys_4k[i]};
+            for(uint8_t j = 0; j < COUNT_OF(SPB_type_3) && variants_count < 41; j++) {
+                if(SPB_type_3[j].sector == sector_num) {
+                    sector_auth_variants[++variants_count] = SPB_type_3[j];
+                    break;
+                }
+            }
+
+            for(uint8_t j = 0; j < variants_count; j++) {
+                if(mf_classic_authenticate(
+                       tx_rx,
+                       mf_classic_get_sector_trailer_block_num_by_sector(
+                           sector_auth_variants[j].sector),
+                       sector_auth_variants[j].key_a,
+                       MfClassicKeyA) &&
+                   mf_classic_authenticate(
+                       tx_rx,
+                       mf_classic_get_sector_trailer_block_num_by_sector(
+                           sector_auth_variants[j].sector),
+                       sector_auth_variants[j].key_b,
+                       MfClassicKeyB)) {
+                    mf_classic_reader_add_sector(
+                        &reader,
+                        sector_auth_variants[j].sector,
+                        sector_auth_variants[j].key_a,
+                        sector_auth_variants[j].key_b);
+                    for(int l = 0; l < 5; l++) {
+                        if(mf_classic_read_card(
+                               tx_rx, &reader, &nfc_worker->dev_data->mf_classic_data) ==
+                           counter + 1) {
+                            readed = true;
+                            break;
+                        }
+                    }
+                    if (readed) {
+                        break;
+                    }
+                    break;
+                }
+                if (readed) {
+                    counter++;
+                    break;
+                }
+                else{
+                    
+                }
+            }
+
+            mf_classic_reader_add_sector(
+                &reader,
+                plantain_keys_4k[i].sector,
+                plantain_keys_4k[i].key_a,
+                plantain_keys_4k[i].key_b);
+            for(int i = 0; i < 5; i++) {
+                if(mf_classic_read_card(tx_rx, &reader, &nfc_worker->dev_data->mf_classic_data) ==
+                   counter + 1) {
+                    readed = true;
+                    break;
+                }
+            }
+            if(readed) {
+                counter++;
+            } else {
+                if(plantain_keys_4k[i].sector == 1) {
+                    // Manually add sector 1
+                    MfClassicSector temp_sector = {};
+                    temp_sector.total_blocks =
+                        mf_classic_get_blocks_num_in_sector(plantain_keys_4k[i].sector);
+                    memset(temp_sector.block, 0, sizeof(temp_sector.block));
+                    add_fake_sector(
+                        plantain_keys_4k[i].sector,
+                        &nfc_worker->dev_data->mf_classic_data,
+                        plantain_keys_4k[i].key_a,
+                        plantain_keys_4k[i].key_b,
+                        &temp_sector);
+                    counter++;
+                }
+            }
+
+            // FURI_LOG_T("plant4k", "Added sector %d", plantain_keys_4k[i].sector);
+        }
+        if(counter == 40) {
+            return true;
+        }
+        break;
     }
+
     return false;
 }
 
@@ -93,9 +363,29 @@ bool plantain_4k_parser_parse(NfcDeviceData* dev_data) {
     MfClassicData* data = &dev_data->mf_classic_data;
 
     // Verify key
-    MfClassicSectorTrailer* sec_tr = mf_classic_get_sector_trailer_by_sector(data, 8);
-    uint64_t key = nfc_util_bytes2num(sec_tr->key_a, 6);
-    if(key != plantain_keys_4k[8].key_a) return false;
+    // if(key != plantain_keys_4k[8].key_a) return false;
+
+    // get card type
+    uint8_t card_type = 0;
+    FURI_LOG_D("plant4k", "%d, %d", nfc_util_bytes2num(mf_classic_get_sector_trailer_by_sector(data, 8)->key_a, 6), SPB_type_1[3].key_a);
+    if (nfc_util_bytes2num(mf_classic_get_sector_trailer_by_sector(data, 8)->key_a, 6) == SPB_type_1[3].key_a){
+        FURI_LOG_D("plant4k", "Key A, sec 8,is SPB_type_1 or 3");
+        if (nfc_util_bytes2num(mf_classic_get_sector_trailer_by_sector(data, 12)->key_a, 6) == plantain_keys_4k[12].key_a){
+            FURI_LOG_D("plant4k", "Key A, sec 12, is SPB_type_1");
+            card_type = 1;
+        }
+        else if (nfc_util_bytes2num(mf_classic_get_sector_trailer_by_sector(data, 12)->key_a, 6) == SPB_type_3[3].key_a){
+            FURI_LOG_D("plant4k", "Key A, sec 12, is SPB_type_3");
+            card_type = 3;
+        }
+
+    }
+    else if (nfc_util_bytes2num(mf_classic_get_sector_trailer_by_sector(data, 8)->key_a, 6) == SPB_type_2[0].key_a){
+        FURI_LOG_D("plant4k", "Key A, sec 8,is SPB_type_2");
+        card_type = 2;
+    }
+
+    if (!card_type) return false;
 
     // Point to block 0 of sector 4, value 0
     uint8_t* temp_ptr = &data->block[4 * 4].value[0];
@@ -133,9 +423,9 @@ bool plantain_4k_parser_parse(NfcDeviceData* dev_data) {
 
     furi_string_printf(
         dev_data->parsed_data,
-        "\e#Plantain\nN:%s\nBalance:%d\n",
+        "\e#Plantain\nN:%s\nBalance:%d\nCard type:%d",
         furi_string_get_cstr(card_number_str),
-        balance);
+        balance, card_type);
     furi_string_free(card_number_str);
 
     return true;
