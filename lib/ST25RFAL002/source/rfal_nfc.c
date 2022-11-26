@@ -1500,6 +1500,8 @@ static ReturnCode rfalNfcPollActivation(uint8_t devIt) {
 
         /*******************************************************************************/
         case RFAL_NFCA_T4T: /* Device supports ISO-DEP */
+            gNfcDev.devList[devIt].rfInterface = RFAL_NFC_INTERFACE_RF;
+            break;
 
 #if RFAL_FEATURE_ISO_DEP && RFAL_FEATURE_ISO_DEP_POLL
             if(!gNfcDev.isOperOngoing) {
