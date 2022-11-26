@@ -360,6 +360,8 @@ bool mf_classic_check_card_type(uint8_t ATQA0, uint8_t ATQA1, uint8_t SAK) {
         return true;
     } else if((ATQA0 == 0x42 || ATQA0 == 0x02) && (SAK == 0x18)) {
         return true;
+    } else if((ATQA0 == 0x44) && (SAK == 0x38)) {
+        return true;
     } else {
         return false;
     }
@@ -374,7 +376,10 @@ MfClassicType mf_classic_get_classic_type(int8_t ATQA0, uint8_t ATQA1, uint8_t S
         return MfClassicType1k;
     } else if((ATQA0 == 0x42 || ATQA0 == 0x02) && (SAK == 0x18)) {
         return MfClassicType4k;
+    } else if((ATQA0 == 0x44) && (SAK == 0x38)) {
+        return MfClassicType4k;
     }
+
     return MfClassicType1k;
 }
 
