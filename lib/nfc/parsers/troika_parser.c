@@ -57,7 +57,7 @@ bool troika_parser_verify(NfcWorker* nfc_worker, FuriHalNfcTxRxContext* tx_rx) {
     uint8_t sector = 11;
     uint8_t block = mf_classic_get_sector_trailer_block_num_by_sector(sector);
     FURI_LOG_D("Troika", "Verifying sector %d", sector);
-    if(mf_classic_authenticate(tx_rx, block, 0x08b386463229, MfClassicKeyA)) {
+    if(mf_classic_authenticate(tx_rx, block, troika_keys[sector].key_a, MfClassicKeyA)) {
         FURI_LOG_D("Troika", "Sector %d verified", sector);
         return true;
     }
@@ -92,6 +92,9 @@ bool troika_parser_parse(NfcDeviceData* dev_data) {
         MfClassicSectorTrailer* sec_tr = mf_classic_get_sector_trailer_by_sector(data, 8);
         uint64_t key = nfc_util_bytes2num(sec_tr->key_a, 6);
         if(key != troika_keys[8].key_a) break;
+        sec_tr = mf_classic_get_sector_trailer_by_sector(data, 4);
+        key = nfc_util_bytes2num(sec_tr->key_a, 6);
+        if(key != troika_keys[4].key_a) break;
 
         // Verify card type
         if(data->type != MfClassicType1k && data->type != MfClassicType4k) break;

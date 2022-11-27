@@ -49,6 +49,10 @@ static const MfClassicAuthContext two_cities_keys_4k[] = {
     {.sector = 39, .key_a = 0x7259fa0197c6, .key_b = 0x5583698df085},
 };
 
+static const MfClassicAuthContext alt_two_cities_keys[] = {
+    {.sector = 30, .key_a = 0x0eb23cc8110b, .key_b = 0x04dc35277635},
+};
+
 bool two_cities_parser_verify(NfcWorker* nfc_worker, FuriHalNfcTxRxContext* tx_rx) {
     furi_assert(nfc_worker);
     UNUSED(nfc_worker);
@@ -70,18 +74,57 @@ bool two_cities_parser_verify(NfcWorker* nfc_worker, FuriHalNfcTxRxContext* tx_r
 bool two_cities_parser_read(NfcWorker* nfc_worker, FuriHalNfcTxRxContext* tx_rx) {
     furi_assert(nfc_worker);
 
+    uint8_t block;
     MfClassicData* mf_classic_data = &nfc_worker->dev_data->mf_classic_data;
     for(size_t i = 0; i < COUNT_OF(two_cities_keys_4k); i++) {
-        mf_classic_set_key_found(
-            mf_classic_data,
-            two_cities_keys_4k[i].sector,
-            MfClassicKeyA,
-            two_cities_keys_4k[i].key_a);
-        mf_classic_set_key_found(
-            mf_classic_data,
-            two_cities_keys_4k[i].sector,
-            MfClassicKeyB,
-            two_cities_keys_4k[i].key_b);
+        if(i == 30) {
+            block =
+                mf_classic_get_sector_trailer_block_num_by_sector(two_cities_keys_4k[i].sector);
+            FURI_LOG_D("2cities", "Sector %d", two_cities_keys_4k[i].sector);
+            if(mf_classic_authenticate(tx_rx, block, two_cities_keys_4k[i].key_a, MfClassicKeyA)) {
+                mf_classic_set_key_found(
+                    mf_classic_data,
+                    two_cities_keys_4k[i].sector,
+                    MfClassicKeyA,
+                    two_cities_keys_4k[i].key_a);
+                FURI_LOG_D("2cities", "def Key A found");
+            } else {
+                mf_classic_set_key_found(
+                    mf_classic_data,
+                    two_cities_keys_4k[i].sector,
+                    MfClassicKeyA,
+                    alt_two_cities_keys[0].key_a);
+                FURI_LOG_D("2cities", "alt Key A found");
+            }
+            FURI_LOG_D("2cities", "Sector %d key b", two_cities_keys_4k[i].sector);
+            if(mf_classic_authenticate(tx_rx, block, two_cities_keys_4k[i].key_b, MfClassicKeyB)) {
+                mf_classic_set_key_found(
+                    mf_classic_data,
+                    two_cities_keys_4k[i].sector,
+                    MfClassicKeyB,
+                    two_cities_keys_4k[i].key_b);
+                FURI_LOG_D("2cities", "def Key B found");
+
+            } else {
+                mf_classic_set_key_found(
+                    mf_classic_data,
+                    alt_two_cities_keys[0].sector,
+                    MfClassicKeyB,
+                    alt_two_cities_keys[0].key_b);
+                FURI_LOG_D("2cities", "alt Key B found");
+            }
+        } else {
+            mf_classic_set_key_found(
+                mf_classic_data,
+                two_cities_keys_4k[i].sector,
+                MfClassicKeyA,
+                two_cities_keys_4k[i].key_a);
+            mf_classic_set_key_found(
+                mf_classic_data,
+                two_cities_keys_4k[i].sector,
+                MfClassicKeyB,
+                two_cities_keys_4k[i].key_b);
+        }
     }
 
     return mf_classic_update_card(tx_rx, mf_classic_data) == 40;
@@ -94,6 +137,9 @@ bool two_cities_parser_parse(NfcDeviceData* dev_data) {
     MfClassicSectorTrailer* sec_tr = mf_classic_get_sector_trailer_by_sector(data, 4);
     uint64_t key = nfc_util_bytes2num(sec_tr->key_a, 6);
     if(key != two_cities_keys_4k[4].key_a) return false;
+    sec_tr = mf_classic_get_sector_trailer_by_sector(data, 8); // check plantain
+    key = nfc_util_bytes2num(sec_tr->key_a, 6);
+    if(key != two_cities_keys_4k[8].key_a) return false; // check troika
 
     // =====
     // PLANTAIN

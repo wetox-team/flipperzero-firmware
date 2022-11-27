@@ -287,6 +287,8 @@ bool plantain_parser_parse(NfcDeviceData* dev_data) {
     last_day = furi_string_alloc();
     uint8_t luhn;
 
+    uint64_t ekp_number = getEKPnum(data);
+
     if(card_type == 0) {
         // Unknown card type
         furi_string_printf(
@@ -294,6 +296,9 @@ bool plantain_parser_parse(NfcDeviceData* dev_data) {
             "\e#Unknown SPB card\nN:%s\nBalance:%ld\n",
             furi_string_get_cstr(card_number_str),
             balance);
+        if(ekp_number != 0) {
+            furi_string_cat_printf(dev_data->parsed_data, "EKP: %lld\n", ekp_number);
+        }
     } else if(card_type == 1) {
         // Plantain card
 
@@ -313,6 +318,9 @@ bool plantain_parser_parse(NfcDeviceData* dev_data) {
             furi_string_get_cstr(card_number_str),
             luhn,
             balance);
+        if(ekp_number != 0) {
+            furi_string_cat_printf(dev_data->parsed_data, "EKP: %lld\n", ekp_number);
+        }
         furi_string_free(plantain_card_prefix);
     } else if(card_type == 2) {
         // Strange card
@@ -331,6 +339,9 @@ bool plantain_parser_parse(NfcDeviceData* dev_data) {
             furi_string_get_cstr(card_number_str),
             luhn,
             balance);
+        if(ekp_number != 0) {
+            furi_string_cat_printf(dev_data->parsed_data, "EKP: %lld\n", ekp_number);
+        }
     } else if(card_type == 3) {
         // Concession card
 
@@ -358,13 +369,16 @@ bool plantain_parser_parse(NfcDeviceData* dev_data) {
         uint32_t passport_number = (temp_ptr[11] << 16) | (temp_ptr[10] << 8) | temp_ptr[9];
         furi_string_printf(
             dev_data->parsed_data,
-            "\e#Concession SPB card\nNumber:\n%s\n%s%01d\nLast day: %s\nPassport num: %s %06ld",
+            "\e#Concession SPB card\nNumber:\n%s\n%s%01d\nLast day: %s\nPassport num: %s %06ld\n",
             furi_string_get_cstr(plantain_card_prefix),
             furi_string_get_cstr(card_number_str),
             luhn,
             furi_string_get_cstr(last_day),
             furi_string_get_cstr(passport_series),
             passport_number);
+        if(ekp_number != 0) {
+            furi_string_cat_printf(dev_data->parsed_data, "EKP: %lld\n", ekp_number);
+        }
         furi_string_free(passport_series);
     } else {
         // Unknown card type
@@ -373,6 +387,9 @@ bool plantain_parser_parse(NfcDeviceData* dev_data) {
             "\e#Unknown SPB card\nN:%s\nBalance:%ld\n",
             furi_string_get_cstr(card_number_str),
             balance);
+        if(ekp_number != 0) {
+            furi_string_cat_printf(dev_data->parsed_data, "EKP: %lld\n", ekp_number);
+        }
     }
 
     // furi_string_printf(
