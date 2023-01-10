@@ -1,6 +1,7 @@
 #include "nfc_supported_card.h"
 
 #include "plantain_parser.h"
+#include "social_card_moscow_parser.h"
 #include "troika_parser.h"
 #include "two_cities.h"
 #include "all_in_one.h"
@@ -12,6 +13,13 @@ NfcSupportedCard nfc_supported_card[NfcSupportedCardTypeEnd] = {
             .verify = plantain_parser_verify,
             .read = plantain_parser_read,
             .parse = plantain_parser_parse,
+        },
+    [NfcSupportedCardTypeSocialCardMoscow] =
+        {
+            .protocol = NfcDeviceProtocolMifareClassic,
+            .verify = social_card_moscow_parser_verify,
+            .read = social_card_moscow_parser_read,
+            .parse = social_card_moscow_parser_parse,
         },
     [NfcSupportedCardTypeTroika] =
         {
