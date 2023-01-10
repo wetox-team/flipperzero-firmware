@@ -737,47 +737,13 @@ uint8_t mf_classic_update_card(FuriHalNfcTxRxContext* tx_rx, MfClassicData* data
     uint8_t total_sectors = mf_classic_get_total_sectors_num(data->type);
 
     for(size_t i = 0; i < total_sectors; i++) {
-<<<<<<< HEAD
-        MfClassicSectorTrailer* sec_tr = mf_classic_get_sector_trailer_by_sector(data, i);
         if(mf_classic_is_sector_read(data, i)) {
             FURI_LOG_D("NFC", "Sector %d skipped as already readed", i);
-            sectors_read++;
             continue;
         }
-        // Load key A
-        if(mf_classic_is_key_found(data, i, MfClassicKeyA)) {
-            sec_reader.key_a = nfc_util_bytes2num(sec_tr->key_a, 6);
-        } else {
-            sec_reader.key_a = MF_CLASSIC_NO_KEY;
-        }
-        // Load key B
-        if(mf_classic_is_key_found(data, i, MfClassicKeyB)) {
-            sec_reader.key_b = nfc_util_bytes2num(sec_tr->key_b, 6);
-        } else {
-            sec_reader.key_b = MF_CLASSIC_NO_KEY;
-        }
-        if((key_a != MF_CLASSIC_NO_KEY) || (key_b != MF_CLASSIC_NO_KEY)) {
-            sec_reader.sector_num = i;
-            if(mf_classic_read_sector_with_reader(tx_rx, &crypto, &sec_reader, &temp_sector)) {
-                uint8_t first_block = mf_classic_get_first_block_num_of_sector(i);
-                for(uint8_t j = 0; j < temp_sector.total_blocks; j++) {
-                    mf_classic_set_block_read(data, first_block + j, &temp_sector.block[j]);
-                }
-                sectors_read++;
-            } else {
-                FURI_LOG_D("NFC", "Sector %d not readed", i);
-                // Invalid key, set it to not found
-                if(key_a != MF_CLASSIC_NO_KEY) {
-                    mf_classic_set_key_not_found(data, i, MfClassicKeyA);
-                } else {
-                    mf_classic_set_key_not_found(data, i, MfClassicKeyB);
-                }
-            }
-        }
-=======
         mf_classic_read_sector(tx_rx, data, i);
->>>>>>> 72dc8e95d0941849929af98fd51a24590d61ca31
     }
+
     uint8_t sectors_read = 0;
     uint8_t keys_found = 0;
     mf_classic_get_read_sectors_and_keys(data, &sectors_read, &keys_found);

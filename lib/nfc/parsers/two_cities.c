@@ -165,7 +165,6 @@ bool two_cities_parser_parse(NfcDeviceData* dev_data) {
     for(size_t i = 0; i < 7; i++) {
         card_number = (card_number << 8) | card_number_arr[i];
     }
-<<<<<<< HEAD
     // Convert card number to string
     FuriString* card_number_str;
     card_number_str = furi_string_alloc();
@@ -187,8 +186,6 @@ bool two_cities_parser_parse(NfcDeviceData* dev_data) {
         furi_string_get_cstr(card_number_str));
     luhn = plantain_calculate_luhn_str(
         furi_string_get_cstr(full_number)); // calculate luhn from full number
-=======
->>>>>>> 72dc8e95d0941849929af98fd51a24590d61ca31
 
     // =====
     // --PLANTAIN--
@@ -209,7 +206,6 @@ bool two_cities_parser_parse(NfcDeviceData* dev_data) {
 
     furi_string_printf(
         dev_data->parsed_data,
-<<<<<<< HEAD
         "\e#Troika+Plantain\nPN: %s\n%s%01d\nPB: %ld rur.\nTN: %010lld\nTB: %d rur.\n",
         furi_string_get_cstr(plantain_card_prefix),
         furi_string_get_cstr(card_number_str),
@@ -220,13 +216,6 @@ bool two_cities_parser_parse(NfcDeviceData* dev_data) {
     furi_string_free(plantain_card_prefix);
     furi_string_free(card_number_str);
     furi_string_free(full_number);
-=======
-        "\e#Troika+Plantain\nPN: %llu-\nPB: %ld rur.\nTN: %ld\nTB: %d rur.\n",
-        card_number,
-        balance,
-        troika_number,
-        troika_balance);
->>>>>>> 72dc8e95d0941849929af98fd51a24590d61ca31
 
     return true;
 }

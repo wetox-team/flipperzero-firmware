@@ -100,8 +100,8 @@ bool troika_parser_parse(NfcDeviceData* dev_data) {
         if(data->type != MfClassicType1k && data->type != MfClassicType4k) break;
 
         // Parse data
-        uint8_t* temp_ptr = &data->block[8 * 4 + 1].value[5];
-        uint16_t balance = ((temp_ptr[0] << 8) | temp_ptr[1]) / 25;
+        uint8_t* temp_ptr = &data->block[8 * 4 + 1].value[4];
+        uint16_t balance = ((temp_ptr[0] << 16) | (temp_ptr[1] << 8) | temp_ptr[2]) / 25;
         temp_ptr = &data->block[8 * 4].value[2];
         uint64_t number = 0;
         for(size_t i = 0; i < 5; i++) {
