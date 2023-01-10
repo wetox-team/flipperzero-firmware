@@ -273,6 +273,7 @@ bool plantain_parser_parse(NfcDeviceData* dev_data) {
     for(size_t i = 0; i < 7; i++) {
         card_number = (card_number << 8) | card_number_arr[i];
     }
+<<<<<<< HEAD
     // Convert card number to string
     FuriString* card_number_str;
     card_number_str = furi_string_alloc();
@@ -405,5 +406,11 @@ bool plantain_parser_parse(NfcDeviceData* dev_data) {
     furi_string_free(card_number_str);
     furi_string_free(full_number);
     furi_string_free(last_day);
+=======
+
+    furi_string_printf(
+        dev_data->parsed_data, "\e#Plantain\nN:%llu-\nBalance:%ld\n", card_number, balance);
+
+>>>>>>> 72dc8e95d0941849929af98fd51a24590d61ca31
     return true;
 }
