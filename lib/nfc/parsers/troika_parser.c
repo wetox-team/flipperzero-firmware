@@ -3,6 +3,8 @@
 #include <gui/modules/widget.h>
 #include <nfc_worker_i.h>
 
+#define TAG "Troyka parser"
+
 static const MfClassicAuthContext troika_keys[] = {
     {.sector = 0, .key_a = 0xa0a1a2a3a4a5, .key_b = 0xfbf225dc5d58},
     {.sector = 1, .key_a = 0xa82607b01c0d, .key_b = 0x2910989b6880},
@@ -87,7 +89,7 @@ bool troika_parser_parse(NfcDeviceData* dev_data) {
     MfClassicData* data = &dev_data->mf_classic_data;
     bool troika_parsed = false;
 
-    do {
+     do {
         // Verify key
         MfClassicSectorTrailer* sec_tr = mf_classic_get_sector_trailer_by_sector(data, 8);
         uint64_t key = nfc_util_bytes2num(sec_tr->key_a, 6);
@@ -99,20 +101,77 @@ bool troika_parser_parse(NfcDeviceData* dev_data) {
         // Verify card type
         if(data->type != MfClassicType1k && data->type != MfClassicType4k) break;
 
-        // Parse data
-        uint8_t* temp_ptr = &data->block[8 * 4 + 1].value[4];
-        uint16_t balance = ((temp_ptr[0] << 16) | (temp_ptr[1] << 8) | temp_ptr[2]) / 25;
-        temp_ptr = &data->block[8 * 4].value[2];
-        uint64_t number = 0;
-        for(size_t i = 0; i < 5; i++) {
-            number <<= 8;
-            number |= temp_ptr[i];
+        uint16_t transport_departament = data->block[32].value[0] << 8;
+        transport_departament += data->block[32].value[1] >> 6;
+
+        FURI_LOG_D(TAG, "Transport departament: %x", transport_departament);
+
+        uint16_t layout_type = data->block[32].value[6];
+        layout_type &= 0xffff;
+        if(layout_type == 0xE) {
+            layout_type = layout_type << 5;
+            layout_type += (data->block[32].value[7]) >> 3;
+        } else if(layout_type == 0xF) {
+            layout_type = layout_type << 8;
+            layout_type += (uint16_t)(data->block[32].value[7]);
+            layout_type = layout_type << 2;
+            layout_type += (uint16_t)(data->block[32].value[8]) >> 6;
         }
-        number &= 0x0FFFFFFFFF;
-        number >>= 4;
+
+        FURI_LOG_D(TAG, "Layout type %x", layout_type);
+
+        uint64_t card_number = 0;
+
+        for(uint8_t i = 2; i < 7; ++i) {
+            card_number <<= 8;
+            card_number |= data->block[32].value[i];
+        }
+        card_number &= 0x0FFFFFFFFF;
+        card_number >>= 4;
+
+        uint16_t valid_to_days = data->block[32].value[7] << 8;
+        valid_to_days += data->block[32].value[8];
+        valid_to_days >>= 2;
+
+        FURI_LOG_D(TAG, "Valid to (days): %d", valid_to_days);
+
+        uint64_t travel_time_minutes = 0;
+        for(uint8_t i = 0; i < 3; ++i) {
+            travel_time_minutes <<= 8;
+            travel_time_minutes |= data->block[33].value[i];
+        }
+        travel_time_minutes >>= 1;
+        travel_time_minutes &= 0x3fffff;
+
+        FURI_LOG_D(TAG, "Travel from (minutes): %lld", travel_time_minutes);
+
+        uint32_t balance = 0;
+        for(uint8_t i = 5; i < 8; ++i) {
+            balance <<= 8;
+            balance |= data->block[33].value[i];
+        }
+        balance >>= 6;
+        balance &= 0x1FFFF;
+        
+        balance /= 100;
+
+        uint64_t validator_id = 0;
+        for(uint8_t i = 7; i < 10; ++i) {
+            validator_id <<= 8;
+            validator_id |= data->block[33].value[i];
+        }
+        validator_id >>= 6;
+        validator_id &= 0xFFFF;
+
 
         furi_string_printf(
-            dev_data->parsed_data, "\e#Troika\nNum: %010lld\nBalance: %d rur.", number, balance);
+            dev_data->parsed_data,
+            "\e#Troika\nMetro card: %010lld\nValid for(days): %d\nBalance: %ld rub\nCheck in from(minutes):\n%lld\nValidator: %05lld",
+            card_number,
+            valid_to_days,
+            balance,
+            travel_time_minutes,
+            validator_id);
         troika_parsed = true;
     } while(false);
 
