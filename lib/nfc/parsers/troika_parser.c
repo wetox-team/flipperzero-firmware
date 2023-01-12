@@ -1,7 +1,10 @@
+#define _XOPEN_SOURCE
 #include "nfc_supported_card.h"
 
 #include <gui/modules/widget.h>
 #include <nfc_worker_i.h>
+#include <time.h>
+#include <locale/locale.h>
 
 #define TAG "Troyka parser"
 
@@ -89,7 +92,7 @@ bool troika_parser_parse(NfcDeviceData* dev_data) {
     MfClassicData* data = &dev_data->mf_classic_data;
     bool troika_parsed = false;
 
-     do {
+    do {
         // Verify key
         MfClassicSectorTrailer* sec_tr = mf_classic_get_sector_trailer_by_sector(data, 8);
         uint64_t key = nfc_util_bytes2num(sec_tr->key_a, 6);
@@ -129,11 +132,20 @@ bool troika_parser_parse(NfcDeviceData* dev_data) {
         card_number &= 0x0FFFFFFFFF;
         card_number >>= 4;
 
-        uint16_t valid_to_days = data->block[32].value[7] << 8;
-        valid_to_days += data->block[32].value[8];
-        valid_to_days >>= 2;
+        uint32_t valid_to_days = 0;
+        for(uint8_t i = 7; i < 10; ++i) {
+            valid_to_days <<= 8;
+            valid_to_days |= data->block[32].value[i];
+        }
+        valid_to_days >>= 6;
+        valid_to_days &= 0xfff;
+        time_t valid_to_seconds = 1546290000 + (valid_to_days - 1) * 24 * 60 * 60;
+        struct tm valid_to_date;
+        gmtime_r(&valid_to_seconds, &valid_to_date);
+        // char valid_to_str[11];
+        // strftime(valid_to_str, sizeof(valid_to_str), "%d.%m.%Y", valid_to_date);
 
-        FURI_LOG_D(TAG, "Valid to (days): %d", valid_to_days);
+        FURI_LOG_D(TAG, "Valid to (days): %ld", valid_to_days);
 
         uint64_t travel_time_minutes = 0;
         for(uint8_t i = 0; i < 3; ++i) {
@@ -141,7 +153,12 @@ bool troika_parser_parse(NfcDeviceData* dev_data) {
             travel_time_minutes |= data->block[33].value[i];
         }
         travel_time_minutes >>= 1;
-        travel_time_minutes &= 0x3fffff;
+        // travel_time_minutes &= 0x3fffff;
+        time_t travel_time_seconds = 1546290000 + travel_time_minutes * 60;
+        struct tm travel_time;
+        gmtime_r(&travel_time_seconds, &travel_time);
+        // char travel_time_str[17];
+        // strftime(travel_time_str, sizeof(travel_time_str), "%d.%m.%Y %H:%M", travel_time);
 
         FURI_LOG_D(TAG, "Travel from (minutes): %lld", travel_time_minutes);
 
@@ -152,7 +169,7 @@ bool troika_parser_parse(NfcDeviceData* dev_data) {
         }
         balance >>= 6;
         balance &= 0x1FFFF;
-        
+
         balance /= 100;
 
         uint64_t validator_id = 0;
@@ -163,15 +180,28 @@ bool troika_parser_parse(NfcDeviceData* dev_data) {
         validator_id >>= 6;
         validator_id &= 0xFFFF;
 
-
         furi_string_printf(
             dev_data->parsed_data,
-            "\e#Troika\nMetro card: %010lld\nValid for(days): %d\nBalance: %ld rub\nCheck in from(minutes):\n%lld\nValidator: %05lld",
+            "\e#Troika\nMetro card: %010lld\nValid for: %02d.%02d.%04d\nBalance: %ld rub\nCheck in from:\n%02d.%02d.%04d %02d:%02d\nValidator: %05lld",
             card_number,
-            valid_to_days,
+            valid_to_date.tm_mday,
+            valid_to_date.tm_mon,
+            valid_to_date.tm_year,
             balance,
-            travel_time_minutes,
+            travel_time.tm_mday,
+            travel_time.tm_mon,
+            travel_time.tm_year,
+            travel_time.tm_hour,
+            travel_time.tm_min,
             validator_id);
+        // furi_string_printf(
+        //     dev_data->parsed_data,
+        //     "\e#Troika\nMetro card: %010lld\nValid for: %s\nBalance: %ld rub\nCheck in from:\n%s\nValidator: %05lld",
+        //     card_number,
+        //     asctime(valid_to_date),
+        //     balance,
+        //     asctime(travel_time),
+        //     validator_id);
         troika_parsed = true;
     } while(false);
 
