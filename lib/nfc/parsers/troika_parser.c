@@ -132,6 +132,8 @@ bool troika_parser_parse(NfcDeviceData* dev_data) {
         card_number &= 0x0FFFFFFFFF;
         card_number >>= 4;
 
+        uint8_t days_in_month[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
         uint32_t valid_to_days = 0;
         for(uint8_t i = 7; i < 10; ++i) {
             valid_to_days <<= 8;
@@ -139,11 +141,19 @@ bool troika_parser_parse(NfcDeviceData* dev_data) {
         }
         valid_to_days >>= 6;
         valid_to_days &= 0xfff;
-        time_t valid_to_seconds = 1546290000 + (valid_to_days - 1) * 24 * 60 * 60;
+        time_t valid_to_seconds = (valid_to_days - 1) * 24 * 60 * 60;
         struct tm valid_to_date;
-        gmtime_r(&valid_to_seconds, &valid_to_date);
-        // char valid_to_str[11];
-        // strftime(valid_to_str, sizeof(valid_to_str), "%d.%m.%Y", valid_to_date);
+        valid_to_date.tm_mday = valid_to_seconds / 60 / 60 / 24 % 365 - 1;
+        valid_to_date.tm_mon = 0;
+        for(uint8_t i = 0; i < 12; ++i) {
+            valid_to_date.tm_mon++;
+            if(valid_to_date.tm_mday < days_in_month[i]) {
+                break;
+            } else {
+                valid_to_date.tm_mday -= days_in_month[i];
+            }
+        }
+        valid_to_date.tm_year = valid_to_seconds / 60 / 60 / 24 / 365 + 2019;
 
         FURI_LOG_D(TAG, "Valid to (days): %ld", valid_to_days);
 
@@ -154,11 +164,21 @@ bool troika_parser_parse(NfcDeviceData* dev_data) {
         }
         travel_time_minutes >>= 1;
         // travel_time_minutes &= 0x3fffff;
-        time_t travel_time_seconds = 1546290000 + travel_time_minutes * 60;
+        time_t travel_time_seconds = travel_time_minutes * 60;
         struct tm travel_time;
-        gmtime_r(&travel_time_seconds, &travel_time);
-        // char travel_time_str[17];
-        // strftime(travel_time_str, sizeof(travel_time_str), "%d.%m.%Y %H:%M", travel_time);
+        travel_time.tm_min = travel_time_seconds / 60 % 60;
+        travel_time.tm_hour = travel_time_seconds / 60 / 60 % 24;
+        travel_time.tm_mday = travel_time_seconds / 60 / 60 / 24 % 365 - 1;
+        travel_time.tm_mon = 0;
+        for(uint8_t i = 0; i < 12; ++i) {
+            travel_time.tm_mon++;
+            if(travel_time.tm_mday < days_in_month[i]) {
+                break;
+            } else {
+                travel_time.tm_mday -= days_in_month[i];
+            }
+        }
+        travel_time.tm_year = travel_time_seconds / 60 / 60 / 24 / 365 + 2019;
 
         FURI_LOG_D(TAG, "Travel from (minutes): %lld", travel_time_minutes);
 
