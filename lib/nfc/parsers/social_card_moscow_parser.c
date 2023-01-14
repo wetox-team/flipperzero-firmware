@@ -144,7 +144,7 @@ bool social_card_moscow_parser_parse(NfcDeviceData* dev_data) {
 
     furi_string_printf(
         dev_data->parsed_data,
-        "\e#Social \ecard\nNumber: %lx %x %llx %x\nOMC:\n%llx\nValid for: %02x/%02x %02x%02x\n%s",
+        "\e#Social \ecard\nNumber: %lx %x %llx %x\nOMC: %llx\nValid for: %02x/%02x %02x%02x\n%s",
         card_code,
         card_region,
         card_number,
@@ -155,6 +155,6 @@ bool social_card_moscow_parser_parse(NfcDeviceData* dev_data) {
         data->block[60].value[13],
         data->block[60].value[14],
         furi_string_get_cstr(result));
-
+    furi_string_free(result);
     return true;
 }
