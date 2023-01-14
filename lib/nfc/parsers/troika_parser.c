@@ -222,16 +222,364 @@ bool troika_parser_parse(NfcDeviceData* dev_data) {
                 card_crc16_2);
             break;
         }
-        case 0x06:
+        case 0x06: {
+            card_view = bit_lib_get_bits_16(data->block[32].value, 0, 10); //101
+            card_type = bit_lib_get_bits_16(data->block[32].value, 10, 10); //102
+            card_number = bit_lib_get_bits_32(data->block[32].value, 20, 32); //201
+            card_layout = bit_lib_get_bits(data->block[32].value, 52, 4); //111
+            card_use_before_date = bit_lib_get_bits_16(data->block[32].value, 56, 16); //202
+            uint8_t card_geozone_a = bit_lib_get_bits(data->block[32].value, 72, 4); //GeoZoneA
+            uint8_t card_geozone_b = bit_lib_get_bits(data->block[32].value, 76, 4); //GeoZoneB
+            card_blank_type = bit_lib_get_bits_16(data->block[32].value, 80, 10); //121.
+            uint16_t card_type_of_extended =
+                bit_lib_get_bits_16(data->block[32].value, 90, 10); //122
+            uint32_t card_rfu1 = bit_lib_get_bits(data->block[32].value, 100, 12); //rfu1
+            uint16_t card_crc16 = bit_lib_get_bits_16(data->block[32].value, 112, 16); //501.1
+            card_blocked = bit_lib_get_bits(data->block[32].value, 128, 1); //303
+            uint16_t card_start_trip_time =
+                bit_lib_get_bits_16(data->block[32].value, 129, 12); //403
+            uint16_t card_start_trip_date =
+                bit_lib_get_bits_16(data->block[32].value, 141, 16); //402
+            uint16_t card_valid_from_date =
+                bit_lib_get_bits_16(data->block[32].value, 157, 16); //311
+            uint16_t card_valid_by_date =
+                bit_lib_get_bits_16(data->block[32].value, 173, 16); //312
+            uint16_t card_company = bit_lib_get_bits(data->block[32].value, 189, 4); //Company
+            uint8_t card_validator1 = bit_lib_get_bits(data->block[32].value, 193, 2); //422.1
+            uint16_t card_remaining_trips =
+                bit_lib_get_bits_16(data->block[32].value, 197, 10); //321
+            uint8_t card_units = bit_lib_get_bits(data->block[32].value, 207, 6); //Units
+            uint16_t card_validator2 = bit_lib_get_bits_16(data->block[32].value, 213, 10); //422.2
+            uint16_t card_total_trips = bit_lib_get_bits_16(data->block[32].value, 221, 16); //331
+            uint8_t card_extended = bit_lib_get_bits(data->block[32].value, 239, 1); //123
+            uint16_t card_crc16_2 = bit_lib_get_bits_16(data->block[32].value, 240, 16); //501.2
+
+            FURI_LOG_D(
+                TAG,
+                "%x %x %lx %x %x %x %x %x %lx %x %x %x %x %x %x %x %x %x %x %x %x %x %x",
+                card_view,
+                card_type,
+                card_number,
+                card_use_before_date,
+                card_geozone_a,
+                card_geozone_b,
+                card_blank_type,
+                card_type_of_extended,
+                card_rfu1,
+                card_crc16,
+                card_blocked,
+                card_start_trip_time,
+                card_start_trip_date,
+                card_valid_from_date,
+                card_valid_by_date,
+                card_company,
+                card_validator1,
+                card_remaining_trips,
+                card_units,
+                card_validator2,
+                card_total_trips,
+                card_extended,
+                card_crc16_2);
+            FuriHalRtcDateTime card_use_before_date_s = {0};
+            from_days_to_datetime(card_use_before_date, &card_use_before_date_s, 1992);
+
+            FuriHalRtcDateTime card_start_trip_minutes_s = {0};
+            from_minutes_to_datetime(
+                card_start_trip_date * 24 * 60 + card_start_trip_time,
+                &card_start_trip_minutes_s,
+                1992);
+            furi_string_printf(
+                result,
+                "Number: %ld\nValid for: %02d.%02d.%04d\nTrips left: %d of %d\nTrip from: %02d.%02d.%04d %02d:%02d\nValidator: %05d",
+                card_number,
+                card_use_before_date_s.day,
+                card_use_before_date_s.month,
+                card_use_before_date_s.year,
+                card_remaining_trips,
+                card_total_trips,
+                card_start_trip_minutes_s.day,
+                card_start_trip_minutes_s.month,
+                card_start_trip_minutes_s.year,
+                card_start_trip_minutes_s.hour,
+                card_start_trip_minutes_s.minute,
+                card_validator);
             break;
-        case 0x08:
+        }
+        case 0x08: {
+            card_view = bit_lib_get_bits_16(data->block[32].value, 0, 10); //101
+            card_type = bit_lib_get_bits_16(data->block[32].value, 10, 10); //102
+            card_number = bit_lib_get_bits_32(data->block[32].value, 20, 32); //201
+            card_layout = bit_lib_get_bits(data->block[32].value, 52, 4); //111
+            card_use_before_date = bit_lib_get_bits_16(data->block[32].value, 56, 16); //202
+            // uint64_t card_rfu1 = bit_lib_get_bits(data->block[32].value, 72, 56); //rfu1
+            uint16_t card_valid_from_date =
+                bit_lib_get_bits_16(data->block[32].value, 128, 16); //311
+            uint8_t card_valid_for_days = bit_lib_get_bits(data->block[32].value, 144, 8); //313
+            uint8_t card_requires_activation =
+                bit_lib_get_bits(data->block[32].value, 152, 1); //301
+            uint8_t card_rfu2 = bit_lib_get_bits(data->block[32].value, 153, 7); //rfu2
+            uint16_t card_remaining_trips1 =
+                bit_lib_get_bits_16(data->block[32].value, 160, 8); //321.1
+            uint16_t card_remaining_trips =
+                bit_lib_get_bits_16(data->block[32].value, 168, 8); //321
+            uint8_t card_validator1 = bit_lib_get_bits(data->block[32].value, 193, 2); //422.1
+            uint16_t card_validator = bit_lib_get_bits_16(data->block[32].value, 177, 15); //422
+            card_hash = bit_lib_get_bits_32(data->block[32].value, 192, 32); //502
+            uint32_t card_rfu3 = bit_lib_get_bits_32(data->block[32].value, 224, 32); //rfu3
+
+            FURI_LOG_D(
+                TAG,
+                "%x %x %lx %x %x %x %x %x %x %x %x %x %lx %x %lx",
+                card_view,
+                card_type,
+                card_number,
+                card_use_before_date,
+                card_valid_from_date,
+                card_valid_for_days,
+                card_requires_activation,
+                card_rfu2,
+                card_remaining_trips1,
+                card_remaining_trips,
+                card_validator1,
+                card_validator,
+                card_hash,
+                card_valid_from_date,
+                card_rfu3);
+            FuriHalRtcDateTime card_use_before_date_s = {0};
+            from_days_to_datetime(card_use_before_date, &card_use_before_date_s, 1992);
+
+            furi_string_printf(
+                result,
+                "Number: %ld\nValid for: %02d.%02d.%04d\nTrips left: %d\nValidator: %05d",
+                card_number,
+                card_use_before_date_s.day,
+                card_use_before_date_s.month,
+                card_use_before_date_s.year,
+                card_remaining_trips,
+                card_validator);
             break;
-        case 0x0A:
+        }
+        case 0x0A: {
+            card_view = bit_lib_get_bits_16(data->block[32].value, 0, 10); //101
+            card_type = bit_lib_get_bits_16(data->block[32].value, 10, 10); //102
+            card_number = bit_lib_get_bits_32(data->block[32].value, 20, 32); //201
+            card_layout = bit_lib_get_bits(data->block[32].value, 52, 4); //111
+            uint16_t card_valid_from_date =
+                bit_lib_get_bits_16(data->block[32].value, 128, 16); //311
+            uint32_t card_valid_for_minutes =
+                bit_lib_get_bits_32(data->block[32].value, 76, 19); //314
+            uint8_t card_requires_activation =
+                bit_lib_get_bits(data->block[32].value, 95, 1); //301
+            card_start_trip_minutes = bit_lib_get_bits_32(data->block[32].value, 96, 19); //405
+            card_minutes_pass = bit_lib_get_bits(data->block[32].value, 119, 7); //412
+            uint8_t card_transport_type_flag =
+                bit_lib_get_bits(data->block[32].value, 126, 2); //421.0
+            uint16_t card_remaining_trips =
+                bit_lib_get_bits_16(data->block[32].value, 128, 8); //321
+            uint16_t card_validator = bit_lib_get_bits_16(data->block[32].value, 136, 16); //422
+            uint8_t card_transport_type1 = bit_lib_get_bits(data->block[32].value, 152, 2); //421.1
+            uint8_t card_transport_type2 = bit_lib_get_bits(data->block[32].value, 154, 2); //421.2
+            uint8_t card_transport_type3 = bit_lib_get_bits(data->block[32].value, 156, 2); //421.3
+            uint8_t card_transport_type4 = bit_lib_get_bits(data->block[32].value, 158, 2); //421.4
+            card_hash = bit_lib_get_bits_32(data->block[32].value, 192, 32); //502
+
+            FURI_LOG_D(
+                TAG,
+                "%x %x %lx %x %x %lx %x %lx %x %x %x %x %x %x %x %x %lx",
+                card_view,
+                card_type,
+                card_number,
+                card_use_before_date,
+                card_valid_from_date,
+                card_valid_for_minutes,
+                card_requires_activation,
+                card_start_trip_minutes,
+                card_minutes_pass,
+                card_transport_type_flag,
+                card_remaining_trips,
+                card_validator,
+                card_transport_type1,
+                card_transport_type2,
+                card_transport_type3,
+                card_transport_type4,
+                card_hash);
+            FuriHalRtcDateTime card_use_before_date_s = {0};
+            from_days_to_datetime(card_use_before_date, &card_use_before_date_s, 2016);
+
+            FuriHalRtcDateTime card_start_trip_minutes_s = {0};
+            from_minutes_to_datetime(card_start_trip_minutes, &card_start_trip_minutes_s, 2016);
+            furi_string_printf(
+                result,
+                "Number: %ld\nValid for: %02d.%02d.%04d\nTrip from: %02d.%02d.%04d %02d:%02d\nTrips left: %d\nValidator: %05d",
+                card_number,
+                card_use_before_date_s.day,
+                card_use_before_date_s.month,
+                card_use_before_date_s.year,
+                card_start_trip_minutes_s.day,
+                card_start_trip_minutes_s.month,
+                card_start_trip_minutes_s.year,
+                card_start_trip_minutes_s.hour,
+                card_start_trip_minutes_s.minute,
+                card_remaining_trips,
+                card_validator);
             break;
-        case 0x0C:
+        }
+        case 0x0C: {
+            card_view = bit_lib_get_bits_16(data->block[32].value, 0, 10); //101
+            card_type = bit_lib_get_bits_16(data->block[32].value, 10, 10); //102
+            card_number = bit_lib_get_bits_32(data->block[32].value, 20, 32); //201
+            card_layout = bit_lib_get_bits(data->block[32].value, 52, 4); //111
+            card_use_before_date = bit_lib_get_bits_16(data->block[32].value, 56, 16); //202
+            // uint64_t card_rfu1 = bit_lib_get_bits(data->block[32].value, 72, 56); //rfu1
+            uint16_t card_valid_from_date =
+                bit_lib_get_bits_16(data->block[32].value, 128, 16); //311
+            uint8_t card_valid_for_days = bit_lib_get_bits(data->block[32].value, 144, 8); //313
+            uint8_t card_requires_activation =
+                bit_lib_get_bits(data->block[32].value, 152, 1); //301
+            uint8_t card_rfu2 = bit_lib_get_bits(data->block[32].value, 153, 13); //rfu2
+            uint16_t card_remaining_trips =
+                bit_lib_get_bits_16(data->block[32].value, 166, 10); //321
+            uint16_t card_validator = bit_lib_get_bits_16(data->block[32].value, 176, 16); //422
+            card_hash = bit_lib_get_bits_32(data->block[32].value, 192, 32); //502
+            uint16_t card_start_trip_date =
+                bit_lib_get_bits_16(data->block[32].value, 224, 16); //402
+            uint16_t card_start_trip_time =
+                bit_lib_get_bits_16(data->block[32].value, 240, 11); //403
+            uint8_t card_transport_type = bit_lib_get_bits(data->block[32].value, 251, 2); //421
+            uint32_t card_rfu3 = bit_lib_get_bits_32(data->block[32].value, 253, 2); //rfu3
+            uint8_t card_transfer_in_metro = bit_lib_get_bits(data->block[32].value, 255, 1); //432
+
+            FURI_LOG_D(
+                TAG,
+                "%x %x %lx %x %x %x %x %x %x %x %x %x %x %lx %x",
+                card_view,
+                card_type,
+                card_number,
+                card_use_before_date,
+                card_valid_from_date,
+                card_valid_for_days,
+                card_requires_activation,
+                card_rfu2,
+                card_remaining_trips,
+                card_validator,
+                card_start_trip_date,
+                card_start_trip_time,
+                card_transport_type,
+                card_rfu3,
+                card_transfer_in_metro);
+            FuriHalRtcDateTime card_use_before_date_s = {0};
+            from_days_to_datetime(card_use_before_date, &card_use_before_date_s, 1992);
+            FuriHalRtcDateTime card_start_trip_minutes_s = {0};
+            from_minutes_to_datetime(
+                card_start_trip_date * 24 * 60 + card_start_trip_time,
+                &card_start_trip_minutes_s,
+                1992);
+            furi_string_printf(
+                result,
+                "Number: %010ld\nValid for: %02d.%02d.%04d\nTrip from: %02d.%02d.%04d %02d:%02d\nTrips left: %d\nValidator: %05d",
+                card_number,
+                card_use_before_date_s.day,
+                card_use_before_date_s.month,
+                card_use_before_date_s.year,
+                card_start_trip_minutes_s.day,
+                card_start_trip_minutes_s.month,
+                card_start_trip_minutes_s.year,
+                card_start_trip_minutes_s.hour,
+                card_start_trip_minutes_s.minute,
+                card_remaining_trips,
+                card_validator);
             break;
-        case 0x0D:
+        }
+        case 0x0D: {
+            card_view = bit_lib_get_bits_16(data->block[32].value, 0, 10); //101
+            card_type = bit_lib_get_bits_16(data->block[32].value, 10, 10); //102
+            card_number = bit_lib_get_bits_32(data->block[32].value, 20, 32); //201
+            card_layout = bit_lib_get_bits(data->block[32].value, 52, 4); //111
+            uint8_t card_rfu1 = bit_lib_get_bits(data->block[32].value, 56, 8); //rfu1
+            card_use_before_date = bit_lib_get_bits_16(data->block[32].value, 64, 16); //202
+            uint16_t card_valid_for_time =
+                bit_lib_get_bits_16(data->block[32].value, 80, 11); //316
+            uint8_t card_rfu2 = bit_lib_get_bits(data->block[32].value, 91, 5); //rfu2
+            uint16_t card_use_before_date2 =
+                bit_lib_get_bits_16(data->block[32].value, 96, 16); //202.2
+            uint16_t card_valid_for_time2 =
+                bit_lib_get_bits_16(data->block[32].value, 123, 11); //316.2
+            uint8_t card_rfu3 = bit_lib_get_bits(data->block[32].value, 123, 5); //rfu3
+            uint16_t card_valid_from_date =
+                bit_lib_get_bits_16(data->block[32].value, 128, 16); //311
+            uint8_t card_valid_for_days = bit_lib_get_bits(data->block[32].value, 144, 8); //313
+            uint8_t card_requires_activation =
+                bit_lib_get_bits(data->block[32].value, 152, 1); //301
+            uint8_t card_rfu4 = bit_lib_get_bits(data->block[32].value, 153, 2); //rfu4
+            uint8_t card_passage_5_minutes = bit_lib_get_bits(data->block[32].value, 155, 5); //413
+            uint8_t card_transport_type1 = bit_lib_get_bits(data->block[32].value, 160, 2); //421.1
+            uint8_t card_passage_in_metro = bit_lib_get_bits(data->block[32].value, 162, 1); //431
+            uint8_t card_passages_ground_transport =
+                bit_lib_get_bits(data->block[32].value, 163, 3); //433
+            uint16_t card_remaining_trips =
+                bit_lib_get_bits_16(data->block[32].value, 166, 10); //321
+            uint16_t card_validator = bit_lib_get_bits_16(data->block[32].value, 176, 16); //422
+            card_hash = bit_lib_get_bits_32(data->block[32].value, 192, 32); //502
+            uint16_t card_start_trip_date =
+                bit_lib_get_bits_16(data->block[32].value, 224, 16); //402
+            uint16_t card_start_trip_time =
+                bit_lib_get_bits_16(data->block[32].value, 240, 11); //403
+            uint8_t card_transport_type2 = bit_lib_get_bits(data->block[32].value, 251, 2); //421.2
+            uint8_t card_rfu5 = bit_lib_get_bits(data->block[32].value, 253, 2); //rfu5
+            uint8_t card_transfer_in_metro = bit_lib_get_bits(data->block[32].value, 255, 1); //432
+
+            FURI_LOG_D(
+                TAG,
+                "%x %x %lx %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x",
+                card_view,
+                card_type,
+                card_number,
+                card_layout,
+                card_rfu1,
+                card_use_before_date,
+                card_valid_for_time,
+                card_rfu2,
+                card_use_before_date2,
+                card_valid_for_time2,
+                card_rfu3,
+                card_valid_from_date,
+                card_valid_for_days,
+                card_requires_activation,
+                card_rfu4,
+                card_passage_5_minutes,
+                card_transport_type1,
+                card_passage_in_metro,
+                card_passages_ground_transport,
+                card_remaining_trips,
+                card_validator,
+                card_start_trip_date,
+                card_start_trip_time,
+                card_transport_type2,
+                card_rfu5,
+                card_transfer_in_metro);
+            FuriHalRtcDateTime card_use_before_date_s = {0};
+            from_days_to_datetime(card_use_before_date, &card_use_before_date_s, 1992);
+            FuriHalRtcDateTime card_start_trip_minutes_s = {0};
+            from_minutes_to_datetime(
+                card_start_trip_date * 24 * 60 + card_start_trip_time,
+                &card_start_trip_minutes_s,
+                1992);
+            furi_string_printf(
+                result,
+                "Number: %010ld\nValid for: %02d.%02d.%04d\nTrip from: %02d.%02d.%04d %02d:%02d\nTrips left: %d\nValidator: %05d",
+                card_number,
+                card_use_before_date_s.day,
+                card_use_before_date_s.month,
+                card_use_before_date_s.year,
+                card_start_trip_minutes_s.day,
+                card_start_trip_minutes_s.month,
+                card_start_trip_minutes_s.year,
+                card_start_trip_minutes_s.hour,
+                card_start_trip_minutes_s.minute,
+                card_remaining_trips,
+                card_validator);
             break;
+        }
         case 0x1C1: {
             card_view = bit_lib_get_bits_16(data->block[32].value, 0, 10); //101
             card_type = bit_lib_get_bits_16(data->block[32].value, 10, 10); //102
@@ -572,10 +920,10 @@ bool troika_parser_parse(NfcDeviceData* dev_data) {
                 card_passages_ground_transport,
                 card_hash);
             FuriHalRtcDateTime card_use_before_date_s = {0};
-            from_days_to_datetime(card_use_before_date, &card_use_before_date_s, 1992);
+            from_days_to_datetime(card_use_before_date, &card_use_before_date_s, 2019);
 
             FuriHalRtcDateTime card_start_trip_minutes_s = {0};
-            from_minutes_to_datetime(card_start_trip_minutes, &card_start_trip_minutes_s, 1992);
+            from_minutes_to_datetime(card_start_trip_minutes, &card_start_trip_minutes_s, 2019);
             furi_string_printf(
                 result,
                 "Number: %010ld\nValid for: %02d.%02d.%04d\nBalance: %ld rub\nTrip from: %02d.%02d.%04d %02d:%02d\nValidator: %05d",
@@ -592,17 +940,184 @@ bool troika_parser_parse(NfcDeviceData* dev_data) {
                 card_validator);
             break;
         }
-        case 0x1C6:
+        case 0x1C6: {
+            card_view = bit_lib_get_bits_16(data->block[32].value, 0, 10); //101
+            card_type = bit_lib_get_bits_16(data->block[32].value, 10, 10); //102
+            card_number = bit_lib_get_bits_32(data->block[32].value, 20, 32); //201
+            card_layout = bit_lib_get_bits(data->block[32].value, 52, 4); //111
+            card_layout2 = bit_lib_get_bits(data->block[32].value, 56, 5); //112
+            uint16_t card_type_of_extended =
+                bit_lib_get_bits_16(data->block[32].value, 61, 10); //122
+            card_use_before_date = bit_lib_get_bits_16(data->block[32].value, 71, 13); //202.
+            card_blank_type = bit_lib_get_bits_16(data->block[32].value, 84, 10); //121.
+            uint16_t card_valid_to_minutes =
+                bit_lib_get_bits_16(data->block[32].value, 94, 23); //311
+            uint16_t card_extension_counter =
+                bit_lib_get_bits_16(data->block[32].value, 117, 10); //304
+            uint32_t card_valid_for_minutes =
+                bit_lib_get_bits_32(data->block[32].value, 128, 20); //314
+            uint32_t card_start_trip_neg_minutes =
+                bit_lib_get_bits_32(data->block[32].value, 148, 20); //404
+            uint8_t card_metro_ride_with = bit_lib_get_bits(data->block[32].value, 168, 7); //414
+            card_minutes_pass = bit_lib_get_bits(data->block[32].value, 175, 7); //412.
+            uint16_t card_remaining_trips =
+                bit_lib_get_bits_16(data->block[32].value, 169, 10); //321
+            card_validator = bit_lib_get_bits_16(data->block[32].value, 189, 16); //422
+            card_blocked = bit_lib_get_bits(data->block[32].value, 205, 1); //303
+            uint8_t card_extended = bit_lib_get_bits(data->block[32].value, 206, 1); //123
+            uint8_t card_route = bit_lib_get_bits(data->block[32].value, 212, 12); //424
+            card_hash = bit_lib_get_bits_32(data->block[32].value, 224, 32); //502
+
+            FURI_LOG_D(
+                TAG,
+                "%x %x %lx %x %x %x %x %x %x %x %lx %lx %x %x %x %x %x %x %x %lx",
+                card_view,
+                card_type,
+                card_number,
+                card_layout,
+                card_layout2,
+                card_type_of_extended,
+                card_use_before_date,
+                card_blank_type,
+                card_valid_to_minutes,
+                card_extension_counter,
+                card_valid_for_minutes,
+                card_start_trip_neg_minutes,
+                card_metro_ride_with,
+                card_minutes_pass,
+                card_remaining_trips,
+                card_validator,
+                card_blocked,
+                card_extended,
+                card_route,
+                card_hash);
+            FuriHalRtcDateTime card_use_before_date_s = {0};
+            from_days_to_datetime(card_use_before_date, &card_use_before_date_s, 2019);
+
+            FuriHalRtcDateTime card_start_trip_minutes_s = {0};
+            from_minutes_to_datetime(
+                card_start_trip_neg_minutes, &card_start_trip_minutes_s, 2019); //-time
+            furi_string_printf(
+                result,
+                "Number: %010ld\nValid for: %02d.%02d.%04d\nTrip from: %02d.%02d.%04d %02d:%02d\nValidator: %05d",
+                card_number,
+                card_use_before_date_s.day,
+                card_use_before_date_s.month,
+                card_use_before_date_s.year,
+                card_start_trip_minutes_s.day,
+                card_start_trip_minutes_s.month,
+                card_start_trip_minutes_s.year,
+                card_start_trip_minutes_s.hour,
+                card_start_trip_minutes_s.minute,
+                card_validator);
             break;
-        case 0x3CCB:
+        }
+        case 0x3CCB: {
+            card_view = bit_lib_get_bits_16(data->block[32].value, 0, 10); //101
+            card_type = bit_lib_get_bits_16(data->block[32].value, 10, 10); //102
+            card_number = bit_lib_get_bits_32(data->block[32].value, 20, 32); //201
+            card_layout = bit_lib_get_bits(data->block[32].value, 52, 4); //111
+            uint16_t card_tech_code =
+                bit_lib_get_bits_32(data->block[32].value, 56, 10); //tech_code
+            uint16_t card_valid_to_minutes =
+                bit_lib_get_bits_16(data->block[32].value, 66, 16); //311
+            uint16_t card_valid_by_date = bit_lib_get_bits_16(data->block[32].value, 82, 16); //312
+            uint8_t card_interval = bit_lib_get_bits(data->block[32].value, 98, 4); //interval
+            uint16_t card_app_code1 =
+                bit_lib_get_bits_16(data->block[32].value, 102, 16); //app_code1
+            uint16_t card_hash1 = bit_lib_get_bits_16(data->block[32].value, 112, 16); //502.1
+            uint16_t card_type1 = bit_lib_get_bits_16(data->block[32].value, 128, 10); //type1
+            uint16_t card_app_code2 =
+                bit_lib_get_bits_16(data->block[32].value, 138, 10); //app_code2
+            uint16_t card_type2 = bit_lib_get_bits_16(data->block[32].value, 148, 10); //type2
+            uint16_t card_app_code3 =
+                bit_lib_get_bits_16(data->block[32].value, 158, 10); //app_code3
+            uint16_t card_type3 = bit_lib_get_bits_16(data->block[32].value, 148, 10); //type3
+            uint16_t card_app_code4 =
+                bit_lib_get_bits_16(data->block[32].value, 168, 10); //app_code4
+            uint16_t card_type4 = bit_lib_get_bits_16(data->block[32].value, 178, 10); //type4
+            card_hash = bit_lib_get_bits_32(data->block[32].value, 224, 32); //502.2
+
+            FURI_LOG_D(
+                TAG,
+                "%x %x %lx %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %lx",
+                card_view,
+                card_type,
+                card_number,
+                card_layout,
+                card_tech_code,
+                card_use_before_date,
+                card_blank_type,
+                card_valid_to_minutes,
+                card_valid_by_date,
+                card_interval,
+                card_app_code1,
+                card_hash1,
+                card_type1,
+                card_app_code2,
+                card_type2,
+                card_app_code3,
+                card_type3,
+                card_app_code4,
+                card_type4,
+                card_hash);
+            FuriHalRtcDateTime card_use_before_date_s = {0};
+            from_days_to_datetime(card_valid_by_date, &card_use_before_date_s, 1992);
+
+            furi_string_printf(
+                result,
+                "Number: %010ld\nValid for: %02d.%02d.%04d\nValidator: %05d",
+                card_number,
+                card_use_before_date_s.day,
+                card_use_before_date_s.month,
+                card_use_before_date_s.year,
+                card_validator);
             break;
-        case 0x3C0B:
+        }
+        case 0x3C0B: {
+            card_view = bit_lib_get_bits_16(data->block[32].value, 0, 10); //101
+            card_type = bit_lib_get_bits_16(data->block[32].value, 10, 10); //102
+            card_number = bit_lib_get_bits_32(data->block[32].value, 20, 32); //201
+            card_layout = bit_lib_get_bits(data->block[32].value, 52, 4); //111
+            uint16_t card_tech_code =
+                bit_lib_get_bits_32(data->block[32].value, 56, 10); //tech_code
+            uint16_t card_valid_to_minutes =
+                bit_lib_get_bits_16(data->block[32].value, 66, 16); //311
+            uint16_t card_valid_by_date = bit_lib_get_bits_16(data->block[32].value, 82, 16); //312
+            uint16_t card_hash = bit_lib_get_bits_16(data->block[32].value, 112, 16); //502.1
+
+            FURI_LOG_D(
+                TAG,
+                "%x %x %lx %x %x %x %x %x %x %x",
+                card_view,
+                card_type,
+                card_number,
+                card_layout,
+                card_tech_code,
+                card_use_before_date,
+                card_blank_type,
+                card_valid_to_minutes,
+                card_valid_by_date,
+                card_hash);
+            FuriHalRtcDateTime card_use_before_date_s = {0};
+            from_days_to_datetime(card_valid_by_date, &card_use_before_date_s, 1992);
+
+            furi_string_printf(
+                result,
+                "Number: %010ld\nValid for: %02d.%02d.%04d\nValidator: %05d",
+                card_number,
+                card_use_before_date_s.day,
+                card_use_before_date_s.month,
+                card_use_before_date_s.year,
+                card_validator);
             break;
+        }
         default:
             return false;
         }
 
-        furi_string_printf(dev_data->parsed_data, "\e#Troika\n%s", furi_string_get_cstr(result));
+        furi_string_printf(
+            dev_data->parsed_data, "\e#Troika %x\n%s", layout_type, furi_string_get_cstr(result));
         troika_parsed = true;
     } while(false);
 
