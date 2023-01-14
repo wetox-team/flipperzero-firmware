@@ -2,6 +2,7 @@
 
 #include <gui/modules/widget.h>
 #include <nfc_worker_i.h>
+#include <nfc/helpers/transport.h>
 
 static const MfClassicAuthContext social_card_moscow_keys[] = {
     {.sector = 0, .key_a = 0xa0a1a2a3a4a5, .key_b = 0x7de02a7f6025},
@@ -137,9 +138,13 @@ bool social_card_moscow_parser_parse(NfcDeviceData* dev_data) {
     year = data->block[60].value[11];
     month = data->block[60].value[12];
 
+    FuriString* result = furi_string_alloc();
+
+    parse_transport_block(data->block[4], result);
+
     furi_string_printf(
         dev_data->parsed_data,
-        "Social card Moscow number:\n %lx %x %llx %x\nOMC:\n%llx\nValid for: %02x/%02x %02x%02x",
+        "Social card Moscow number:\n %lx %x %llx %x\nOMC:\n%llx\nValid for: %02x/%02x %02x%02x\n%s",
         card_code,
         card_region,
         card_number,
@@ -148,7 +153,8 @@ bool social_card_moscow_parser_parse(NfcDeviceData* dev_data) {
         month,
         year,
         data->block[60].value[13],
-        data->block[60].value[14]);
+        data->block[60].value[14],
+        furi_string_get_cstr(result));
 
     return true;
 }
