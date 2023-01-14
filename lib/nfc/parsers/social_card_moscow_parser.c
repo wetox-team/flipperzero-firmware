@@ -140,11 +140,11 @@ bool social_card_moscow_parser_parse(NfcDeviceData* dev_data) {
 
     FuriString* result = furi_string_alloc();
 
-    parse_transport_block(data->block[4], result);
+    parse_transport_block(&data->block[4], result);
 
     furi_string_printf(
         dev_data->parsed_data,
-        "Social card Moscow number:\n %lx %x %llx %x\nOMC:\n%llx\nValid for: %02x/%02x %02x%02x\n%s",
+        "\e#Social \e#card\nNumber: %lx %x %llx %x\nOMC:\n%llx\nValid for: %02x/%02x %02x%02x\n%s",
         card_code,
         card_region,
         card_number,
