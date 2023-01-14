@@ -78,6 +78,37 @@ uint32_t bit_lib_get_bits_32(const uint8_t* data, size_t position, uint8_t lengt
     return value;
 }
 
+uint64_t bit_lib_get_bits_64(const uint8_t* data, size_t position, uint8_t length) {
+    uint64_t value = 0;
+    if(length <= 8) {
+        value = bit_lib_get_bits(data, position, length);
+    } else if(length <= 16) {
+        value = bit_lib_get_bits(data, position, 8) << (length - 8);
+        value |= bit_lib_get_bits(data, position + 8, length - 8);
+    } else if(length <= 24) {
+        value = bit_lib_get_bits(data, position, 8) << (length - 8);
+        value |= bit_lib_get_bits(data, position + 8, 8) << (length - 16);
+        value |= bit_lib_get_bits(data, position + 16, length - 16);
+    } else if(length <= 32) {
+        value = (uint64_t)bit_lib_get_bits(data, position, 8) << (length - 8);
+        value |= (uint64_t)bit_lib_get_bits(data, position + 8, 8) << (length - 16);
+        value |= (uint64_t)bit_lib_get_bits(data, position + 16, 8) << (length - 24);
+        value |= bit_lib_get_bits(data, position + 24, length - 24);
+    } else {
+        value = (uint64_t)bit_lib_get_bits(data, position, 8) << (length - 8);
+        value |= (uint64_t)bit_lib_get_bits(data, position + 8, 8) << (length - 16);
+        value |= (uint64_t)bit_lib_get_bits(data, position + 16, 8) << (length - 24);
+        value |= (uint64_t)bit_lib_get_bits(data, position + 24, 8) << (length - 32);
+        value |= (uint64_t)bit_lib_get_bits(data, position + 32, 8) << (length - 40);
+        value |= (uint64_t)bit_lib_get_bits(data, position + 40, 8) << (length - 48);
+        value |= (uint64_t)bit_lib_get_bits(data, position + 48, 8) << (length - 56);
+        value |= (uint64_t)bit_lib_get_bits(data, position + 56, 8) << (length - 64);
+        value |= bit_lib_get_bits(data, position + 64, length - 64);
+    }
+
+    return value;
+}
+
 bool bit_lib_test_parity_32(uint32_t bits, BitLibParity parity) {
 #if !defined __GNUC__
 #error Please, implement parity test for non-GCC compilers
