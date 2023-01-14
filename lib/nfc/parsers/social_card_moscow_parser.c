@@ -3,6 +3,7 @@
 #include <gui/modules/widget.h>
 #include <nfc_worker_i.h>
 #include <nfc/helpers/transport.h>
+#include <nfc/helpers/bit_lib.h>
 
 static const MfClassicAuthContext social_card_moscow_keys[] = {
     {.sector = 0, .key_a = 0xa0a1a2a3a4a5, .key_b = 0x7de02a7f6025},
@@ -96,47 +97,13 @@ bool social_card_moscow_parser_parse(NfcDeviceData* dev_data) {
 
     //Print social number
 
-    uint8_t card_code_arr[3];
-    uint32_t card_code = 0;
-    uint8_t card_region = 0;
-    uint8_t card_number_arr[5];
-    uint64_t card_number = 0;
-    uint8_t card_control = 0;
-    uint8_t omc_number_arr[8];
-    uint64_t omc_number = 0;
-    uint8_t year = 0;
-    uint8_t month = 0;
-
-    for(uint8_t i = 0; i < 3; ++i) {
-        card_code_arr[i] = data->block[60].value[i + 1];
-    }
-
-    for(uint8_t i = 0; i < 3; ++i) {
-        card_code = (card_code << 8) | card_code_arr[i];
-    }
-
-    card_region = data->block[60].value[4];
-
-    for(uint8_t i = 0; i < 5; ++i) {
-        card_number_arr[i] = data->block[60].value[i + 5];
-    }
-
-    for(uint8_t i = 0; i < 5; ++i) {
-        card_number = (card_number << 8) | card_number_arr[i];
-    }
-
-    card_control = data->block[60].value[10];
-    card_control = card_control >> 4;
-
-    for(uint8_t i = 0; i < 8; ++i) {
-        omc_number_arr[i] = data->block[21].value[i + 1];
-    }
-
-    for(uint8_t i = 0; i < 8; ++i) {
-        omc_number = (omc_number << 8) | omc_number_arr[i];
-    }
-    year = data->block[60].value[11];
-    month = data->block[60].value[12];
+    uint32_t card_code = bit_lib_get_bits_32(data->block[60].value, 8, 24);
+    uint8_t card_region = bit_lib_get_bits(data->block[60].value, 32, 8);
+    uint64_t card_number = bit_lib_get_bits_64(data->block[60].value, 40, 40);
+    uint8_t card_control = bit_lib_get_bits(data->block[60].value, 80, 4);
+    uint64_t omc_number = bit_lib_get_bits_64(data->block[21].value, 8, 64);
+    uint8_t year = data->block[60].value[11];
+    uint8_t month = data->block[60].value[12];
 
     FuriString* result = furi_string_alloc();
 
