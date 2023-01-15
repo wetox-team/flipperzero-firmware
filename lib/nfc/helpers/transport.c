@@ -796,22 +796,22 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
         uint16_t card_type_of_extended = bit_lib_get_bits_16(block->value, 61, 10); //122
         card_use_before_date = bit_lib_get_bits_16(block->value, 71, 13); //202.
         card_blank_type = bit_lib_get_bits_16(block->value, 84, 10); //121.
-        uint16_t card_valid_from_date = bit_lib_get_bits_16(block->value, 94, 23); //311
+        uint32_t card_valid_from_date = bit_lib_get_bits_32(block->value, 94, 23); //311
         uint16_t card_extension_counter = bit_lib_get_bits_16(block->value, 117, 10); //304
         uint32_t card_valid_for_minutes = bit_lib_get_bits_32(block->value, 128, 20); //314
         uint32_t card_start_trip_neg_minutes = bit_lib_get_bits_32(block->value, 148, 20); //404
         uint8_t card_metro_ride_with = bit_lib_get_bits(block->value, 168, 7); //414
         card_minutes_pass = bit_lib_get_bits(block->value, 175, 7); //412.
-        uint16_t card_remaining_trips = bit_lib_get_bits_16(block->value, 169, 10); //321
+        uint16_t card_remaining_trips = bit_lib_get_bits_16(block->value, 182, 7); //321
         card_validator = bit_lib_get_bits_16(block->value, 189, 16); //422
         card_blocked = bit_lib_get_bits(block->value, 205, 1); //303
         uint8_t card_extended = bit_lib_get_bits(block->value, 206, 1); //123
-        uint8_t card_route = bit_lib_get_bits(block->value, 212, 12); //424
+        uint16_t card_route = bit_lib_get_bits_16(block->value, 212, 12); //424
         card_hash = bit_lib_get_bits_32(block->value, 224, 32); //502
 
         FURI_LOG_D(
             TAG,
-            "%x %x %lx %x %x %x %x %x %x %x %lx %lx %x %x %x %x %x %x %x %lx",
+            "%x %x %lx %x %x %x %x %x %lx %x %lx %lx %x %x %x %x %x %x %x %lx",
             card_view,
             card_type,
             card_number,
@@ -837,7 +837,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
 
         FuriHalRtcDateTime card_start_trip_minutes_s = {0};
         from_minutes_to_datetime(
-            card_valid_from_date + card_valid_for_minutes - card_start_trip_neg_minutes,
+            card_valid_from_date + card_valid_for_minutes - card_start_trip_neg_minutes - 24 * 60,
             &card_start_trip_minutes_s,
             2019); //-time
         furi_string_printf(
