@@ -561,7 +561,8 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
 
         FuriHalRtcDateTime card_start_trip_minutes_s = {0};
         from_minutes_to_datetime(
-            card_valid_to_date * 24 * 60 + card_valid_for_minutes - card_start_trip_neg_minutes,
+            (card_valid_to_date - 1) * 24 * 60 + card_valid_for_minutes -
+                card_start_trip_neg_minutes,
             &card_start_trip_minutes_s,
             2016); //-time
         furi_string_printf(
@@ -652,7 +653,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
         uint16_t card_type_of_extended = bit_lib_get_bits_16(block->value, 61, 10); //122
         card_use_before_date = bit_lib_get_bits_16(block->value, 71, 13); //202.
         card_blank_type = bit_lib_get_bits_16(block->value, 84, 10); //121.
-        uint16_t card_valid_to_minutes = bit_lib_get_bits_16(block->value, 94, 13); //311
+        uint16_t card_valid_to_date = bit_lib_get_bits_16(block->value, 94, 13); //311
         uint16_t card_activate_during = bit_lib_get_bits_16(block->value, 107, 9); //302
         uint16_t card_extension_counter = bit_lib_get_bits_16(block->value, 116, 10); //304
         uint32_t card_valid_for_minutes = bit_lib_get_bits_32(block->value, 128, 20); //314
@@ -681,7 +682,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
             card_type_of_extended,
             card_use_before_date,
             card_blank_type,
-            card_valid_to_minutes,
+            card_valid_to_date,
             card_activate_during,
             card_extension_counter,
             card_valid_for_minutes,
@@ -703,7 +704,10 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
 
         FuriHalRtcDateTime card_start_trip_minutes_s = {0};
         from_minutes_to_datetime(
-            card_start_trip_neg_minutes, &card_start_trip_minutes_s, 2016); //-time
+            (card_use_before_date - 1) * 24 * 60 + card_valid_for_minutes -
+                card_start_trip_neg_minutes,
+            &card_start_trip_minutes_s,
+            2016); //-time
         furi_string_printf(
             result,
             "Number: %010lu\nValid for: %02d.%02d.%04d\nTrip from: %02d.%02d.%04d %02d:%02d\nValidator: %05d",
