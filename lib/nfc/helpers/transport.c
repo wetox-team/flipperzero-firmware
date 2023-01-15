@@ -58,7 +58,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
         card_layout = bit_lib_get_bits(block->value, 52, 4); //111
         card_use_before_date = bit_lib_get_bits_16(block->value, 56, 16); //202
         uint8_t card_benefit_code = bit_lib_get_bits(block->value, 72, 8); //124
-        uint32_t card_rfu1 = bit_lib_get_bits(block->value, 80, 32); //rfu1
+        uint32_t card_rfu1 = bit_lib_get_bits_32(block->value, 80, 32); //rfu1
         uint16_t card_crc16 = bit_lib_get_bits_16(block->value, 112, 16); //501.1
         card_blocked = bit_lib_get_bits(block->value, 128, 1); //303
         uint16_t card_start_trip_time = bit_lib_get_bits_16(block->value, 177, 12); //403
@@ -72,8 +72,6 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
         uint8_t card_transport_type4 = bit_lib_get_bits(block->value, 186, 2); //421.4
         uint16_t card_use_with_date = bit_lib_get_bits_16(block->value, 189, 16); //205
         uint8_t card_route = bit_lib_get_bits(block->value, 205, 1); //424
-        card_remaining_funds = bit_lib_get_bits_32(block->value, 188, 22); //322
-        card_hash = bit_lib_get_bits_32(block->value, 224, 32); //502
         uint16_t card_validator1 = bit_lib_get_bits_16(block->value, 206, 15); //422.1
         card_validator = bit_lib_get_bits_16(block->value, 205, 16); //422
         uint16_t card_total_trips = bit_lib_get_bits_16(block->value, 221, 16); //331
@@ -83,7 +81,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
 
         FURI_LOG_D(
             TAG,
-            "%x %x %lx %x %x %lx %x %x %x %x %x %x %x %x %x %x %x %x %x %lx %lx %x %x %x %x %x %x",
+            "%x %x %lx %x %x %lx %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x",
             card_view,
             card_type,
             card_number,
@@ -103,8 +101,6 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
             card_transport_type4,
             card_use_with_date,
             card_route,
-            card_remaining_funds,
-            card_hash,
             card_validator1,
             card_validator,
             card_total_trips,
@@ -123,7 +119,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
         uint8_t card_geozone_b = bit_lib_get_bits(block->value, 76, 4); //GeoZoneB
         card_blank_type = bit_lib_get_bits_16(block->value, 80, 10); //121.
         uint16_t card_type_of_extended = bit_lib_get_bits_16(block->value, 90, 10); //122
-        uint32_t card_rfu1 = bit_lib_get_bits(block->value, 100, 12); //rfu1
+        uint32_t card_rfu1 = bit_lib_get_bits_16(block->value, 100, 12); //rfu1
         uint16_t card_crc16 = bit_lib_get_bits_16(block->value, 112, 16); //501.1
         card_blocked = bit_lib_get_bits(block->value, 128, 1); //303
         uint16_t card_start_trip_time = bit_lib_get_bits_16(block->value, 129, 12); //403
@@ -196,13 +192,13 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
         card_number = bit_lib_get_bits_32(block->value, 20, 32); //201
         card_layout = bit_lib_get_bits(block->value, 52, 4); //111
         card_use_before_date = bit_lib_get_bits_16(block->value, 56, 16); //202
-        // uint64_t card_rfu1 = bit_lib_get_bits(block->value, 72, 56); //rfu1
+        uint64_t card_rfu1 = bit_lib_get_bits_64(block->value, 72, 56); //rfu1
         uint16_t card_valid_from_date = bit_lib_get_bits_16(block->value, 128, 16); //311
         uint8_t card_valid_for_days = bit_lib_get_bits(block->value, 144, 8); //313
         uint8_t card_requires_activation = bit_lib_get_bits(block->value, 152, 1); //301
         uint8_t card_rfu2 = bit_lib_get_bits(block->value, 153, 7); //rfu2
-        uint16_t card_remaining_trips1 = bit_lib_get_bits_16(block->value, 160, 8); //321.1
-        uint16_t card_remaining_trips = bit_lib_get_bits_16(block->value, 168, 8); //321
+        uint8_t card_remaining_trips1 = bit_lib_get_bits(block->value, 160, 8); //321.1
+        uint8_t card_remaining_trips = bit_lib_get_bits(block->value, 168, 8); //321
         uint8_t card_validator1 = bit_lib_get_bits(block->value, 193, 2); //422.1
         uint16_t card_validator = bit_lib_get_bits_16(block->value, 177, 15); //422
         card_hash = bit_lib_get_bits_32(block->value, 192, 32); //502
@@ -245,13 +241,13 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
         card_type = bit_lib_get_bits_16(block->value, 10, 10); //102
         card_number = bit_lib_get_bits_32(block->value, 20, 32); //201
         card_layout = bit_lib_get_bits(block->value, 52, 4); //111
-        uint16_t card_valid_from_date = bit_lib_get_bits_16(block->value, 128, 16); //311
+        uint16_t card_valid_from_date = bit_lib_get_bits_16(block->value, 64, 12); //311
         uint32_t card_valid_for_minutes = bit_lib_get_bits_32(block->value, 76, 19); //314
         uint8_t card_requires_activation = bit_lib_get_bits(block->value, 95, 1); //301
         card_start_trip_minutes = bit_lib_get_bits_32(block->value, 96, 19); //405
         card_minutes_pass = bit_lib_get_bits(block->value, 119, 7); //412
         uint8_t card_transport_type_flag = bit_lib_get_bits(block->value, 126, 2); //421.0
-        uint16_t card_remaining_trips = bit_lib_get_bits_16(block->value, 128, 8); //321
+        uint8_t card_remaining_trips = bit_lib_get_bits(block->value, 128, 8); //321
         uint16_t card_validator = bit_lib_get_bits_16(block->value, 136, 16); //422
         uint8_t card_transport_type1 = bit_lib_get_bits(block->value, 152, 2); //421.1
         uint8_t card_transport_type2 = bit_lib_get_bits(block->value, 154, 2); //421.2
@@ -307,18 +303,18 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
         card_number = bit_lib_get_bits_32(block->value, 20, 32); //201
         card_layout = bit_lib_get_bits(block->value, 52, 4); //111
         card_use_before_date = bit_lib_get_bits_16(block->value, 56, 16); //202
-        // uint64_t card_rfu1 = bit_lib_get_bits(block->value, 72, 56); //rfu1
+        uint64_t card_rfu1 = bit_lib_get_bits_64(block->value, 72, 56); //rfu1
         uint16_t card_valid_from_date = bit_lib_get_bits_16(block->value, 128, 16); //311
         uint8_t card_valid_for_days = bit_lib_get_bits(block->value, 144, 8); //313
         uint8_t card_requires_activation = bit_lib_get_bits(block->value, 152, 1); //301
-        uint8_t card_rfu2 = bit_lib_get_bits(block->value, 153, 13); //rfu2
+        uint16_t card_rfu2 = bit_lib_get_bits_16(block->value, 153, 13); //rfu2
         uint16_t card_remaining_trips = bit_lib_get_bits_16(block->value, 166, 10); //321
         uint16_t card_validator = bit_lib_get_bits_16(block->value, 176, 16); //422
         card_hash = bit_lib_get_bits_32(block->value, 192, 32); //502
         uint16_t card_start_trip_date = bit_lib_get_bits_16(block->value, 224, 16); //402
         uint16_t card_start_trip_time = bit_lib_get_bits_16(block->value, 240, 11); //403
         uint8_t card_transport_type = bit_lib_get_bits(block->value, 251, 2); //421
-        uint32_t card_rfu3 = bit_lib_get_bits_32(block->value, 253, 2); //rfu3
+        uint8_t card_rfu3 = bit_lib_get_bits(block->value, 253, 2); //rfu3
         uint8_t card_transfer_in_metro = bit_lib_get_bits(block->value, 255, 1); //432
 
         FURI_LOG_D(
@@ -460,7 +456,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
         uint8_t card_passage_in_metro = bit_lib_get_bits(block->value, 178, 1); //431
         uint8_t card_passages_ground_transport = bit_lib_get_bits(block->value, 179, 3); //433
         card_minutes_pass = bit_lib_get_bits(block->value, 185, 8); //412.
-        card_remaining_funds = bit_lib_get_bits_32(block->value, 196, 19); //322
+        card_remaining_funds = bit_lib_get_bits_32(block->value, 196, 19) / 100; //322
         uint8_t card_fare_trip = bit_lib_get_bits(block->value, 215, 2); //441
         card_blocked = bit_lib_get_bits(block->value, 202, 1); //303
         uint8_t card_zoo = bit_lib_get_bits(block->value, 218, 1); //zoo
@@ -591,7 +587,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
         card_layout2 = bit_lib_get_bits(block->value, 56, 5); //112
         card_use_before_date = bit_lib_get_bits_16(block->value, 61, 16); //202
         card_blank_type = bit_lib_get_bits_16(block->value, 77, 10); //121
-        card_remaining_funds = bit_lib_get_bits_32(block->value, 188, 22); //322
+        card_remaining_funds = bit_lib_get_bits_32(block->value, 188, 22) / 100; //322
         card_hash = bit_lib_get_bits_32(block->value, 224, 32); //502
         card_validator = bit_lib_get_bits_16(block->value, 128, 16); //422
         card_start_trip_minutes = bit_lib_get_bits_32(block->value, 144, 23); //405
@@ -638,7 +634,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
             card_use_before_date_s.day,
             card_use_before_date_s.month,
             card_use_before_date_s.year,
-            card_remaining_funds / 100,
+            card_remaining_funds,
             card_start_trip_minutes_s.day,
             card_start_trip_minutes_s.month,
             card_start_trip_minutes_s.year,
