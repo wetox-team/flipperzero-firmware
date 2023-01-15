@@ -206,11 +206,12 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
 
         FURI_LOG_D(
             TAG,
-            "%x %x %lx %x %x %x %x %x %x %x %x %x %lx %x %lx",
+            "%x %x %lx %x %llx %x %x %x %x %x %x %x %x %lx %x %lx",
             card_view,
             card_type,
             card_number,
             card_use_before_date,
+            card_rfu1,
             card_valid_from_date,
             card_valid_for_days,
             card_requires_activation,
@@ -319,11 +320,12 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
 
         FURI_LOG_D(
             TAG,
-            "%x %x %lx %x %x %x %x %x %x %x %x %x %x %lx %x",
+            "%x %x %lx %x %llx %x %x %x %x %x %x %x %x %x %x %x",
             card_view,
             card_type,
             card_number,
             card_use_before_date,
+            card_rfu1,
             card_valid_from_date,
             card_valid_for_days,
             card_requires_activation,

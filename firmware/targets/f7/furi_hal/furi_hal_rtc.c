@@ -443,5 +443,23 @@ uint8_t furi_hal_rtc_get_timezone() {
     uint32_t timestamp = furi_hal_rtc_datetime_to_timestamp(&datetime);
     FuriHalRtcDateTime new_datetime = {0};
     furi_hal_rtc_timestamp_to_datetime(timestamp, &new_datetime);
+    FURI_LOG_D(
+        TAG,
+        "Time 1: %02d.%02d.%04d %02d:%02d:%02d",
+        datetime.day,
+        datetime.month,
+        datetime.year,
+        datetime.hour,
+        datetime.minute,
+        datetime.second);
+    FURI_LOG_D(
+        TAG,
+        "Time 2: %02d.%02d.%04d %02d:%02d:%02d",
+        new_datetime.day,
+        new_datetime.month,
+        new_datetime.year,
+        new_datetime.hour,
+        new_datetime.minute,
+        new_datetime.second);
     return datetime.hour - new_datetime.hour;
 }
