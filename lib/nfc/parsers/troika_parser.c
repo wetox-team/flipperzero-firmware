@@ -102,12 +102,17 @@ bool troika_parser_parse(NfcDeviceData* dev_data) {
         // Verify card type
         if(data->type != MfClassicType1k && data->type != MfClassicType4k) break;
 
-        FuriString* result = furi_string_alloc();
-
-        parse_transport_block(&data->block[32], result);
-
-        furi_string_printf(dev_data->parsed_data, "\e#Troika\n%s", furi_string_get_cstr(result));
-        furi_string_free(result);
+        FuriString* metro_result = furi_string_alloc();
+        FuriString* ground_result = furi_string_alloc();
+        parse_transport_block(&data->block[32], metro_result);
+        parse_transport_block(&data->block[28], ground_result);
+        furi_string_printf(
+            dev_data->parsed_data,
+            "\e#Troika\n%s\n%s",
+            furi_string_get_cstr(metro_result),
+            furi_string_get_cstr(ground_result));
+        furi_string_free(metro_result);
+        furi_string_free(ground_result);
         troika_parsed = true;
     } while(false);
 
