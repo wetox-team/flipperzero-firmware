@@ -256,11 +256,6 @@ uint32_t furi_hal_rtc_datetime_to_timestamp(FuriHalRtcDateTime* datetime);
  */
 void furi_hal_rtc_timestamp_to_datetime(uint32_t timestamp, FuriHalRtcDateTime* datetime);
 
-/** Get timezone additional hours
- * @return Additional hours in timezone
- */
-uint8_t furi_hal_rtc_get_timezone();
-
 #ifdef __cplusplus
 }
 #endif

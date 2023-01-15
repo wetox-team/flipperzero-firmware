@@ -3,7 +3,7 @@
 #define TAG "Transport parser"
 
 void from_days_to_datetime(uint16_t days, FuriHalRtcDateTime* datetime, uint16_t start_year) {
-    uint32_t timestamp = days * 24 * 60 * 60 + furi_hal_rtc_get_timezone() * 60 * 60;
+    uint32_t timestamp = days * 24 * 60 * 60;
     FuriHalRtcDateTime start_datetime = {0};
     start_datetime.year = start_year;
     start_datetime.month = 1;
@@ -13,7 +13,7 @@ void from_days_to_datetime(uint16_t days, FuriHalRtcDateTime* datetime, uint16_t
 }
 
 void from_minutes_to_datetime(uint32_t minutes, FuriHalRtcDateTime* datetime, uint16_t start_year) {
-    uint32_t timestamp = minutes * 60 + furi_hal_rtc_get_timezone() * 60 * 60;
+    uint32_t timestamp = minutes * 60;
     FuriHalRtcDateTime start_datetime = {0};
     start_datetime.year = start_year;
     start_datetime.month = 1;
@@ -281,7 +281,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
 
         FuriHalRtcDateTime card_start_trip_minutes_s = {0};
         from_minutes_to_datetime(
-            card_start_trip_minutes - 24 * 60, &card_start_trip_minutes_s, 2016);
+            card_start_trip_minutes - (2 * 24 * 60), &card_start_trip_minutes_s, 2016);
         furi_string_printf(
             result,
             "Number: %ld\nValid for: %02d.%02d.%04d\nTrip from: %02d.%02d.%04d %02d:%02d\nTrips left: %d\nValidator: %05d",
@@ -493,7 +493,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
 
         FuriHalRtcDateTime card_start_trip_minutes_s = {0};
         from_minutes_to_datetime(
-            card_start_trip_minutes - 24 * 60, &card_start_trip_minutes_s, 1992);
+            card_start_trip_minutes - (2 * 24 * 60), &card_start_trip_minutes_s, 1992);
         furi_string_printf(
             result,
             "Number: %ld\nValid for: %02d.%02d.%04d\nTrip from: %02d.%02d.%04d %02d:%02d\nValidator: %05d",
@@ -629,7 +629,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
 
         FuriHalRtcDateTime card_start_trip_minutes_s = {0};
         from_minutes_to_datetime(
-            card_start_trip_minutes - 24 * 60, &card_start_trip_minutes_s, 2016);
+            card_start_trip_minutes - (2 * 24 * 60), &card_start_trip_minutes_s, 2016);
         furi_string_printf(
             result,
             "Number: %010lu\nValid for: %02d.%02d.%04d\nBalance: %ld rub\nTrip from: %02d.%02d.%04d %02d:%02d\nValidator: %05d",
@@ -772,7 +772,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
 
         FuriHalRtcDateTime card_start_trip_minutes_s = {0};
         from_minutes_to_datetime(
-            card_start_trip_minutes - 24 * 60, &card_start_trip_minutes_s, 2019);
+            card_start_trip_minutes - (2 * 24 * 60), &card_start_trip_minutes_s, 2019);
         furi_string_printf(
             result,
             "Number: %010lu\nValid for: %02d.%02d.%04d\nBalance: %ld rub\nTrip from: %02d.%02d.%04d %02d:%02d\nValidator: %05d",
