@@ -105,13 +105,15 @@ bool social_card_moscow_parser_parse(NfcDeviceData* dev_data) {
     uint8_t year = data->block[60].value[11];
     uint8_t month = data->block[60].value[12];
 
-    FuriString* result = furi_string_alloc();
+    FuriString* metro_result = furi_string_alloc();
+    FuriString* ground_result = furi_string_alloc();
 
-    parse_transport_block(&data->block[4], result);
+    parse_transport_block(&data->block[4], metro_result);
+    parse_transport_block(&data->block[16], ground_result);
 
     furi_string_printf(
         dev_data->parsed_data,
-        "\e#Social \ecard\nNumber: %lx %x %llx %x\nOMC: %llx\nValid for: %02x/%02x %02x%02x\n%s",
+        "\e#Social \ecard\nNumber: %lx %x %llx %x\nOMC: %llx\nValid for: %02x/%02x %02x%02x\n%s\n%s",
         card_code,
         card_region,
         card_number,
@@ -121,7 +123,9 @@ bool social_card_moscow_parser_parse(NfcDeviceData* dev_data) {
         year,
         data->block[60].value[13],
         data->block[60].value[14],
-        furi_string_get_cstr(result));
-    furi_string_free(result);
+        furi_string_get_cstr(metro_result),
+        furi_string_get_cstr(ground_result));
+    furi_string_free(metro_result);
+    furi_string_free(ground_result);
     return true;
 }
