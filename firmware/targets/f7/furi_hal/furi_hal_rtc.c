@@ -42,6 +42,7 @@ _Static_assert(sizeof(SystemReg) == 4, "SystemReg size mismatch");
 #define FURI_HAL_RTC_SECONDS_PER_MINUTE 60
 #define FURI_HAL_RTC_SECONDS_PER_HOUR (FURI_HAL_RTC_SECONDS_PER_MINUTE * 60)
 #define FURI_HAL_RTC_SECONDS_PER_DAY (FURI_HAL_RTC_SECONDS_PER_HOUR * 24)
+#define FURI_HAL_RTC_SECONDS_PER_YEAR (FURI_HAL_RTC_SECONDS_PER_DAY * 365)
 #define FURI_HAL_RTC_MONTHS_COUNT 12
 #define FURI_HAL_RTC_EPOCH_START_YEAR 1970
 #define FURI_HAL_RTC_IS_LEAP_YEAR(year) \
@@ -409,4 +410,38 @@ uint32_t furi_hal_rtc_datetime_to_timestamp(FuriHalRtcDateTime* datetime) {
     timestamp += datetime->second;
 
     return timestamp;
+}
+
+void furi_hal_rtc_timestamp_to_datetime(uint32_t timestamp, FuriHalRtcDateTime* datetime) {
+    datetime->year = timestamp / FURI_HAL_RTC_SECONDS_PER_YEAR + FURI_HAL_RTC_EPOCH_START_YEAR;
+    uint16_t extra_days = (datetime->year - FURI_HAL_RTC_EPOCH_START_YEAR - 1) / 4;
+    uint16_t days_since_epoch = timestamp / FURI_HAL_RTC_SECONDS_PER_DAY;
+    uint16_t days_since_epoch_without_extra_days = days_since_epoch - extra_days;
+    uint16_t days_in_this_year =
+        days_since_epoch_without_extra_days % furi_hal_rtc_days_per_year[0] + 1;
+    while(days_in_this_year > furi_hal_rtc_days_per_month[0][datetime->month]) {
+        days_in_this_year -= furi_hal_rtc_days_per_month[0][datetime->month];
+        datetime->month++;
+    }
+    datetime->month++;
+    if(FURI_HAL_RTC_IS_LEAP_YEAR(datetime->year)) {
+        datetime->day = days_in_this_year - 1;
+    } else {
+        datetime->day = days_in_this_year;
+    }
+    uint16_t seconds_in_this_day = timestamp - (days_since_epoch * FURI_HAL_RTC_SECONDS_PER_DAY);
+    datetime->hour = seconds_in_this_day / FURI_HAL_RTC_SECONDS_PER_HOUR;
+    uint16_t minutes_in_this_day =
+        seconds_in_this_day - (datetime->hour * FURI_HAL_RTC_SECONDS_PER_HOUR);
+    datetime->minute = minutes_in_this_day / FURI_HAL_RTC_SECONDS_PER_MINUTE;
+    datetime->second = minutes_in_this_day - (datetime->minute * FURI_HAL_RTC_SECONDS_PER_MINUTE);
+}
+
+uint8_t furi_hal_rtc_get_timezone() {
+    FuriHalRtcDateTime datetime = {0};
+    furi_hal_rtc_get_datetime(&datetime);
+    uint32_t timestamp = furi_hal_rtc_datetime_to_timestamp(&datetime);
+    FuriHalRtcDateTime new_datetime = {0};
+    furi_hal_rtc_timestamp_to_datetime(timestamp, &new_datetime);
+    return datetime.hour - new_datetime.hour;
 }
