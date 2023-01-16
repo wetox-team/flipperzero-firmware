@@ -5,9 +5,9 @@
 void from_days_to_datetime(uint16_t days, FuriHalRtcDateTime* datetime, uint16_t start_year) {
     uint32_t timestamp = days * 24 * 60 * 60;
     FuriHalRtcDateTime start_datetime = {0};
-    start_datetime.year = start_year;
-    start_datetime.month = 1;
-    start_datetime.day = 1;
+    start_datetime.year = start_year - 1;
+    start_datetime.month = 12;
+    start_datetime.day = 31;
     timestamp += furi_hal_rtc_datetime_to_timestamp(&start_datetime);
     furi_hal_rtc_timestamp_to_datetime(timestamp, datetime);
 }
@@ -15,9 +15,9 @@ void from_days_to_datetime(uint16_t days, FuriHalRtcDateTime* datetime, uint16_t
 void from_minutes_to_datetime(uint32_t minutes, FuriHalRtcDateTime* datetime, uint16_t start_year) {
     uint32_t timestamp = minutes * 60;
     FuriHalRtcDateTime start_datetime = {0};
-    start_datetime.year = start_year;
-    start_datetime.month = 1;
-    start_datetime.day = 1;
+    start_datetime.year = start_year - 1;
+    start_datetime.month = 12;
+    start_datetime.day = 31;
     timestamp += furi_hal_rtc_datetime_to_timestamp(&start_datetime);
     furi_hal_rtc_timestamp_to_datetime(timestamp, datetime);
 }
@@ -127,11 +127,11 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
         uint16_t card_valid_from_date = bit_lib_get_bits_16(block->value, 157, 16); //311
         uint16_t card_valid_by_date = bit_lib_get_bits_16(block->value, 173, 16); //312
         uint16_t card_company = bit_lib_get_bits(block->value, 189, 4); //Company
-        uint8_t card_validator1 = bit_lib_get_bits(block->value, 193, 2); //422.1
+        uint8_t card_validator1 = bit_lib_get_bits(block->value, 193, 4); //422.1
         uint16_t card_remaining_trips = bit_lib_get_bits_16(block->value, 197, 10); //321
         uint8_t card_units = bit_lib_get_bits(block->value, 207, 6); //Units
         uint16_t card_validator2 = bit_lib_get_bits_16(block->value, 213, 10); //422.2
-        uint16_t card_total_trips = bit_lib_get_bits_16(block->value, 221, 16); //331
+        uint16_t card_total_trips = bit_lib_get_bits_16(block->value, 223, 16); //331
         uint8_t card_extended = bit_lib_get_bits(block->value, 239, 1); //123
         uint16_t card_crc16_2 = bit_lib_get_bits_16(block->value, 240, 16); //501.2
 
@@ -161,8 +161,9 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
             card_total_trips,
             card_extended,
             card_crc16_2);
+        card_validator = card_validator1 * 1024 + card_validator2;
         FuriHalRtcDateTime card_use_before_date_s = {0};
-        from_days_to_datetime(card_use_before_date - 1, &card_use_before_date_s, 1992);
+        from_days_to_datetime(card_valid_by_date - 1, &card_use_before_date_s, 1992);
 
         FuriHalRtcDateTime card_start_trip_minutes_s = {0};
         from_minutes_to_datetime(
@@ -171,7 +172,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
             1992);
         furi_string_printf(
             result,
-            "Number: %ld\nValid for: %02d.%02d.%04d\nTrips left: %d of %d\nTrip from: %02d.%02d.%04d %02d:%02d\nValidator: %05d",
+            "Number: %010lu\nValid for: %02d.%02d.%04d\nTrips left: %d of %d\nTrip from: %02d.%02d.%04d %02d:%02d\nValidator: %05d",
             card_number,
             card_use_before_date_s.day,
             card_use_before_date_s.month,
@@ -228,7 +229,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
 
         furi_string_printf(
             result,
-            "Number: %ld\nValid for: %02d.%02d.%04d\nTrips left: %d\nValidator: %05d",
+            "Number: %010lu\nValid for: %02d.%02d.%04d\nTrips left: %d\nValidator: %05d",
             card_number,
             card_use_before_date_s.day,
             card_use_before_date_s.month,
@@ -284,7 +285,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
             card_start_trip_minutes - (2 * 24 * 60), &card_start_trip_minutes_s, 2016);
         furi_string_printf(
             result,
-            "Number: %ld\nValid for: %02d.%02d.%04d\nTrip from: %02d.%02d.%04d %02d:%02d\nTrips left: %d\nValidator: %05d",
+            "Number: %010lu\nValid for: %02d.%02d.%04d\nTrip from: %02d.%02d.%04d %02d:%02d\nTrips left: %d\nValidator: %05d",
             card_number,
             card_use_before_date_s.day,
             card_use_before_date_s.month,
@@ -496,7 +497,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
             card_start_trip_minutes - (2 * 24 * 60), &card_start_trip_minutes_s, 1992);
         furi_string_printf(
             result,
-            "Number: %ld\nValid for: %02d.%02d.%04d\nTrip from: %02d.%02d.%04d %02d:%02d\nValidator: %05d",
+            "Number: %010lu\nValid for: %02d.%02d.%04d\nTrip from: %02d.%02d.%04d %02d:%02d\nValidator: %05d",
             card_number,
             card_use_before_date_s.day,
             card_use_before_date_s.month,
@@ -569,7 +570,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
             2016); //-time
         furi_string_printf(
             result,
-            "Number: %ld\nValid for: %02d.%02d.%04d\nTrip from: %02d.%02d.%04d %02d:%02d\nValidator: %05d",
+            "Number: %010lu\nValid for: %02d.%02d.%04d\nTrip from: %02d.%02d.%04d %02d:%02d\nValidator: %05d",
             card_number,
             card_use_before_date_s.day,
             card_use_before_date_s.month,
@@ -604,7 +605,7 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
         card_blocked = bit_lib_get_bits(block->value, 212, 1); //303
         FURI_LOG_D(
             TAG,
-            "%x %x %lx %x %x %x %x %lx %lx %x %lx %x %x %x %x %x %x %x %x",
+            "Card view: %x, type: %x, number: %lx, layout: %x, layout2: %x, use before date: %x, blank type: %x, remaining funds: %lx, hash: %lx, validator: %x, start trip minutes: %lx, fare trip: %x, minutes pass: %x, transport type flag: %x, transport type1: %x, transport type2: %x, transport type3: %x, transport type4: %x, blocked: %x",
             card_view,
             card_type,
             card_number,
@@ -625,11 +626,10 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
             card_transport_type4,
             card_blocked);
         FuriHalRtcDateTime card_use_before_date_s = {0};
-        from_days_to_datetime(card_use_before_date - 1, &card_use_before_date_s, 1992);
+        from_days_to_datetime(card_use_before_date, &card_use_before_date_s, 1992);
 
         FuriHalRtcDateTime card_start_trip_minutes_s = {0};
-        from_minutes_to_datetime(
-            card_start_trip_minutes - (2 * 24 * 60), &card_start_trip_minutes_s, 2016);
+        from_minutes_to_datetime(card_start_trip_minutes, &card_start_trip_minutes_s, 2016);
         furi_string_printf(
             result,
             "Number: %010lu\nValid for: %02d.%02d.%04d\nBalance: %ld rub\nTrip from: %02d.%02d.%04d %02d:%02d\nValidator: %05d",
@@ -768,11 +768,11 @@ bool parse_transport_block(MfClassicBlock* block, FuriString* result) {
             card_hash);
         FuriHalRtcDateTime card_use_before_date_s = {0};
 
-        from_days_to_datetime(card_use_before_date - 1, &card_use_before_date_s, 2019);
+        from_days_to_datetime(card_use_before_date, &card_use_before_date_s, 2019);
 
         FuriHalRtcDateTime card_start_trip_minutes_s = {0};
         from_minutes_to_datetime(
-            card_start_trip_minutes - (2 * 24 * 60), &card_start_trip_minutes_s, 2019);
+            card_start_trip_minutes - (24 * 60), &card_start_trip_minutes_s, 2019);
         furi_string_printf(
             result,
             "Number: %010lu\nValid for: %02d.%02d.%04d\nBalance: %ld rub\nTrip from: %02d.%02d.%04d %02d:%02d\nValidator: %05d",
