@@ -47,8 +47,8 @@ all the API functions to use the MPU wrappers.  That should only be done when
 task.h is included from an application file. */
 #define MPU_WRAPPERS_INCLUDED_FROM_API_FILE
 
-#include "FreeRTOS.h"
-#include "task.h"
+#include <FreeRTOS.h>
+#include <task.h>
 
 #undef MPU_WRAPPERS_INCLUDED_FROM_API_FILE
 
@@ -115,8 +115,9 @@ static size_t xBlockAllocatedBit = 0;
 #include <m-dict.h>
 
 /* Allocation tracking types */
-DICT_DEF2(MemmgrHeapAllocDict, uint32_t, uint32_t)
-DICT_DEF2(
+DICT_DEF2(MemmgrHeapAllocDict, uint32_t, uint32_t) //-V1048
+
+DICT_DEF2( //-V1048
     MemmgrHeapThreadDict,
     uint32_t,
     M_DEFAULT_OPLIST,
@@ -150,8 +151,7 @@ void memmgr_heap_disable_thread_trace(FuriThreadId thread_id) {
     vTaskSuspendAll();
     {
         memmgr_heap_thread_trace_depth++;
-        furi_check(MemmgrHeapThreadDict_get(memmgr_heap_thread_dict, (uint32_t)thread_id) != NULL);
-        MemmgrHeapThreadDict_erase(memmgr_heap_thread_dict, (uint32_t)thread_id);
+        furi_check(MemmgrHeapThreadDict_erase(memmgr_heap_thread_dict, (uint32_t)thread_id));
         memmgr_heap_thread_trace_depth--;
     }
     (void)xTaskResumeAll();
@@ -212,7 +212,9 @@ static inline void traceFREE(void* pointer, size_t size) {
         MemmgrHeapAllocDict_t* alloc_dict =
             MemmgrHeapThreadDict_get(memmgr_heap_thread_dict, (uint32_t)thread_id);
         if(alloc_dict) {
-            MemmgrHeapAllocDict_erase(*alloc_dict, (uint32_t)pointer);
+            // In some cases thread may want to release memory that was not allocated by it
+            const bool res = MemmgrHeapAllocDict_erase(*alloc_dict, (uint32_t)pointer);
+            UNUSED(res);
         }
         memmgr_heap_thread_trace_depth--;
     }
@@ -339,6 +341,10 @@ void* pvPortMalloc(size_t xWantedSize) {
     BlockLink_t *pxBlock, *pxPreviousBlock, *pxNewBlockLink;
     void* pvReturn = NULL;
     size_t to_wipe = xWantedSize;
+
+    if(FURI_IS_IRQ_MODE()) {
+        furi_crash("memmgt in ISR");
+    }
 
 #ifdef HEAP_PRINT_DEBUG
     BlockLink_t* print_heap_block = NULL;
@@ -486,6 +492,10 @@ void vPortFree(void* pv) {
     uint8_t* puc = (uint8_t*)pv;
     BlockLink_t* pxLink;
 
+    if(FURI_IS_IRQ_MODE()) {
+        furi_crash("memmgt in ISR");
+    }
+
     if(pv != NULL) {
         /* The memory being freed will have an BlockLink_t structure immediately
         before it. */
@@ -512,8 +522,8 @@ void vPortFree(void* pv) {
                 {
                     furi_assert((size_t)pv >= SRAM_BASE);
                     furi_assert((size_t)pv < SRAM_BASE + 1024 * 256);
+                    furi_assert(pxLink->xBlockSize >= xHeapStructSize);
                     furi_assert((pxLink->xBlockSize - xHeapStructSize) < 1024 * 256);
-                    furi_assert((int32_t)(pxLink->xBlockSize - xHeapStructSize) >= 0);
 
                     /* Add this block to the list of free blocks. */
                     xFreeBytesRemaining += pxLink->xBlockSize;

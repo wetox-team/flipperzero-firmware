@@ -11,7 +11,7 @@ void subghz_protocol_decoder_base_set_decoder_callback(
 
 bool subghz_protocol_decoder_base_get_string(
     SubGhzProtocolDecoderBase* decoder_base,
-    string_t output) {
+    FuriString* output) {
     bool status = false;
 
     if(decoder_base->protocol && decoder_base->protocol->decoder &&
@@ -23,11 +23,11 @@ bool subghz_protocol_decoder_base_get_string(
     return status;
 }
 
-bool subghz_protocol_decoder_base_serialize(
+SubGhzProtocolStatus subghz_protocol_decoder_base_serialize(
     SubGhzProtocolDecoderBase* decoder_base,
     FlipperFormat* flipper_format,
-    SubGhzPresetDefinition* preset) {
-    bool status = false;
+    SubGhzRadioPreset* preset) {
+    SubGhzProtocolStatus status = SubGhzProtocolStatusError;
 
     if(decoder_base->protocol && decoder_base->protocol->decoder &&
        decoder_base->protocol->decoder->serialize) {
@@ -37,10 +37,10 @@ bool subghz_protocol_decoder_base_serialize(
     return status;
 }
 
-bool subghz_protocol_decoder_base_deserialize(
+SubGhzProtocolStatus subghz_protocol_decoder_base_deserialize(
     SubGhzProtocolDecoderBase* decoder_base,
     FlipperFormat* flipper_format) {
-    bool status = false;
+    SubGhzProtocolStatus status = SubGhzProtocolStatusError;
 
     if(decoder_base->protocol && decoder_base->protocol->decoder &&
        decoder_base->protocol->decoder->deserialize) {

@@ -49,25 +49,26 @@ uint8_t subghz_protocol_decoder_nice_flor_s_get_hash_data(void* context);
  * Serialize data SubGhzProtocolDecoderNiceFlorS.
  * @param context Pointer to a SubGhzProtocolDecoderNiceFlorS instance
  * @param flipper_format Pointer to a FlipperFormat instance
- * @param preset The modulation on which the signal was received, SubGhzPresetDefinition
- * @return true On success
+ * @param preset The modulation on which the signal was received, SubGhzRadioPreset
+ * @return status
  */
-bool subghz_protocol_decoder_nice_flor_s_serialize(
+SubGhzProtocolStatus subghz_protocol_decoder_nice_flor_s_serialize(
     void* context,
     FlipperFormat* flipper_format,
-    SubGhzPresetDefinition* preset);
+    SubGhzRadioPreset* preset);
 
 /**
  * Deserialize data SubGhzProtocolDecoderNiceFlorS.
  * @param context Pointer to a SubGhzProtocolDecoderNiceFlorS instance
  * @param flipper_format Pointer to a FlipperFormat instance
- * @return true On success
+ * @return status
  */
-bool subghz_protocol_decoder_nice_flor_s_deserialize(void* context, FlipperFormat* flipper_format);
+SubGhzProtocolStatus
+    subghz_protocol_decoder_nice_flor_s_deserialize(void* context, FlipperFormat* flipper_format);
 
 /**
  * Getting a textual representation of the received data.
  * @param context Pointer to a SubGhzProtocolDecoderNiceFlorS instance
  * @param output Resulting text
  */
-void subghz_protocol_decoder_nice_flor_s_get_string(void* context, string_t output);
+void subghz_protocol_decoder_nice_flor_s_get_string(void* context, FuriString* output);

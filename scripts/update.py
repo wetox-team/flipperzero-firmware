@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
-from flipper.app import App
-from flipper.utils.fff import FlipperFormatFile
-from flipper.assets.coprobin import CoproBinary, get_stack_type
-from flipper.assets.obdata import OptionBytesData, ObReferenceValues
-from os.path import basename, join, exists
+import math
 import os
 import shutil
-import zlib
 import tarfile
-import math
+import zlib
+from os.path import exists, join
 
+from flipper.app import App
+from flipper.assets.coprobin import CoproBinary, get_stack_type
+from flipper.assets.obdata import ObReferenceValues, OptionBytesData
+from flipper.utils.fff import FlipperFormatFile
 from slideshow import Main as SlideshowMain
 
 
@@ -22,6 +22,7 @@ class Main(App):
     RESOURCE_TAR_MODE = "w:"
     RESOURCE_TAR_FORMAT = tarfile.USTAR_FORMAT
     RESOURCE_FILE_NAME = "resources.tar"
+    RESOURCE_ENTRY_NAME_MAX_LENGTH = 100
 
     WHITELISTED_STACK_TYPES = set(
         map(
@@ -72,13 +73,20 @@ class Main(App):
         self.parser_generate.add_argument(
             "--I-understand-what-I-am-doing", dest="disclaimer", required=False
         )
+        self.parser_generate.add_argument(
+            "--stackversion", dest="stack_version", required=False, default=""
+        )
 
         self.parser_generate.set_defaults(func=self.generate)
 
     def generate(self):
-        stage_basename = basename(self.args.stage)
-        dfu_basename = basename(self.args.dfu)
-        radiobin_basename = basename(self.args.radiobin)
+        stage_basename = "updater.bin"  # used to be basename(self.args.stage)
+        dfu_basename = (
+            "firmware.dfu" if self.args.dfu else ""
+        )  # used to be basename(self.args.dfu)
+        radiobin_basename = (
+            "radio.bin" if self.args.radiobin else ""
+        )  # used to be basename(self.args.radiobin)
         resources_basename = ""
 
         radio_version = 0
@@ -88,6 +96,13 @@ class Main(App):
             if not self.args.radiotype:
                 raise ValueError("Missing --radiotype")
             radio_meta = CoproBinary(self.args.radiobin)
+            if self.args.stack_version:
+                actual_stack_version_str = f"{radio_meta.img_sig.version_major}.{radio_meta.img_sig.version_minor}.{radio_meta.img_sig.version_sub}"
+                if actual_stack_version_str != self.args.stack_version:
+                    self.logger.error(
+                        f"Stack version mismatch: expected {self.args.stack_version}, actual {actual_stack_version_str}"
+                    )
+                    return 1
             radio_version = self.copro_version_as_int(radio_meta, self.args.radiotype)
             if (
                 get_stack_type(self.args.radiotype) not in self.WHITELISTED_STACK_TYPES
@@ -120,9 +135,10 @@ class Main(App):
             )
         if self.args.resources:
             resources_basename = self.RESOURCE_FILE_NAME
-            self.package_resources(
+            if not self.package_resources(
                 self.args.resources, join(self.args.directory, resources_basename)
-            )
+            ):
+                return 3
 
         if not self.layout_check(dfu_size, radio_addr):
             self.logger.warn("Memory layout looks suspicious")
@@ -193,17 +209,37 @@ class Main(App):
 
     def disclaimer(self):
         self.logger.error(
-            "You might brick you device into a state in which you'd need an SWD programmer to fix it."
+            "You might brick your device into a state in which you'd need an SWD programmer to fix it."
         )
         self.logger.error(
             "Please confirm that you REALLY want to do that with --I-understand-what-I-am-doing=yes"
         )
 
+    def _tar_filter(self, tarinfo: tarfile.TarInfo):
+        if len(tarinfo.name) > self.RESOURCE_ENTRY_NAME_MAX_LENGTH:
+            self.logger.error(
+                f"Cannot package resource: name '{tarinfo.name}' too long"
+            )
+            raise ValueError("Resource name too long")
+        tarinfo.gid = tarinfo.uid = 0
+        tarinfo.mtime = 0
+        tarinfo.uname = tarinfo.gname = "furippa"
+        return tarinfo
+
     def package_resources(self, srcdir: str, dst_name: str):
-        with tarfile.open(
-            dst_name, self.RESOURCE_TAR_MODE, format=self.RESOURCE_TAR_FORMAT
-        ) as tarball:
-            tarball.add(srcdir, arcname="")
+        try:
+            with tarfile.open(
+                dst_name, self.RESOURCE_TAR_MODE, format=self.RESOURCE_TAR_FORMAT
+            ) as tarball:
+                tarball.add(
+                    srcdir,
+                    arcname="",
+                    filter=self._tar_filter,
+                )
+            return True
+        except ValueError as e:
+            self.logger.error(f"Cannot package resources: {e}")
+            return False
 
     @staticmethod
     def copro_version_as_int(coprometa, stacktype):
@@ -229,7 +265,7 @@ class Main(App):
     @staticmethod
     def int2ffhex(value: int, n_hex_syms=8):
         if value:
-            n_hex_syms = math.ceil(math.ceil(math.log2(value)) / 8) * 2
+            n_hex_syms = max(math.ceil(math.ceil(math.log2(value)) / 8) * 2, n_hex_syms)
         fmtstr = f"%0{n_hex_syms}X"
         hexstr = fmtstr % value
         return " ".join(list(Main.batch(hexstr, 2))[::-1])
@@ -244,9 +280,9 @@ class Main(App):
 
     @staticmethod
     def batch(iterable, n=1):
-        l = len(iterable)
-        for ndx in range(0, l, n):
-            yield iterable[ndx : min(ndx + n, l)]
+        iterable_len = len(iterable)
+        for ndx in range(0, iterable_len, n):
+            yield iterable[ndx : min(ndx + n, iterable_len)]
 
 
 if __name__ == "__main__":

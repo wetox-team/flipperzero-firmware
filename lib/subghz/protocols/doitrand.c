@@ -136,31 +136,31 @@ static bool subghz_protocol_encoder_doitrand_get_upload(SubGhzProtocolEncoderDoi
     return true;
 }
 
-bool subghz_protocol_encoder_doitrand_deserialize(void* context, FlipperFormat* flipper_format) {
+SubGhzProtocolStatus
+    subghz_protocol_encoder_doitrand_deserialize(void* context, FlipperFormat* flipper_format) {
     furi_assert(context);
     SubGhzProtocolEncoderDoitrand* instance = context;
-    bool res = false;
+    SubGhzProtocolStatus ret = SubGhzProtocolStatusError;
     do {
-        if(!subghz_block_generic_deserialize(&instance->generic, flipper_format)) {
-            FURI_LOG_E(TAG, "Deserialize error");
-            break;
-        }
-        if(instance->generic.data_count_bit !=
-           subghz_protocol_doitrand_const.min_count_bit_for_found) {
-            FURI_LOG_E(TAG, "Wrong number of bits in key");
+        ret = subghz_block_generic_deserialize_check_count_bit(
+            &instance->generic,
+            flipper_format,
+            subghz_protocol_doitrand_const.min_count_bit_for_found);
+        if(ret != SubGhzProtocolStatusOk) {
             break;
         }
         //optional parameter parameter
         flipper_format_read_uint32(
             flipper_format, "Repeat", (uint32_t*)&instance->encoder.repeat, 1);
 
-        subghz_protocol_encoder_doitrand_get_upload(instance);
+        if(!subghz_protocol_encoder_doitrand_get_upload(instance)) {
+            ret = SubGhzProtocolStatusErrorEncoderGetUpload;
+            break;
+        }
         instance->encoder.is_running = true;
-
-        res = true;
     } while(false);
 
-    return res;
+    return ret;
 }
 
 void subghz_protocol_encoder_doitrand_stop(void* context) {
@@ -310,42 +310,34 @@ uint8_t subghz_protocol_decoder_doitrand_get_hash_data(void* context) {
         &instance->decoder, (instance->decoder.decode_count_bit / 8) + 1);
 }
 
-bool subghz_protocol_decoder_doitrand_serialize(
+SubGhzProtocolStatus subghz_protocol_decoder_doitrand_serialize(
     void* context,
     FlipperFormat* flipper_format,
-    SubGhzPresetDefinition* preset) {
+    SubGhzRadioPreset* preset) {
     furi_assert(context);
     SubGhzProtocolDecoderDoitrand* instance = context;
     return subghz_block_generic_serialize(&instance->generic, flipper_format, preset);
 }
 
-bool subghz_protocol_decoder_doitrand_deserialize(void* context, FlipperFormat* flipper_format) {
+SubGhzProtocolStatus
+    subghz_protocol_decoder_doitrand_deserialize(void* context, FlipperFormat* flipper_format) {
     furi_assert(context);
     SubGhzProtocolDecoderDoitrand* instance = context;
-    bool ret = false;
-    do {
-        if(!subghz_block_generic_deserialize(&instance->generic, flipper_format)) {
-            break;
-        }
-        if(instance->generic.data_count_bit !=
-           subghz_protocol_doitrand_const.min_count_bit_for_found) {
-            FURI_LOG_E(TAG, "Wrong number of bits in key");
-            break;
-        }
-        ret = true;
-    } while(false);
-    return ret;
+    return subghz_block_generic_deserialize_check_count_bit(
+        &instance->generic,
+        flipper_format,
+        subghz_protocol_doitrand_const.min_count_bit_for_found);
 }
 
-void subghz_protocol_decoder_doitrand_get_string(void* context, string_t output) {
+void subghz_protocol_decoder_doitrand_get_string(void* context, FuriString* output) {
     furi_assert(context);
     SubGhzProtocolDecoderDoitrand* instance = context;
     subghz_protocol_doitrand_check_remote_controller(&instance->generic);
-    string_cat_printf(
+    furi_string_cat_printf(
         output,
         "%s %dbit\r\n"
         "Key:%02lX%08lX\r\n"
-        "Btn:%lX\r\n"
+        "Btn:%X\r\n"
         "DIP:" DIP_PATTERN "\r\n",
         instance->generic.protocol_name,
         instance->generic.data_count_bit,

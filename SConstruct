@@ -1,5 +1,5 @@
 #
-# Main Fipper Build System entry point
+# Main Flipper Build System entry point
 #
 # This file is evaluated by scons (the build system) every time fbt is invoked.
 # Scons constructs all referenced environments & their targets' dependency
@@ -7,65 +7,45 @@
 # construction of certain targets behind command-line options.
 
 import os
-import subprocess
+from fbt.util import path_as_posix
+
+DefaultEnvironment(tools=[])
 
 EnsurePythonVersion(3, 8)
 
-DefaultEnvironment(tools=[])
 # Progress(["OwO\r", "owo\r", "uwu\r", "owo\r"], interval=15)
 
-
-# This environment is created only for loading options & validating file/dir existance
+# This environment is created only for loading options & validating file/dir existence
 fbt_variables = SConscript("site_scons/commandline.scons")
-cmd_environment = Environment(tools=[], variables=fbt_variables)
-Help(fbt_variables.GenerateHelpText(cmd_environment))
+cmd_environment = Environment(
+    toolpath=["#/scripts/fbt_tools"],
+    tools=[
+        ("fbt_help", {"vars": fbt_variables}),
+    ],
+    variables=fbt_variables,
+)
 
 # Building basic environment - tools, utility methods, cross-compilation
 # settings, gcc flags for Cortex-M4, basic builders and more
 coreenv = SConscript(
     "site_scons/environ.scons",
     exports={"VAR_ENV": cmd_environment},
+    toolpath=["#/scripts/fbt_tools"],
 )
 SConscript("site_scons/cc.scons", exports={"ENV": coreenv})
 
-# Store root dir in environment for certain tools
-coreenv["ROOT_DIR"] = Dir(".")
-
-
 # Create a separate "dist" environment and add construction envs to it
 distenv = coreenv.Clone(
-    tools=["fbt_dist", "openocd", "blackmagic", "jflash"],
-    OPENOCD_GDB_PIPE=[
-        "|openocd -c 'gdb_port pipe; log_output debug/openocd.log' ${[SINGLEQUOTEFUNC(OPENOCD_OPTS)]}"
+    tools=[
+        "fbt_dist",
+        "fbt_debugopts",
+        "openocd",
+        "blackmagic",
+        "jflash",
     ],
-    GDBOPTS_BASE=[
-        "-ex",
-        "target extended-remote ${GDBREMOTE}",
-        "-ex",
-        "set confirm off",
-    ],
-    GDBOPTS_BLACKMAGIC=[
-        "-ex",
-        "monitor swdp_scan",
-        "-ex",
-        "monitor debug_bmp enable",
-        "-ex",
-        "attach 1",
-        "-ex",
-        "set mem inaccessible-by-default off",
-    ],
-    GDBPYOPTS=[
-        "-ex",
-        "source debug/FreeRTOS/FreeRTOS.py",
-        "-ex",
-        "source debug/PyCortexMDebug/PyCortexMDebug.py",
-        "-ex",
-        "svd_load ${SVD_FILE}",
-        "-ex",
-        "compare-sections",
-    ],
-    JFLASHPROJECT="${ROOT_DIR.abspath}/debug/fw.jflash",
     ENV=os.environ,
+    UPDATE_BUNDLE_DIR="dist/${DIST_DIR}/f${TARGET_HW}-update-${DIST_SUFFIX}",
+    VSCODE_LANG_SERVER=ARGUMENTS.get("LANG_SERVER", "cpptools"),
 )
 
 firmware_env = distenv.AddFwProject(
@@ -87,20 +67,22 @@ if GetOption("fullenv") or any(
     # Target for self-update package
     dist_basic_arguments = [
         "--bundlever",
-        '"${UPDATE_VERSION_STRING}"',
+        "${UPDATE_VERSION_STRING}",
     ]
     dist_radio_arguments = [
         "--radio",
-        '"${ROOT_DIR.abspath}/${COPRO_STACK_BIN_DIR}/${COPRO_STACK_BIN}"',
+        "${ROOT_DIR.abspath}/${COPRO_STACK_BIN_DIR}/${COPRO_STACK_BIN}",
         "--radiotype",
         "${COPRO_STACK_TYPE}",
         "${COPRO_DISCLAIMER}",
         "--obdata",
-        '"${ROOT_DIR.abspath}/${COPRO_OB_DATA}"',
+        "${ROOT_DIR.abspath}/${COPRO_OB_DATA}",
+        "--stackversion",
+        "${COPRO_CUBE_VERSION}",
     ]
     dist_resource_arguments = [
         "-r",
-        '"${ROOT_DIR.abspath}/assets/resources"',
+        firmware_env.subst("${RESOURCES_ROOT}"),
     ]
     dist_splash_arguments = (
         [
@@ -113,7 +95,7 @@ if GetOption("fullenv") or any(
 
     selfupdate_dist = distenv.DistCommand(
         "updater_package",
-        (distenv["DIST_DEPENDS"], firmware_env["FW_RESOURCES"]),
+        (distenv["DIST_DEPENDS"], firmware_env["FW_RESOURCES_MANIFEST"]),
         DIST_EXTRA=[
             *dist_basic_arguments,
             *dist_radio_arguments,
@@ -146,7 +128,8 @@ if GetOption("fullenv") or any(
 
     # Installation over USB & CLI
     usb_update_package = distenv.AddUsbFlashTarget(
-        "#build/usbinstall.flag", (firmware_env["FW_RESOURCES"], selfupdate_dist)
+        "#build/usbinstall.flag",
+        (firmware_env["FW_RESOURCES_MANIFEST"], selfupdate_dist),
     )
     distenv.Alias("flash_usb_full", usb_update_package)
 
@@ -160,28 +143,78 @@ if GetOption("fullenv") or any(
 basic_dist = distenv.DistCommand("fw_dist", distenv["DIST_DEPENDS"])
 distenv.Default(basic_dist)
 
+dist_dir_name = distenv.GetProjetDirName()
+dist_dir = distenv.Dir(f"#/dist/{dist_dir_name}")
+external_apps_artifacts = firmware_env["FW_EXTAPPS"]
+external_app_list = external_apps_artifacts.application_map.values()
+
+fap_dist = [
+    distenv.Install(
+        dist_dir.Dir("debug_elf"),
+        list(app_artifact.debug for app_artifact in external_app_list),
+    ),
+    *(
+        distenv.Install(
+            dist_dir.File(dist_entry[1]).dir,
+            app_artifact.compact,
+        )
+        for app_artifact in external_app_list
+        for dist_entry in app_artifact.dist_entries
+    ),
+]
+Depends(
+    fap_dist,
+    list(app_artifact.validator for app_artifact in external_app_list),
+)
+Alias("fap_dist", fap_dist)
+
+# Copy all faps to device
+
+fap_deploy = distenv.PhonyTarget(
+    "fap_deploy",
+    Action(
+        [
+            [
+                "${PYTHON3}",
+                "${FBT_SCRIPT_DIR}/storage.py",
+                "-p",
+                "${FLIP_PORT}",
+                "send",
+                "${SOURCE}",
+                "/ext/apps",
+            ]
+        ]
+    ),
+    source=firmware_env.Dir(("${RESOURCES_ROOT}/apps")),
+)
+Depends(fap_deploy, firmware_env["FW_RESOURCES_MANIFEST"])
+
+
 # Target for bundling core2 package for qFlipper
 copro_dist = distenv.CoproBuilder(
-    distenv.Dir("assets/core2_firmware"),
+    "#/build/core2_firmware.tgz",
     [],
 )
+distenv.AlwaysBuild(copro_dist)
 distenv.Alias("copro_dist", copro_dist)
 
-firmware_flash = distenv.AddOpenOCDFlashTarget(firmware_env)
+
+firmware_flash = distenv.AddFwFlashTarget(firmware_env)
 distenv.Alias("flash", firmware_flash)
 
+# To be implemented in fwflash.py
 firmware_jflash = distenv.AddJFlashTarget(firmware_env)
 distenv.Alias("jflash", firmware_jflash)
 
-firmware_bm_flash = distenv.PhonyTarget(
-    "flash_blackmagic",
+distenv.PhonyTarget(
+    "gdb_trace_all",
     "$GDB $GDBOPTS $SOURCES $GDBFLASH",
     source=firmware_env["FW_ELF"],
-    GDBOPTS="${GDBOPTS_BASE} ${GDBOPTS_BLACKMAGIC}",
-    GDBREMOTE="${BLACKMAGIC_ADDR}",
+    GDBOPTS="${GDBOPTS_BASE}",
+    GDBREMOTE="${OPENOCD_GDB_PIPE}",
     GDBFLASH=[
         "-ex",
-        "load",
+        "thread apply all bt",
         "-ex",
         "quit",
     ],
@@ -194,6 +227,7 @@ firmware_debug = distenv.PhonyTarget(
     source=firmware_env["FW_ELF"],
     GDBOPTS="${GDBOPTS_BASE}",
     GDBREMOTE="${OPENOCD_GDB_PIPE}",
+    FBT_FAP_DEBUG_ELF_ROOT=path_as_posix(firmware_env.subst("$FBT_FAP_DEBUG_ELF_ROOT")),
 )
 distenv.Depends(firmware_debug, firmware_flash)
 
@@ -203,15 +237,37 @@ distenv.PhonyTarget(
     source=firmware_env["FW_ELF"],
     GDBOPTS="${GDBOPTS_BASE} ${GDBOPTS_BLACKMAGIC}",
     GDBREMOTE="${BLACKMAGIC_ADDR}",
+    FBT_FAP_DEBUG_ELF_ROOT=path_as_posix(firmware_env.subst("$FBT_FAP_DEBUG_ELF_ROOT")),
 )
 
 # Debug alien elf
+debug_other_opts = [
+    "-ex",
+    "source ${FBT_DEBUG_DIR}/PyCortexMDebug/PyCortexMDebug.py",
+    # "-ex",
+    # "source ${FBT_DEBUG_DIR}/FreeRTOS/FreeRTOS.py",
+    "-ex",
+    "source ${FBT_DEBUG_DIR}/flipperversion.py",
+    "-ex",
+    "fw-version",
+]
+
 distenv.PhonyTarget(
     "debug_other",
     "${GDBPYCOM}",
-    GDBPYOPTS='-ex "source debug/PyCortexMDebug/PyCortexMDebug.py" ',
+    GDBOPTS="${GDBOPTS_BASE}",
     GDBREMOTE="${OPENOCD_GDB_PIPE}",
+    GDBPYOPTS=debug_other_opts,
 )
+
+distenv.PhonyTarget(
+    "debug_other_blackmagic",
+    "${GDBPYCOM}",
+    GDBOPTS="${GDBOPTS_BASE} ${GDBOPTS_BLACKMAGIC}",
+    GDBREMOTE="${BLACKMAGIC_ADDR}",
+    GDBPYOPTS=debug_other_opts,
+)
+
 
 # Just start OpenOCD
 distenv.PhonyTarget(
@@ -222,25 +278,28 @@ distenv.PhonyTarget(
 # Linter
 distenv.PhonyTarget(
     "lint",
-    "${PYTHON3} scripts/lint.py check ${LINT_SOURCES}",
-    LINT_SOURCES=firmware_env["LINT_SOURCES"],
+    [["${PYTHON3}", "${FBT_SCRIPT_DIR}/lint.py", "check", "${LINT_SOURCES}"]],
+    LINT_SOURCES=[n.srcnode() for n in firmware_env["LINT_SOURCES"]],
 )
 
 distenv.PhonyTarget(
     "format",
-    "${PYTHON3} scripts/lint.py format ${LINT_SOURCES}",
-    LINT_SOURCES=firmware_env["LINT_SOURCES"],
+    [["${PYTHON3}", "${FBT_SCRIPT_DIR}/lint.py", "format", "${LINT_SOURCES}"]],
+    LINT_SOURCES=[n.srcnode() for n in firmware_env["LINT_SOURCES"]],
 )
 
-# PY_LINT_SOURCES contains recursively-built modules' SConscript files + application manifests
+# PY_LINT_SOURCES contains recursively-built modules' SConscript files
 # Here we add additional Python files residing in repo root
 firmware_env.Append(
     PY_LINT_SOURCES=[
         # Py code folders
         "site_scons",
         "scripts",
+        "applications",
+        "applications_user",
+        "assets",
+        "targets",
         # Extra files
-        "applications/extapps.scons",
         "SConstruct",
         "firmware.scons",
         "fbt_options.py",
@@ -249,7 +308,10 @@ firmware_env.Append(
 
 
 black_commandline = "@${PYTHON3} -m black ${PY_BLACK_ARGS} ${PY_LINT_SOURCES}"
-black_base_args = ["--include", '"\\.scons|\\.py|SConscript|SConstruct"']
+black_base_args = [
+    "--include",
+    '"(\\.scons|\\.py|SConscript|SConstruct|\\.fam)$"',
+]
 
 distenv.PhonyTarget(
     "lint_py",
@@ -270,7 +332,14 @@ distenv.PhonyTarget(
 )
 
 # Start Flipper CLI via PySerial's miniterm
-distenv.PhonyTarget("cli", "${PYTHON3} scripts/serial_cli.py")
+distenv.PhonyTarget(
+    "cli", [["${PYTHON3}", "${FBT_SCRIPT_DIR}/serial_cli.py", "-p", "${FLIP_PORT}"]]
+)
+
+# Update WiFi devboard firmware
+distenv.PhonyTarget(
+    "devboard_flash", [["${PYTHON3}", "${FBT_SCRIPT_DIR}/wifi_board.py"]]
+)
 
 
 # Find blackmagic probe
@@ -279,8 +348,31 @@ distenv.PhonyTarget(
     "@echo $( ${BLACKMAGIC_ADDR} $)",
 )
 
+
+# Find STLink probe ids
+distenv.PhonyTarget(
+    "get_stlink",
+    distenv.Action(
+        lambda **kw: distenv.GetDevices(),
+        None,
+    ),
+)
+
 # Prepare vscode environment
-vscode_dist = distenv.Install("#.vscode", distenv.Glob("#.vscode/example/*"))
+VSCODE_LANG_SERVER = cmd_environment["LANG_SERVER"]
+vscode_dist = distenv.Install(
+    "#.vscode",
+    [
+        distenv.Glob("#.vscode/example/*.json"),
+        distenv.Glob(f"#.vscode/example/{VSCODE_LANG_SERVER}/*.json"),
+    ],
+)
 distenv.Precious(vscode_dist)
 distenv.NoClean(vscode_dist)
 distenv.Alias("vscode_dist", vscode_dist)
+
+# Configure shell with build tools
+distenv.PhonyTarget(
+    "env",
+    "@echo $( ${FBT_SCRIPT_DIR.abspath}/toolchain/fbtenv.sh $)",
+)

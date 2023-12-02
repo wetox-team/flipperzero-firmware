@@ -1,8 +1,7 @@
 #pragma once
 
+#include "core_defines.h"
 #include <stdbool.h>
-#include <FreeRTOS.h>
-#include <task.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -10,90 +9,16 @@ extern "C" {
 
 #include <cmsis_compiler.h>
 
-#ifndef MAX
-#define MAX(a, b)               \
-    ({                          \
-        __typeof__(a) _a = (a); \
-        __typeof__(b) _b = (b); \
-        _a > _b ? _a : _b;      \
-    })
+#ifndef FURI_WARN_UNUSED
+#define FURI_WARN_UNUSED __attribute__((warn_unused_result))
 #endif
 
-#ifndef MIN
-#define MIN(a, b)               \
-    ({                          \
-        __typeof__(a) _a = (a); \
-        __typeof__(b) _b = (b); \
-        _a < _b ? _a : _b;      \
-    })
+#ifndef FURI_WEAK
+#define FURI_WEAK __attribute__((weak))
 #endif
 
-#ifndef ROUND_UP_TO
-#define ROUND_UP_TO(a, b)       \
-    ({                          \
-        __typeof__(a) _a = (a); \
-        __typeof__(b) _b = (b); \
-        _a / _b + !!(_a % _b);  \
-    })
-#endif
-
-#ifndef CLAMP
-#define CLAMP(x, upper, lower) (MIN(upper, MAX(x, lower)))
-#endif
-
-#ifndef COUNT_OF
-#define COUNT_OF(x) (sizeof(x) / sizeof(x[0]))
-#endif
-
-#ifndef FURI_SWAP
-#define FURI_SWAP(x, y)     \
-    do {                    \
-        typeof(x) SWAP = x; \
-        x = y;              \
-        y = SWAP;           \
-    } while(0)
-#endif
-
-#ifndef PLACE_IN_SECTION
-#define PLACE_IN_SECTION(x) __attribute__((section(x)))
-#endif
-
-#ifndef ALIGN
-#define ALIGN(n) __attribute__((aligned(n)))
-#endif
-
-#ifndef __weak
-#define __weak __attribute__((weak))
-#endif
-
-#ifndef UNUSED
-#define UNUSED(X) (void)(X)
-#endif
-
-#ifndef STRINGIFY
-#define STRINGIFY(x) #x
-#endif
-
-#ifndef TOSTRING
-#define TOSTRING(x) STRINGIFY(x)
-#endif
-
-#ifndef REVERSE_BYTES_U32
-#define REVERSE_BYTES_U32(x)                                                        \
-    ((((x)&0x000000FF) << 24) | (((x)&0x0000FF00) << 8) | (((x)&0x00FF0000) >> 8) | \
-     (((x)&0xFF000000) >> 24))
-#endif
-
-#ifndef FURI_BIT
-#define FURI_BIT(x, n) (((x) >> (n)) & 1)
-#endif
-
-#ifndef FURI_BIT_SET
-#define FURI_BIT_SET(x, n) ((x) |= (1 << (n)))
-#endif
-
-#ifndef FURI_BIT_CLEAR
-#define FURI_BIT_CLEAR(x, n) ((x) &= ~(1 << (n)))
+#ifndef FURI_PACKED
+#define FURI_PACKED __attribute__((packed))
 #endif
 
 #ifndef FURI_IS_IRQ_MASKED
@@ -108,54 +33,27 @@ extern "C" {
 #define FURI_IS_ISR() (FURI_IS_IRQ_MODE() || FURI_IS_IRQ_MASKED())
 #endif
 
+typedef struct {
+    uint32_t isrm;
+    bool from_isr;
+    bool kernel_running;
+} __FuriCriticalInfo;
+
+__FuriCriticalInfo __furi_critical_enter(void);
+
+void __furi_critical_exit(__FuriCriticalInfo info);
+
 #ifndef FURI_CRITICAL_ENTER
-#define FURI_CRITICAL_ENTER()                                                    \
-    uint32_t __isrm = 0;                                                         \
-    bool __from_isr = FURI_IS_ISR();                                             \
-    bool __kernel_running = (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING); \
-    if(__from_isr) {                                                             \
-        __isrm = taskENTER_CRITICAL_FROM_ISR();                                  \
-    } else if(__kernel_running) {                                                \
-        taskENTER_CRITICAL();                                                    \
-    } else {                                                                     \
-        __disable_irq();                                                         \
-    }
+#define FURI_CRITICAL_ENTER() __FuriCriticalInfo __furi_critical_info = __furi_critical_enter();
 #endif
 
 #ifndef FURI_CRITICAL_EXIT
-#define FURI_CRITICAL_EXIT()                \
-    if(__from_isr) {                        \
-        taskEXIT_CRITICAL_FROM_ISR(__isrm); \
-    } else if(__kernel_running) {           \
-        taskEXIT_CRITICAL();                \
-    } else {                                \
-        __enable_irq();                     \
-    }
+#define FURI_CRITICAL_EXIT() __furi_critical_exit(__furi_critical_info);
 #endif
 
-static inline bool furi_is_irq_context() {
-    bool irq = false;
-    BaseType_t state;
-
-    if(FURI_IS_IRQ_MODE()) {
-        /* Called from interrupt context */
-        irq = true;
-    } else {
-        /* Get FreeRTOS scheduler state */
-        state = xTaskGetSchedulerState();
-
-        if(state != taskSCHEDULER_NOT_STARTED) {
-            /* Scheduler was started */
-            if(FURI_IS_IRQ_MASKED()) {
-                /* Interrupts are masked */
-                irq = true;
-            }
-        }
-    }
-
-    /* Return context, 0: thread context, 1: IRQ context */
-    return (irq);
-}
+#ifndef FURI_CHECK_RETURN
+#define FURI_CHECK_RETURN __attribute__((__warn_unused_result__))
+#endif
 
 #ifdef __cplusplus
 }

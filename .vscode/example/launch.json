@@ -9,8 +9,12 @@
             "type": "command",
             "command": "shellCommand.execute",
             "args": {
-                "command": "./fbt get_blackmagic",
-                "description": "Get Blackmagic device",
+                "useSingleResult": true,
+                "env": {
+                    "PATH": "${workspaceFolder}${command:extension.commandvariable.envListSep}${env:PATH}"
+                },
+                "command": "fbt -s get_blackmagic",
+                "description": "Get Blackmagic device"
             }
         }
     ],
@@ -23,15 +27,21 @@
             "type": "cortex-debug",
             "servertype": "openocd",
             "device": "stlink",
-            "svdFile": "./debug/STM32WB55_CM4.svd",
+            "svdFile": "./scripts/debug/STM32WB55_CM4.svd",
+            // If you're debugging early in the boot process, before OS scheduler is running,
+            // you have to comment out the following line.
             "rtos": "FreeRTOS",
             "configFiles": [
                 "interface/stlink.cfg",
-                "./debug/stm32wbx.cfg",
+                "./scripts/debug/stm32wbx.cfg",
             ],
             "postAttachCommands": [
-                // "attach 1",
-                "compare-sections",
+                "source scripts/debug/flipperversion.py",
+                "fw-version",
+                // "compare-sections",
+                "source scripts/debug/flipperapps.py",
+                "fap-set-debug-elf-root build/latest/.extapps",
+                // "source scripts/debug/FreeRTOS/FreeRTOS.py",
             ]
             // "showDevDebugOutput": "raw",
         },
@@ -43,14 +53,18 @@
             "type": "cortex-debug",
             "servertype": "external",
             "gdbTarget": "${input:BLACKMAGIC}",
-            "svdFile": "./debug/STM32WB55_CM4.svd",
+            "svdFile": "./scripts/debug/STM32WB55_CM4.svd",
             "rtos": "FreeRTOS",
             "postAttachCommands": [
                 "monitor swdp_scan",
                 "attach 1",
                 "set confirm off",
                 "set mem inaccessible-by-default off",
-                "compare-sections",
+                "source scripts/debug/flipperversion.py",
+                "fw-version",
+                "source scripts/debug/flipperapps.py",
+                "fap-set-debug-elf-root build/latest/.extapps",
+                // "compare-sections",
             ]
             // "showDevDebugOutput": "raw",
         },
@@ -63,18 +77,37 @@
             "servertype": "jlink",
             "interface": "swd",
             "device": "STM32WB55RG",
-            "svdFile": "./debug/STM32WB55_CM4.svd",
+            "svdFile": "./scripts/debug/STM32WB55_CM4.svd",
             "rtos": "FreeRTOS",
+            "postAttachCommands": [
+                "source scripts/debug/flipperversion.py",
+                "fw-version",
+                "source scripts/debug/flipperapps.py",
+                "fap-set-debug-elf-root build/latest/.extapps",
+            ]
             // "showDevDebugOutput": "raw",
         },
         {
-            "name": "fbt debug",
-            "type": "python",
-            "request": "launch",
-            "program": "./lib/scons/scripts/scons.py",
-            "args": [
-                "sdk"
-            ]
+            "name": "Attach FW (DAP)",
+            "cwd": "${workspaceFolder}",
+            "executable": "./build/latest/firmware.elf",
+            "request": "attach",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "device": "cmsis-dap",
+            "svdFile": "./scripts/debug/STM32WB55_CM4.svd",
+            "rtos": "FreeRTOS",
+            "configFiles": [
+                "interface/cmsis-dap.cfg",
+                "./scripts/debug/stm32wbx.cfg",
+            ],
+            "postAttachCommands": [
+                "source scripts/debug/flipperversion.py",
+                "fw-version",
+                "source scripts/debug/flipperapps.py",
+                "fap-set-debug-elf-root build/latest/.extapps",
+            ],
+            // "showDevDebugOutput": "raw",
         },
         {
             "name": "python debug",

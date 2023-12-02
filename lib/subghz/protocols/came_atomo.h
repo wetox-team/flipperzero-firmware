@@ -48,25 +48,26 @@ uint8_t subghz_protocol_decoder_came_atomo_get_hash_data(void* context);
  * Serialize data SubGhzProtocolDecoderCameAtomo.
  * @param context Pointer to a SubGhzProtocolDecoderCameAtomo instance
  * @param flipper_format Pointer to a FlipperFormat instance
- * @param preset The modulation on which the signal was received, SubGhzPresetDefinition
- * @return true On success
+ * @param preset The modulation on which the signal was received, SubGhzRadioPreset
+ * @return status
  */
-bool subghz_protocol_decoder_came_atomo_serialize(
+SubGhzProtocolStatus subghz_protocol_decoder_came_atomo_serialize(
     void* context,
     FlipperFormat* flipper_format,
-    SubGhzPresetDefinition* preset);
+    SubGhzRadioPreset* preset);
 
 /**
  * Deserialize data SubGhzProtocolDecoderCameAtomo.
  * @param context Pointer to a SubGhzProtocolDecoderCameAtomo instance
  * @param flipper_format Pointer to a FlipperFormat instance
- * @return true On success
+ * @return status
  */
-bool subghz_protocol_decoder_came_atomo_deserialize(void* context, FlipperFormat* flipper_format);
+SubGhzProtocolStatus
+    subghz_protocol_decoder_came_atomo_deserialize(void* context, FlipperFormat* flipper_format);
 
 /**
  * Getting a textual representation of the received data.
  * @param context Pointer to a SubGhzProtocolDecoderCameAtomo instance
  * @param output Resulting text
  */
-void subghz_protocol_decoder_came_atomo_get_string(void* context, string_t output);
+void subghz_protocol_decoder_came_atomo_get_string(void* context, FuriString* output);

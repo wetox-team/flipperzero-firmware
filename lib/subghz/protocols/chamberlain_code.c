@@ -6,7 +6,7 @@
 #include "../blocks/generic.h"
 #include "../blocks/math.h"
 
-#define TAG "SubGhzProtocolChamb_Code"
+#define TAG "SubGhzProtocolChambCode"
 
 #define CHAMBERLAIN_CODE_BIT_STOP 0b0001
 #define CHAMBERLAIN_CODE_BIT_1 0b0011
@@ -155,7 +155,7 @@ static bool
         break;
 
     default:
-        furi_crash(TAG " unknown protocol.");
+        FURI_LOG_E(TAG, "Invalid bits count");
         return false;
         break;
     }
@@ -196,41 +196,46 @@ static bool
         break;
     }
 
-    instance->encoder.size_upload = subghz_protocol_blocks_get_upload(
+    instance->encoder.size_upload = subghz_protocol_blocks_get_upload_from_bit_array(
         upload_hex_data,
         upload_hex_count_bit,
         instance->encoder.upload,
         instance->encoder.size_upload,
-        subghz_protocol_chamb_code_const.te_short);
+        subghz_protocol_chamb_code_const.te_short,
+        SubGhzProtocolBlockAlignBitLeft);
 
     return true;
 }
 
-bool subghz_protocol_encoder_chamb_code_deserialize(void* context, FlipperFormat* flipper_format) {
+SubGhzProtocolStatus
+    subghz_protocol_encoder_chamb_code_deserialize(void* context, FlipperFormat* flipper_format) {
     furi_assert(context);
     SubGhzProtocolEncoderChamb_Code* instance = context;
-    bool res = false;
+    SubGhzProtocolStatus ret = SubGhzProtocolStatusError;
     do {
-        if(!subghz_block_generic_deserialize(&instance->generic, flipper_format)) {
-            FURI_LOG_E(TAG, "Deserialize error");
+        ret = subghz_block_generic_deserialize(&instance->generic, flipper_format);
+        if(ret != SubGhzProtocolStatusOk) {
             break;
         }
-        if(instance->generic.data_count_bit <
+        if(instance->generic.data_count_bit >
            subghz_protocol_chamb_code_const.min_count_bit_for_found) {
             FURI_LOG_E(TAG, "Wrong number of bits in key");
+            ret = SubGhzProtocolStatusErrorValueBitCount;
             break;
         }
         //optional parameter parameter
         flipper_format_read_uint32(
             flipper_format, "Repeat", (uint32_t*)&instance->encoder.repeat, 1);
 
-        subghz_protocol_encoder_chamb_code_get_upload(instance);
+        if(!subghz_protocol_encoder_chamb_code_get_upload(instance)) {
+            ret = SubGhzProtocolStatusErrorEncoderGetUpload;
+            break;
+        }
         instance->encoder.is_running = true;
 
-        res = true;
     } while(false);
 
-    return res;
+    return ret;
 }
 
 void subghz_protocol_encoder_chamb_code_stop(void* context) {
@@ -280,9 +285,9 @@ static bool subghz_protocol_chamb_code_to_bit(uint64_t* data, uint8_t size) {
     uint64_t data_tmp = data[0];
     uint64_t data_res = 0;
     for(uint8_t i = 0; i < size; i++) {
-        if((data_tmp & 0xF) == CHAMBERLAIN_CODE_BIT_0) {
+        if((data_tmp & 0xFll) == CHAMBERLAIN_CODE_BIT_0) {
             bit_write(data_res, i, 0);
-        } else if((data_tmp & 0xF) == CHAMBERLAIN_CODE_BIT_1) {
+        } else if((data_tmp & 0xFll) == CHAMBERLAIN_CODE_BIT_1) {
             bit_write(data_res, i, 1);
         } else {
             return false;
@@ -424,34 +429,36 @@ uint8_t subghz_protocol_decoder_chamb_code_get_hash_data(void* context) {
         &instance->decoder, (instance->decoder.decode_count_bit / 8) + 1);
 }
 
-bool subghz_protocol_decoder_chamb_code_serialize(
+SubGhzProtocolStatus subghz_protocol_decoder_chamb_code_serialize(
     void* context,
     FlipperFormat* flipper_format,
-    SubGhzPresetDefinition* preset) {
+    SubGhzRadioPreset* preset) {
     furi_assert(context);
     SubGhzProtocolDecoderChamb_Code* instance = context;
     return subghz_block_generic_serialize(&instance->generic, flipper_format, preset);
 }
 
-bool subghz_protocol_decoder_chamb_code_deserialize(void* context, FlipperFormat* flipper_format) {
+SubGhzProtocolStatus
+    subghz_protocol_decoder_chamb_code_deserialize(void* context, FlipperFormat* flipper_format) {
     furi_assert(context);
     SubGhzProtocolDecoderChamb_Code* instance = context;
-    bool ret = false;
+    SubGhzProtocolStatus ret = SubGhzProtocolStatusError;
     do {
-        if(!subghz_block_generic_deserialize(&instance->generic, flipper_format)) {
+        ret = subghz_block_generic_deserialize(&instance->generic, flipper_format);
+        if(ret != SubGhzProtocolStatusOk) {
             break;
         }
-        if(instance->generic.data_count_bit <
+        if(instance->generic.data_count_bit >
            subghz_protocol_chamb_code_const.min_count_bit_for_found) {
             FURI_LOG_E(TAG, "Wrong number of bits in key");
+            ret = SubGhzProtocolStatusErrorValueBitCount;
             break;
         }
-        ret = true;
     } while(false);
     return ret;
 }
 
-void subghz_protocol_decoder_chamb_code_get_string(void* context, string_t output) {
+void subghz_protocol_decoder_chamb_code_get_string(void* context, FuriString* output) {
     furi_assert(context);
     SubGhzProtocolDecoderChamb_Code* instance = context;
 
@@ -462,7 +469,7 @@ void subghz_protocol_decoder_chamb_code_get_string(void* context, string_t outpu
 
     uint32_t code_found_reverse_lo = code_found_reverse & 0x00000000ffffffff;
 
-    string_cat_printf(
+    furi_string_cat_printf(
         output,
         "%s %db\r\n"
         "Key:0x%03lX\r\n"
@@ -474,19 +481,19 @@ void subghz_protocol_decoder_chamb_code_get_string(void* context, string_t outpu
 
     switch(instance->generic.data_count_bit) {
     case 7:
-        string_cat_printf(
+        furi_string_cat_printf(
             output,
             "DIP:" CHAMBERLAIN_7_CODE_DIP_PATTERN "\r\n",
             CHAMBERLAIN_7_CODE_DATA_TO_DIP(code_found_lo));
         break;
     case 8:
-        string_cat_printf(
+        furi_string_cat_printf(
             output,
             "DIP:" CHAMBERLAIN_8_CODE_DIP_PATTERN "\r\n",
             CHAMBERLAIN_8_CODE_DATA_TO_DIP(code_found_lo));
         break;
     case 9:
-        string_cat_printf(
+        furi_string_cat_printf(
             output,
             "DIP:" CHAMBERLAIN_9_CODE_DIP_PATTERN "\r\n",
             CHAMBERLAIN_9_CODE_DATA_TO_DIP(code_found_lo));

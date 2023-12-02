@@ -4,7 +4,6 @@
 
 #include <furi.h>
 #include <furi_hal.h>
-#include <m-string.h>
 #include <loader/loader.h>
 #include <lib/toolbox/path.h>
 #include <lib/toolbox/crc32_calc.h>
@@ -12,7 +11,7 @@
 #define UPDATE_ROOT_DIR EXT_PATH("update")
 
 /* Need at least 4 free LFS pages before update */
-#define UPDATE_MIN_INT_FREE_SPACE 4 * 4 * 1024
+#define UPDATE_MIN_INT_FREE_SPACE (2 * 4 * 1024)
 
 static const char* update_prepare_result_descr[] = {
     [UpdatePrepareResultOK] = "OK",
@@ -21,9 +20,12 @@ static const char* update_prepare_result_descr[] = {
     [UpdatePrepareResultManifestInvalid] = "Invalid manifest data",
     [UpdatePrepareResultStageMissing] = "Missing Stage2 loader",
     [UpdatePrepareResultStageIntegrityError] = "Corrupted Stage2 loader",
-    [UpdatePrepareResultManifestPointerError] = "Failed to create update pointer file",
+    [UpdatePrepareResultManifestPointerCreateError] = "Failed to create update pointer file",
+    [UpdatePrepareResultManifestPointerCheckError] = "Update pointer file error (corrupted FS?)",
+    [UpdatePrepareResultTargetMismatch] = "Hardware target mismatch",
     [UpdatePrepareResultOutdatedManifestVersion] = "Update package is too old",
     [UpdatePrepareResultIntFull] = "Need more free space in internal storage",
+    [UpdatePrepareResultUnspecifiedError] = "Unknown error",
 };
 
 const char* update_operation_describe_preparation_result(const UpdatePrepareResult value) {
@@ -34,9 +36,9 @@ const char* update_operation_describe_preparation_result(const UpdatePrepareResu
     }
 }
 
-static bool update_operation_get_current_package_path_rtc(Storage* storage, string_t out_path) {
+static bool update_operation_get_current_package_path_rtc(Storage* storage, FuriString* out_path) {
     const uint32_t update_index = furi_hal_rtc_get_register(FuriHalRtcRegisterUpdateFolderFSIndex);
-    string_set_str(out_path, UPDATE_ROOT_DIR);
+    furi_string_set(out_path, UPDATE_ROOT_DIR);
     if(update_index == UPDATE_OPERATION_ROOT_DIR_PACKAGE_MAGIC) {
         return true;
     }
@@ -63,7 +65,7 @@ static bool update_operation_get_current_package_path_rtc(Storage* storage, stri
     free(name_buffer);
     storage_file_free(dir);
     if(!found) {
-        string_reset(out_path);
+        furi_string_reset(out_path);
     }
 
     return found;
@@ -72,8 +74,8 @@ static bool update_operation_get_current_package_path_rtc(Storage* storage, stri
 #define UPDATE_FILE_POINTER_FN EXT_PATH(UPDATE_MANIFEST_POINTER_FILE_NAME)
 #define UPDATE_MANIFEST_MAX_PATH_LEN 256u
 
-bool update_operation_get_current_package_manifest_path(Storage* storage, string_t out_path) {
-    string_reset(out_path);
+bool update_operation_get_current_package_manifest_path(Storage* storage, FuriString* out_path) {
+    furi_string_reset(out_path);
     if(storage_common_stat(storage, UPDATE_FILE_POINTER_FN, NULL) == FSE_OK) {
         char* manifest_name_buffer = malloc(UPDATE_MANIFEST_MAX_PATH_LEN);
         File* upd_file = NULL;
@@ -83,7 +85,7 @@ bool update_operation_get_current_package_manifest_path(Storage* storage, string
                    upd_file, UPDATE_FILE_POINTER_FN, FSAM_READ, FSOM_OPEN_EXISTING)) {
                 break;
             }
-            uint16_t bytes_read =
+            size_t bytes_read =
                 storage_file_read(upd_file, manifest_name_buffer, UPDATE_MANIFEST_MAX_PATH_LEN);
             if((bytes_read == 0) || (bytes_read == UPDATE_MANIFEST_MAX_PATH_LEN)) {
                 break;
@@ -91,27 +93,27 @@ bool update_operation_get_current_package_manifest_path(Storage* storage, string
             if(storage_common_stat(storage, manifest_name_buffer, NULL) != FSE_OK) {
                 break;
             }
-            string_set_str(out_path, manifest_name_buffer);
+            furi_string_set(out_path, manifest_name_buffer);
         } while(0);
         free(manifest_name_buffer);
         storage_file_free(upd_file);
     } else {
         /* legacy, will be deprecated */
-        string_t rtcpath;
-        string_init(rtcpath);
+        FuriString* rtcpath;
+        rtcpath = furi_string_alloc();
         do {
             if(!update_operation_get_current_package_path_rtc(storage, rtcpath)) {
                 break;
             }
-            path_concat(string_get_cstr(rtcpath), UPDATE_MANIFEST_DEFAULT_NAME, out_path);
+            path_concat(furi_string_get_cstr(rtcpath), UPDATE_MANIFEST_DEFAULT_NAME, out_path);
         } while(0);
-        string_clear(rtcpath);
+        furi_string_free(rtcpath);
     }
-    return !string_empty_p(out_path);
+    return !furi_string_empty(out_path);
 }
 
 static bool update_operation_persist_manifest_path(Storage* storage, const char* manifest_path) {
-    const uint16_t manifest_path_len = strlen(manifest_path);
+    const size_t manifest_path_len = strlen(manifest_path);
     furi_check(manifest_path && manifest_path_len);
     bool success = false;
     File* file = storage_file_alloc(storage);
@@ -141,8 +143,8 @@ UpdatePrepareResult update_operation_prepare(const char* manifest_file_path) {
     File* file = storage_file_alloc(storage);
 
     uint64_t free_int_space;
-    string_t stage_path;
-    string_init(stage_path);
+    FuriString* stage_path = furi_string_alloc();
+    FuriString* manifest_path_check = furi_string_alloc();
     do {
         if((storage_common_fs_info(storage, STORAGE_INT_PATH_PREFIX, NULL, &free_int_space) !=
             FSE_OK) ||
@@ -164,16 +166,18 @@ UpdatePrepareResult update_operation_prepare(const char* manifest_file_path) {
             result = UpdatePrepareResultOutdatedManifestVersion;
             break;
         }
-
-        if(furi_hal_version_get_hw_target() != manifest->target) {
+        /* Only compare hardware target if it is set - pre-production devices accept any firmware*/
+        if(furi_hal_version_get_hw_target() &&
+           (furi_hal_version_get_hw_target() != manifest->target)) {
             result = UpdatePrepareResultTargetMismatch;
             break;
         }
 
         path_extract_dirname(manifest_file_path, stage_path);
-        path_append(stage_path, string_get_cstr(manifest->staged_loader_file));
+        path_append(stage_path, furi_string_get_cstr(manifest->staged_loader_file));
 
-        if(!storage_file_open(file, string_get_cstr(stage_path), FSAM_READ, FSOM_OPEN_EXISTING)) {
+        if(!storage_file_open(
+               file, furi_string_get_cstr(stage_path), FSAM_READ, FSOM_OPEN_EXISTING)) {
             result = UpdatePrepareResultStageMissing;
             break;
         }
@@ -185,7 +189,18 @@ UpdatePrepareResult update_operation_prepare(const char* manifest_file_path) {
         }
 
         if(!update_operation_persist_manifest_path(storage, manifest_file_path)) {
-            result = UpdatePrepareResultManifestPointerError;
+            result = UpdatePrepareResultManifestPointerCreateError;
+            break;
+        }
+
+        if(!update_operation_get_current_package_manifest_path(storage, manifest_path_check) ||
+           (furi_string_cmpi_str(manifest_path_check, manifest_file_path) != 0)) {
+            FURI_LOG_E(
+                "update",
+                "Manifest pointer check failed: '%s' != '%s'",
+                furi_string_get_cstr(manifest_path_check),
+                manifest_file_path);
+            result = UpdatePrepareResultManifestPointerCheckError;
             break;
         }
 
@@ -193,7 +208,8 @@ UpdatePrepareResult update_operation_prepare(const char* manifest_file_path) {
         furi_hal_rtc_set_boot_mode(FuriHalRtcBootModePreUpdate);
     } while(false);
 
-    string_clear(stage_path);
+    furi_string_free(stage_path);
+    furi_string_free(manifest_path_check);
     storage_file_free(file);
 
     update_manifest_free(manifest);

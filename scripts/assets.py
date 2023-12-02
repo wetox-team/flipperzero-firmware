@@ -1,24 +1,21 @@
 #!/usr/bin/env python3
 
+import os
+import shutil
+
 from flipper.app import App
 from flipper.assets.icon import file2image
-
-import logging
-import argparse
-import subprocess
-import io
-import os
-import sys
 
 ICONS_SUPPORTED_FORMATS = ["png"]
 
 ICONS_TEMPLATE_H_HEADER = """#pragma once
+
 #include <gui/icon.h>
 
 """
 ICONS_TEMPLATE_H_ICON_NAME = "extern const Icon {name};\n"
 
-ICONS_TEMPLATE_C_HEADER = """#include \"assets_icons.h\"
+ICONS_TEMPLATE_C_HEADER = """#include "{assets_filename}.h"
 
 #include <gui/icon_i.h>
 
@@ -37,12 +34,26 @@ class Main(App):
         )
         self.parser_icons.add_argument("input_directory", help="Source directory")
         self.parser_icons.add_argument("output_directory", help="Output directory")
+        self.parser_icons.add_argument(
+            "--filename",
+            help="Base filename for file with icon data",
+            required=False,
+            default="assets_icons",
+        )
+
         self.parser_icons.set_defaults(func=self.icons)
 
         self.parser_manifest = self.subparsers.add_parser(
             "manifest", help="Create directory Manifest"
         )
         self.parser_manifest.add_argument("local_path", help="local_path")
+        self.parser_manifest.add_argument(
+            "--timestamp",
+            help="timestamp value to embed",
+            default=0,
+            type=int,
+            required=False,
+        )
         self.parser_manifest.set_defaults(func=self.manifest)
 
         self.parser_copro = self.subparsers.add_parser(
@@ -50,7 +61,6 @@ class Main(App):
         )
         self.parser_copro.add_argument("cube_dir", help="Path to Cube folder")
         self.parser_copro.add_argument("output_dir", help="Path to output folder")
-        self.parser_copro.add_argument("mcu", help="MCU series as in copro folder")
         self.parser_copro.add_argument(
             "--cube_ver", dest="cube_ver", help="Cube version", required=True
         )
@@ -99,13 +109,15 @@ class Main(App):
         return extension in ICONS_SUPPORTED_FORMATS
 
     def icons(self):
-        self.logger.debug(f"Converting icons")
+        self.logger.debug("Converting icons")
         icons_c = open(
-            os.path.join(self.args.output_directory, "assets_icons.c"),
+            os.path.join(self.args.output_directory, f"{self.args.filename}.c"),
             "w",
             newline="\n",
         )
-        icons_c.write(ICONS_TEMPLATE_C_HEADER)
+        icons_c.write(
+            ICONS_TEMPLATE_C_HEADER.format(assets_filename=self.args.filename)
+        )
         icons = []
         # Traverse icons tree, append image data to source file
         for dirpath, dirnames, filenames in os.walk(self.args.input_directory):
@@ -115,7 +127,7 @@ class Main(App):
             if not filenames:
                 continue
             if "frame_rate" in filenames:
-                self.logger.debug(f"Folder contatins animation")
+                self.logger.debug("Folder contains animation")
                 icon_name = "A_" + os.path.split(dirpath)[1].replace("-", "_")
                 width = height = None
                 frame_count = 0
@@ -174,7 +186,7 @@ class Main(App):
                     icons_c.write("\n")
                     icons.append((icon_name, width, height, 0, 1))
         # Create array of images:
-        self.logger.debug(f"Finalizing source file")
+        self.logger.debug("Finalizing source file")
         for name, width, height, frame_rate, frame_count in icons:
             icons_c.write(
                 ICONS_TEMPLATE_C_ICONS.format(
@@ -189,9 +201,9 @@ class Main(App):
         icons_c.close()
 
         # Create Public Header
-        self.logger.debug(f"Creating header")
+        self.logger.debug("Creating header")
         icons_h = open(
-            os.path.join(self.args.output_directory, "assets_icons.h"),
+            os.path.join(self.args.output_directory, f"{self.args.filename}.h"),
             "w",
             newline="\n",
         )
@@ -199,7 +211,7 @@ class Main(App):
         for name, width, height, frame_rate, frame_count in icons:
             icons_h.write(ICONS_TEMPLATE_H_ICON_NAME.format(name=name))
         icons_h.close()
-        self.logger.debug(f"Done")
+        self.logger.debug("Done")
         return 0
 
     def manifest(self):
@@ -209,6 +221,7 @@ class Main(App):
         if not os.path.isdir(directory_path):
             self.logger.error(f'"{directory_path}" is not a directory')
             exit(255)
+
         manifest_file = os.path.join(directory_path, "Manifest")
         old_manifest = Manifest()
         if os.path.exists(manifest_file):
@@ -217,55 +230,61 @@ class Main(App):
         self.logger.info(
             f'Creating temporary Manifest for directory "{directory_path}"'
         )
-        new_manifest = Manifest()
+        new_manifest = Manifest(self.args.timestamp)
         new_manifest.create(directory_path)
 
-        self.logger.info(f"Comparing new manifest with existing")
+        self.logger.info("Comparing new manifest with existing")
         only_in_old, changed, only_in_new = Manifest.compare(old_manifest, new_manifest)
         for record in only_in_old:
-            self.logger.info(f"Only in old: {record}")
+            self.logger.debug(f"Only in old: {record}")
         for record in changed:
             self.logger.info(f"Changed: {record}")
         for record in only_in_new:
-            self.logger.info(f"Only in new: {record}")
+            self.logger.debug(f"Only in new: {record}")
         if any((only_in_old, changed, only_in_new)):
-            self.logger.warning("Manifests are different, updating")
+            self.logger.info(
+                f"Manifest updated ({len(only_in_new)} new, {len(only_in_old)} removed, {len(changed)} changed)"
+            )
             new_manifest.save(manifest_file)
         else:
             self.logger.info("Manifest is up-to-date!")
 
-        self.logger.info(f"Complete")
+        self.logger.info("Complete")
 
         return 0
 
     def copro(self):
         from flipper.assets.copro import Copro
 
-        self.logger.info(f"Bundling coprocessor binaries")
-        copro = Copro(self.args.mcu)
-        self.logger.info(f"Loading CUBE info")
-        copro.loadCubeInfo(self.args.cube_dir, self.args.cube_ver)
-        self.logger.info(f"Bundling")
-        copro.bundle(
-            self.args.output_dir,
-            self.args.stack_file,
-            self.args.stack_type,
-            self.args.stack_addr,
-        )
-        self.logger.info(f"Complete")
+        self.logger.info("Bundling coprocessor binaries")
+        copro = Copro()
+        try:
+            self.logger.info("Loading CUBE info")
+            copro.loadCubeInfo(self.args.cube_dir, self.args.cube_ver)
+            self.logger.info("Bundling")
+            copro.bundle(
+                self.args.output_dir,
+                self.args.stack_file,
+                self.args.stack_type,
+                self.args.stack_addr,
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to bundle: {e}")
+            return 1
+        self.logger.info("Complete")
 
         return 0
 
     def dolphin(self):
         from flipper.assets.dolphin import Dolphin
 
-        self.logger.info(f"Processing Dolphin sources")
+        self.logger.info("Processing Dolphin sources")
         dolphin = Dolphin()
-        self.logger.info(f"Loading data")
+        self.logger.info("Loading data")
         dolphin.load(self.args.input_directory)
-        self.logger.info(f"Packing")
+        self.logger.info("Packing")
         dolphin.pack(self.args.output_directory, self.args.symbol_name)
-        self.logger.info(f"Complete")
+        self.logger.info("Complete")
 
         return 0
 

@@ -142,31 +142,31 @@ static bool subghz_protocol_encoder_holtek_get_upload(SubGhzProtocolEncoderHolte
     return true;
 }
 
-bool subghz_protocol_encoder_holtek_deserialize(void* context, FlipperFormat* flipper_format) {
+SubGhzProtocolStatus
+    subghz_protocol_encoder_holtek_deserialize(void* context, FlipperFormat* flipper_format) {
     furi_assert(context);
     SubGhzProtocolEncoderHoltek* instance = context;
-    bool res = false;
+    SubGhzProtocolStatus ret = SubGhzProtocolStatusError;
     do {
-        if(!subghz_block_generic_deserialize(&instance->generic, flipper_format)) {
-            FURI_LOG_E(TAG, "Deserialize error");
-            break;
-        }
-        if(instance->generic.data_count_bit !=
-           subghz_protocol_holtek_const.min_count_bit_for_found) {
-            FURI_LOG_E(TAG, "Wrong number of bits in key");
+        ret = subghz_block_generic_deserialize_check_count_bit(
+            &instance->generic,
+            flipper_format,
+            subghz_protocol_holtek_const.min_count_bit_for_found);
+        if(ret != SubGhzProtocolStatusOk) {
             break;
         }
         //optional parameter parameter
         flipper_format_read_uint32(
             flipper_format, "Repeat", (uint32_t*)&instance->encoder.repeat, 1);
 
-        subghz_protocol_encoder_holtek_get_upload(instance);
+        if(!subghz_protocol_encoder_holtek_get_upload(instance)) {
+            ret = SubGhzProtocolStatusErrorEncoderGetUpload;
+            break;
+        }
         instance->encoder.is_running = true;
-
-        res = true;
     } while(false);
 
-    return res;
+    return ret;
 }
 
 void subghz_protocol_encoder_holtek_stop(void* context) {
@@ -240,7 +240,6 @@ void subghz_protocol_decoder_holtek_feed(void* context, bool level, uint32_t dur
         if(!level) {
             if(duration >= ((uint32_t)subghz_protocol_holtek_const.te_short * 10 +
                             subghz_protocol_holtek_const.te_delta)) {
-                instance->decoder.parser_step = HoltekDecoderStepSaveDuration;
                 if(instance->decoder.decode_count_bit ==
                    subghz_protocol_holtek_const.min_count_bit_for_found) {
                     if((instance->decoder.decode_data & HOLTEK_HEADER_MASK) == HOLTEK_HEADER) {
@@ -323,39 +322,29 @@ uint8_t subghz_protocol_decoder_holtek_get_hash_data(void* context) {
         &instance->decoder, (instance->decoder.decode_count_bit / 8) + 1);
 }
 
-bool subghz_protocol_decoder_holtek_serialize(
+SubGhzProtocolStatus subghz_protocol_decoder_holtek_serialize(
     void* context,
     FlipperFormat* flipper_format,
-    SubGhzPresetDefinition* preset) {
+    SubGhzRadioPreset* preset) {
     furi_assert(context);
     SubGhzProtocolDecoderHoltek* instance = context;
     return subghz_block_generic_serialize(&instance->generic, flipper_format, preset);
 }
 
-bool subghz_protocol_decoder_holtek_deserialize(void* context, FlipperFormat* flipper_format) {
+SubGhzProtocolStatus
+    subghz_protocol_decoder_holtek_deserialize(void* context, FlipperFormat* flipper_format) {
     furi_assert(context);
     SubGhzProtocolDecoderHoltek* instance = context;
-    bool ret = false;
-    do {
-        if(!subghz_block_generic_deserialize(&instance->generic, flipper_format)) {
-            break;
-        }
-        if(instance->generic.data_count_bit !=
-           subghz_protocol_holtek_const.min_count_bit_for_found) {
-            FURI_LOG_E(TAG, "Wrong number of bits in key");
-            break;
-        }
-        ret = true;
-    } while(false);
-    return ret;
+    return subghz_block_generic_deserialize_check_count_bit(
+        &instance->generic, flipper_format, subghz_protocol_holtek_const.min_count_bit_for_found);
 }
 
-void subghz_protocol_decoder_holtek_get_string(void* context, string_t output) {
+void subghz_protocol_decoder_holtek_get_string(void* context, FuriString* output) {
     furi_assert(context);
     SubGhzProtocolDecoderHoltek* instance = context;
     subghz_protocol_holtek_check_remote_controller(&instance->generic);
 
-    string_cat_printf(
+    furi_string_cat_printf(
         output,
         "%s %dbit\r\n"
         "Key:0x%lX%08lX\r\n"
@@ -368,8 +357,8 @@ void subghz_protocol_decoder_holtek_get_string(void* context, string_t output) {
         instance->generic.btn >> 4);
 
     if((instance->generic.btn & 0xF) == 0xE) {
-        string_cat_printf(output, "ON\r\n");
+        furi_string_cat_printf(output, "ON\r\n");
     } else if(((instance->generic.btn & 0xF) == 0xB)) {
-        string_cat_printf(output, "OFF\r\n");
+        furi_string_cat_printf(output, "OFF\r\n");
     }
 }

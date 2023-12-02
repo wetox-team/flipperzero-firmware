@@ -6,7 +6,7 @@
 #include "../blocks/generic.h"
 #include "../blocks/math.h"
 
-#define TAG "SubGhzProtocolHoneywellWDB"
+#define TAG "SubGhzProtocolHoneywellWdb"
 
 /*
  * 
@@ -142,33 +142,32 @@ static bool subghz_protocol_encoder_honeywell_wdb_get_upload(
     return true;
 }
 
-bool subghz_protocol_encoder_honeywell_wdb_deserialize(
+SubGhzProtocolStatus subghz_protocol_encoder_honeywell_wdb_deserialize(
     void* context,
     FlipperFormat* flipper_format) {
     furi_assert(context);
     SubGhzProtocolEncoderHoneywell_WDB* instance = context;
-    bool res = false;
+    SubGhzProtocolStatus ret = SubGhzProtocolStatusError;
     do {
-        if(!subghz_block_generic_deserialize(&instance->generic, flipper_format)) {
-            FURI_LOG_E(TAG, "Deserialize error");
-            break;
-        }
-        if(instance->generic.data_count_bit !=
-           subghz_protocol_honeywell_wdb_const.min_count_bit_for_found) {
-            FURI_LOG_E(TAG, "Wrong number of bits in key");
+        ret = subghz_block_generic_deserialize_check_count_bit(
+            &instance->generic,
+            flipper_format,
+            subghz_protocol_honeywell_wdb_const.min_count_bit_for_found);
+        if(ret != SubGhzProtocolStatusOk) {
             break;
         }
         //optional parameter parameter
         flipper_format_read_uint32(
             flipper_format, "Repeat", (uint32_t*)&instance->encoder.repeat, 1);
 
-        subghz_protocol_encoder_honeywell_wdb_get_upload(instance);
+        if(!subghz_protocol_encoder_honeywell_wdb_get_upload(instance)) {
+            ret = SubGhzProtocolStatusErrorEncoderGetUpload;
+            break;
+        }
         instance->encoder.is_running = true;
-
-        res = true;
     } while(false);
 
-    return res;
+    return ret;
 }
 
 void subghz_protocol_encoder_honeywell_wdb_stop(void* context) {
@@ -345,47 +344,38 @@ uint8_t subghz_protocol_decoder_honeywell_wdb_get_hash_data(void* context) {
         &instance->decoder, (instance->decoder.decode_count_bit / 8) + 1);
 }
 
-bool subghz_protocol_decoder_honeywell_wdb_serialize(
+SubGhzProtocolStatus subghz_protocol_decoder_honeywell_wdb_serialize(
     void* context,
     FlipperFormat* flipper_format,
-    SubGhzPresetDefinition* preset) {
+    SubGhzRadioPreset* preset) {
     furi_assert(context);
     SubGhzProtocolDecoderHoneywell_WDB* instance = context;
     return subghz_block_generic_serialize(&instance->generic, flipper_format, preset);
 }
 
-bool subghz_protocol_decoder_honeywell_wdb_deserialize(
+SubGhzProtocolStatus subghz_protocol_decoder_honeywell_wdb_deserialize(
     void* context,
     FlipperFormat* flipper_format) {
     furi_assert(context);
     SubGhzProtocolDecoderHoneywell_WDB* instance = context;
-    bool ret = false;
-    do {
-        if(!subghz_block_generic_deserialize(&instance->generic, flipper_format)) {
-            break;
-        }
-        if(instance->generic.data_count_bit !=
-           subghz_protocol_honeywell_wdb_const.min_count_bit_for_found) {
-            FURI_LOG_E(TAG, "Wrong number of bits in key");
-            break;
-        }
-        ret = true;
-    } while(false);
-    return ret;
+    return subghz_block_generic_deserialize_check_count_bit(
+        &instance->generic,
+        flipper_format,
+        subghz_protocol_honeywell_wdb_const.min_count_bit_for_found);
 }
 
-void subghz_protocol_decoder_honeywell_wdb_get_string(void* context, string_t output) {
+void subghz_protocol_decoder_honeywell_wdb_get_string(void* context, FuriString* output) {
     furi_assert(context);
     SubGhzProtocolDecoderHoneywell_WDB* instance = context;
     subghz_protocol_honeywell_wdb_check_remote_controller(instance);
 
-    string_cat_printf(
+    furi_string_cat_printf(
         output,
         "%s %dbit\r\n"
         "Key:0x%lX%08lX\r\n"
         "Sn:0x%05lX\r\n"
         "DT:%s  Al:%s\r\n"
-        "SK:%01lX R:%01lX LBat:%01lX\r\n",
+        "SK:%01X R:%01X LBat:%01X\r\n",
         instance->generic.protocol_name,
         instance->generic.data_count_bit,
         (uint32_t)((instance->generic.data >> 32) & 0xFFFFFFFF),

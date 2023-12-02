@@ -96,6 +96,15 @@ for wrapped_fn in wrapped_fn_list:
         ]
     )
 
+env.Append(
+    SDK_HEADERS=[
+        File("wrappers.h"),
+    ],
+    LINT_SOURCES=[
+        Dir("."),
+    ],
+)
+
 libenv = env.Clone(FW_LIB_NAME="print")
 libenv.ApplyLibFlags()
 libenv.Append(CCFLAGS=["-Wno-double-promotion"])

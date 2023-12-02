@@ -1,11 +1,10 @@
-import datetime
 import logging
 import os
 import posixpath
 from pathlib import Path
 
-from flipper.utils import *
-from flipper.utils.fstree import *
+from flipper.utils import timestamp, file_md5
+from flipper.utils.fstree import FsNode, compare_fs_trees
 
 MANIFEST_VERSION = 0
 
@@ -106,11 +105,11 @@ addManifestRecord(ManifestRecordFile)
 
 
 class Manifest:
-    def __init__(self):
+    def __init__(self, timestamp_value=None):
         self.version = None
         self.records = []
         self.records.append(ManifestRecordVersion(MANIFEST_VERSION))
-        self.records.append(ManifestRecordTimestamp(timestamp()))
+        self.records.append(ManifestRecordTimestamp(timestamp_value or timestamp()))
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def load(self, filename):

@@ -4,6 +4,14 @@ env.Append(
     CPPPATH=[
         "#/lib/flipper_format",
     ],
+    SDK_HEADERS=[
+        File("flipper_format.h"),
+        File("flipper_format_i.h"),
+        File("flipper_format_stream.h"),
+    ],
+    LINT_SOURCES=[
+        Dir("."),
+    ],
 )
 
 
